@@ -11442,8 +11442,6 @@ async def handle_date_selection(update: Update, context, text: str):
             message += f"\n*🌃 Ночная надбавка:*\n"
             message += f"• С 00:00 до 06:00 +200₽ в час\n\n"
             
-            message += f"*🎯 Правила:* ровно 4 часа\n"
-            message += f"*💡 Примеры:* 14-18, 22-2 (через полночь)\n\n"
             message += f"*✏️ Введите время в формате час-час:*"
             
             await update.message.reply_text(
@@ -11554,8 +11552,6 @@ async def handle_date_selection(update: Update, context, text: str):
         message += f"\n*🌃 Ночная надбавка при работе с инженером:*\n"
         message += f"• С 00:00 до 06:00 +200₽ в час\n\n"
         
-        message += f"*🎯 Правила:* минимально 1 час, максимально 6 часов\n"
-        message += f"*💡 Пример:* 14-18, 22-2 (через полночь)\n\n"
         message += f"*✏️ Введите время в формате час-час:*"
         
         await update.message.reply_text(
