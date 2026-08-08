@@ -9010,11 +9010,13 @@ async def start_booking(update: Update, context):
     logger.info(f"🔍 Начало записи для пользователя {user_id}")
     
     await update.message.reply_text(
-        "*👋 Шаг 1/7: Ввод имени*\n\n"
-        "*✨ Как вас зовут?*\n"
-        "• Алексей Иванов\n"
-        "• Ex Sinner\n\n"
-        "*✏️ Введите своё имя:*",
+        "*👤 Шаг 1/7: Ввод имени*\n\n"
+        "*✨ Здравствуйте! Как к Вам обращаться?*\n\n"
+        "*Вы можете ввести:*\n"
+        "• Настоящее имя — Алексей\n"
+        "• Творческий псевдоним — Ex Sinner\n"
+        "• Любое удобное для Вас имя\n\n"
+        "*✏️ Введите своё имя в чат:*",
         parse_mode="Markdown",
         reply_markup=KeyboardManager.get_main_menu_only_keyboard()
     )
@@ -9777,11 +9779,13 @@ async def get_contact(update: Update, context):
         
         if text == "↩️ Назад":
             await update.message.reply_text(
-                "*👋 Шаг 1/7: Ввод имени*\n\n"
-                "*✨ Как вас зовут?*\n"
-                "• Алексей Иванов\n"
-                "• Ex Sinner\n\n"
-                "*✏️ Введите своё имя:*",
+                "*👤 Шаг 1/7: Ввод имени*\n\n"
+                "*✨ Здравствуйте! Как к Вам обращаться?*\n\n"
+                "*Вы можете ввести:*\n"
+                "• Настоящее имя — Алексей\n"
+                "• Творческий псевдоним — Ex Sinner\n"
+                "• Любое удобное для Вас имя\n\n"
+                "*✏️ Введите своё имя в чат:*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_main_menu_only_keyboard()
             )
