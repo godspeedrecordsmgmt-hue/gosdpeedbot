@@ -16421,11 +16421,13 @@ async def show_slots(update: Update, context):
         )
         return CONFIRM
     
+    # ===== НОРМАЛИЗУЕМ ВВОД ВРЕМЕНИ =====
     normalized_input = DateTimeUtils.normalize_time_input(user_input)
     logger.info(f"Нормализованный ввод: {normalized_input}")
     
     is_track_creation = context.user_data.get('is_track_creation', False)
     with_engineer = context.user_data.get('with_engineer', False)
+    is_mixing = context.user_data.get('is_mixing', False)
     
     free_intervals = context.user_data.get('free_intervals', [])
     free_interval = context.user_data.get('free_interval')
@@ -16433,6 +16435,7 @@ async def show_slots(update: Update, context):
     
     logger.info(f"is_track_creation: {is_track_creation}")
     logger.info(f"with_engineer: {with_engineer}")
+    logger.info(f"is_mixing: {is_mixing}")
     
     # ===== ДЛЯ ТРЕКА =====
     if is_track_creation:
@@ -16523,45 +16526,117 @@ async def show_slots(update: Update, context):
                 reply_markup=KeyboardManager.get_time_input()
             )
             return SHOW_SLOTS
-    
-    # ===== ДЛЯ ВОКАЛА/ИНСТРУМЕНТА =====
-    else:
-        is_mixing = context.user_data.get('is_mixing', False)
         
-        if not is_mixing:
-            is_valid, error_msg = DateTimeUtils.is_valid_booking_time(
-                normalized_input, with_engineer, is_12_hours=False, is_track_creation=False
-            )
-            
-            if not is_valid:
-                if "Максимальное время" in error_msg:
-                    await update.message.reply_text(
-                        "*❌ Максимальное время записи — 6 часов!*",
-                        parse_mode="Markdown",
-                        reply_markup=KeyboardManager.get_time_input()
-                    )
-                    return SHOW_SLOTS
-                elif "Минимальное время" in error_msg or "минимально" in error_msg.lower():
-                    await update.message.reply_text(
-                        "*❌ Минимальное время записи — 1 час!*",
-                        parse_mode="Markdown",
-                        reply_markup=KeyboardManager.get_time_input()
-                    )
-                    return SHOW_SLOTS
-                elif "Неверный формат" in error_msg:
-                    await update.message.reply_text(
-                        "*❌ Неверный формат времени!*",
-                        parse_mode="Markdown",
-                        reply_markup=KeyboardManager.get_time_input()
-                    )
-                    return SHOW_SLOTS
-                else:
-                    await update.message.reply_text(
-                        "*❌ Неверный формат времени!*",
-                        parse_mode="Markdown",
-                        reply_markup=KeyboardManager.get_time_input()
-                    )
-                    return SHOW_SLOTS
+        # ===== СОХРАНЯЕМ ДАННЫЕ И ПЕРЕХОДИМ К ПОДТВЕРЖДЕНИЮ =====
+        context.user_data['time'] = normalized_input
+        context.user_data['display_time'] = DateTimeUtils.format_time_for_display(normalized_input)
+        context.user_data['start_hour'] = start_hour
+        context.user_data['end_hour'] = end_hour
+        context.user_data['duration'] = 4
+        
+        price_result = PriceCalculator.calculate(
+            service=context.user_data['service'],
+            duration=4,
+            is_mixing=False,
+            mixing_type=None,
+            is_12_hours=False,
+            is_track_creation=True,
+            track_type=context.user_data.get('track_type'),
+            twelve_hours_type=None,
+            start_hour=start_hour,
+            end_hour=end_hour,
+            with_engineer=True,
+            user_id=user_id,
+            consume_coupon=False
+        )
+        
+        context.user_data['price_result'] = price_result
+        context.user_data['price'] = price_result['final_price']
+        
+        logger.info(f"✅ Трек: время подтверждено, переходим к показу подтверждения")
+        
+        # Переходим к подтверждению
+        safe_name = context.user_data.get('safe_name', context.user_data.get('name', ''))
+        safe_contact = context.user_data.get('safe_contact', context.user_data.get('contact', ''))
+        display_date = context.user_data.get('date_with_color', context.user_data['date'])
+        display_time = context.user_data.get('display_time', context.user_data['time'])
+        
+        # ===== ФОРМИРУЕМ ТЕКСТ О СКИДКАХ =====
+        discount_text = ""
+        if price_result.get('level_discount_percent', 0) > 0:
+            discount_text += f"\n🎟 Скидка по уровню: {price_result['level_discount_percent']}%"
+        if price_result.get('promo_discount_percent', 0) > 0:
+            discount_text += f"\n🎟 Промокод: {price_result['promo_discount_percent']}%"
+        if price_result.get('free_hours_applied', 0) > 0:
+            free_hours = price_result['free_hours_applied']
+            if free_hours == 1:
+                hours_text = "бесплатный час"
+            elif free_hours in [2, 3, 4]:
+                hours_text = f"{free_hours} бесплатных часа"
+            else:
+                hours_text = f"{free_hours} бесплатных часов"
+            discount_text += f"\n🎟 Промокод: {hours_text}"
+        if price_result.get('free_service_applied', False):
+            discount_text += f"\n🎟 Промокод: Бесплатная услуга"
+        
+        # ===== ЕДИНЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
+        confirmation_text = (
+            f"*✅ Шаг 7/7: Подтверждение*\n\n"
+            f"*✨ Проверьте правильность введённых данных:*\n\n"
+            f"👤 Имя: {safe_name}\n"
+            f"📱 Контакт: {safe_contact}\n"
+            f"🎧 Услуга: {context.user_data['service']}\n"
+            f"🎵 Тип: {context.user_data.get('track_type', 'Один трек')}\n"
+            f"📅 Дата: {display_date}\n"
+            f"⏰ Время: {display_time} (4 часа)\n"
+            f"💰 Стоимость: {price_result['final_price']}₽{discount_text}\n\n"
+            f"*👇 Выберите подходящий вариант:*"
+        )
+        
+        context.user_data['_conversation_state'] = CONFIRM
+        
+        await update.message.reply_text(
+            confirmation_text,
+            reply_markup=KeyboardManager.get_confirmation(),
+            parse_mode="Markdown"
+        )
+        return CONFIRM
+    
+    # ===== ДЛЯ ВОКАЛА И ИНСТРУМЕНТА =====
+    if not is_mixing:
+        is_valid, error_msg = DateTimeUtils.is_valid_booking_time(
+            normalized_input, with_engineer, is_12_hours=False, is_track_creation=False
+        )
+        
+        if not is_valid:
+            if "Максимальное время" in error_msg:
+                await update.message.reply_text(
+                    "*❌ Максимальное время записи — 6 часов!*",
+                    parse_mode="Markdown",
+                    reply_markup=KeyboardManager.get_time_input()
+                )
+                return SHOW_SLOTS
+            elif "Минимальное время" in error_msg or "минимально" in error_msg.lower():
+                await update.message.reply_text(
+                    "*❌ Минимальное время записи — 1 час!*",
+                    parse_mode="Markdown",
+                    reply_markup=KeyboardManager.get_time_input()
+                )
+                return SHOW_SLOTS
+            elif "Неверный формат" in error_msg:
+                await update.message.reply_text(
+                    "*❌ Неверный формат времени!*",
+                    parse_mode="Markdown",
+                    reply_markup=KeyboardManager.get_time_input()
+                )
+                return SHOW_SLOTS
+            else:
+                await update.message.reply_text(
+                    "*❌ Неверный формат времени!*",
+                    parse_mode="Markdown",
+                    reply_markup=KeyboardManager.get_time_input()
+                )
+                return SHOW_SLOTS
         
         is_in_any_interval = False
         interval_error = ""
@@ -16595,26 +16670,22 @@ async def show_slots(update: Update, context):
             )
             return SHOW_SLOTS
     
-    # ===== ОБЩАЯ ЧАСТЬ ДЛЯ ВСЕХ УСЛУГ (КРОМЕ АРЕНДЫ) =====
+    # ===== ОБЩАЯ ЧАСТЬ ДЛЯ ВОКАЛА/ИНСТРУМЕНТА (ПРОВЕРКА ДОСТУПНОСТИ) =====
     selected_date = context.user_data['date']
-    service_type = "track_creation" if is_track_creation else "vocal"
+    service_type = "vocal"
     
-    is_mixing = context.user_data.get('is_mixing', False)
+    logger.info(f"Проверка доступности: дата={selected_date}, время={normalized_input}, тип={service_type}")
     
-    if not is_mixing:
-        logger.info(f"Проверка доступности: дата={selected_date}, время={normalized_input}, тип={service_type}")
+    if not BookingManager.check_time_slot_available(selected_date, normalized_input, service_type):
+        display_time = DateTimeUtils.format_time_for_display(normalized_input)
+        logger.info(f"Слот НЕ доступен: {display_time}")
         
-        if not BookingManager.check_time_slot_available(selected_date, normalized_input, service_type):
-            display_time = DateTimeUtils.format_time_for_display(normalized_input)
-            
-            logger.info(f"Слот НЕ доступен: {display_time}")
-            
-            await update.message.reply_text(
-                "*❌ Время должно начинаться в доступном интервале!*",
-                parse_mode="Markdown",
-                reply_markup=KeyboardManager.get_time_input()
-            )
-            return SHOW_SLOTS
+        await update.message.reply_text(
+            "*❌ Время должно начинаться в доступном интервале!*",
+            parse_mode="Markdown",
+            reply_markup=KeyboardManager.get_time_input()
+        )
+        return SHOW_SLOTS
     
     start_hour_str, end_hour_str = map(str.strip, normalized_input.split('-'))
     start_hour = int(start_hour_str.strip())
@@ -16640,25 +16711,24 @@ async def show_slots(update: Update, context):
             )
             return SHOW_SLOTS
     
+    # ===== СОХРАНЯЕМ ДАННЫЕ ДЛЯ ВОКАЛА/ИНСТРУМЕНТА =====
     context.user_data['time'] = normalized_input
     context.user_data['display_time'] = DateTimeUtils.format_time_for_display(normalized_input)
     context.user_data['start_hour'] = start_hour
     context.user_data['end_hour'] = end_hour
     
-    if is_track_creation:
-        duration = 4
-    else:
-        duration = DateTimeUtils.calculate_duration(start_hour, end_hour)
+    duration = DateTimeUtils.calculate_duration(start_hour, end_hour)
+    context.user_data['duration'] = duration
     
     price_result = PriceCalculator.calculate(
         service=context.user_data['service'],
         duration=duration,
-        is_mixing=context.user_data.get('is_mixing', False),
-        mixing_type=context.user_data.get('mixing_type'),
-        is_12_hours=context.user_data.get('is_12_hours', False),
-        is_track_creation=is_track_creation,
-        track_type=context.user_data.get('track_type'),
-        twelve_hours_type=context.user_data.get('12_hours_type'),
+        is_mixing=False,
+        mixing_type=None,
+        is_12_hours=False,
+        is_track_creation=False,
+        track_type=None,
+        twelve_hours_type=None,
         start_hour=start_hour,
         end_hour=end_hour,
         with_engineer=with_engineer,
@@ -16668,7 +16738,6 @@ async def show_slots(update: Update, context):
     
     context.user_data['price_result'] = price_result
     context.user_data['price'] = price_result['final_price']
-    context.user_data['duration'] = duration
     
     logger.info(f"Длительность: {duration}")
     logger.info(f"Базовая цена: {price_result['base_price']}")
@@ -16705,13 +16774,11 @@ async def show_slots(update: Update, context):
         discount_text += f"\n🎟 Промокод: Бесплатная услуга"
     
     # ===== ЕДИНЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
-    # Определяем шаг в зависимости от услуги
-    if is_track_creation:
-        step_text = "Шаг 7/7"
-    elif is_mixing:
+    # Определяем шаг
+    if is_mixing:
         step_text = "Шаг 5/5"
-    elif is_12_hours:
-        step_text = "Шаг 6/6"
+    elif is_track_creation:
+        step_text = "Шаг 7/7"
     else:
         step_text = "Шаг 7/7"
     
@@ -16741,7 +16808,7 @@ async def show_slots(update: Update, context):
         f"*✨ Проверьте правильность введённых данных:*\n\n"
         f"👤 Имя: {safe_name}\n"
         f"📱 Контакт: {safe_contact}\n"
-        f"🎧 Услуга: {service}\n"
+        f"🎧 Услуга: {context.user_data['service']}\n"
     )
     
     # Добавляем дополнительную информацию в зависимости от услуги
