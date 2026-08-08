@@ -10133,19 +10133,22 @@ async def get_service(update: Update, context):
         keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("👀 Написать Simwey", url="https://t.me/Simweyy")]
         ])
-        
+
         await update.message.reply_text(
-            "*✨ Что именно требуется?*\n\n"
+            "*🎹 Аранжировка/Биты*\n\n"
+            "*✨ Предлагаем выбрать готовые решения или заказать индивидуальную работу:*\n\n"
             "*🎵 Готовые биты:*\n"
             "• MP3 Leasing — 1500₽\n"
             "• WAV Leasing — 2500₽\n"
             "• WAV TRACK OUT — 5000₽\n"
             "• EXCLUSIVE RIGHTS — от 10000₽\n\n"
-            "*💿 Заказной бит — договорная*\n"
+            "*💿 Заказной бит:*\n"
+            "• Договорная цена\n"
             "• Обсуждение с продюсером\n"
             "• Индивидуальный подход\n\n"
-            "[BEATS](t.me/godspeedbeats) — готовые биты\n"
-            "[LOOPS](https://t.me/simweyloops) — лупы и сэмплы",
+            "BEATS — готовые биты\n"
+            "LOOPS — лупы и сэмплы\n\n"
+            "*👇 Для заказа свяжитесь с продюсером:*",
             parse_mode="Markdown",
             disable_web_page_preview=True,
             reply_markup=keyboard
