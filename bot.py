@@ -6585,7 +6585,7 @@ class KeyboardManager:
             ["🏆 Достижения", "🎁 Промокоды"],
             ["👥 Рефералы", "📈 Мой уровень"],
             ["❓ Помощь", "❗️ Полезная информация"],
-            ["🏆 Топ пользователей"],  # теперь внизу по центру
+            ["🏆 Топ пользователей"],
         ]
         
         if user_id and user_id in Config.ADMIN_IDS:
@@ -6593,7 +6593,6 @@ class KeyboardManager:
             keyboard.append(["👑 Заблокировать", "👑 Выдать достижение"])
             keyboard.append(["👑 Удалить достижение", "👑 Пластинки"])
             keyboard.append(["👑 Профиль", "👑 Выручка"])
-            # Промокоды в одной строке по бокам
             keyboard.append(["👑 Создать промокод", "👑 Удалить промокод"])
         
         return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
@@ -6616,38 +6615,38 @@ class KeyboardManager:
     
     @staticmethod
     def get_contact_request():
+        """Клавиатура с кнопками слева и справа для ввода контакта"""
         contact_button = KeyboardButton("📲 Отправить контакт", request_contact=True)
         return ReplyKeyboardMarkup([
-            [contact_button],
-            ["✏️ Ввести вручную"],
-            ["↩️ Главное меню", "↩️ Назад"]
+            [contact_button, "✏️ Ввести вручную"],  # ← КНОПКИ СЛЕВА И СПРАВА
+            ["↩️ Главное меню", "↩️ Назад"]         # ← КНОПКИ СЛЕВА И СПРАВА
         ], resize_keyboard=True)
     
     @staticmethod
     def get_text_contact_input():
         return ReplyKeyboardMarkup([
-            ["↩️ Главное меню", "↩️ Назад"]
+            ["↩️ Главное меню", "↩️ Назад"]         # ← КНОПКИ СЛЕВА И СПРАВА
         ], resize_keyboard=True)
     
     @staticmethod
     def get_mixing():
         return ReplyKeyboardMarkup([
-            ["🎵 Трек", "💿 Альбом"],
-            ["↩️ Главное меню", "↩️ Назад"]
+            ["🎵 Трек", "💿 Альбом"],                # ← КНОПКИ СЛЕВА И СПРАВА
+            ["↩️ Главное меню", "↩️ Назад"]         # ← КНОПКИ СЛЕВА И СПРАВА
         ], resize_keyboard=True)
     
     @staticmethod
     def get_track_creation_options():
         return ReplyKeyboardMarkup([
-            ["🎵 Трек", "💿 Альбом"],
-            ["↩️ Главное меню", "↩️ Назад"]
+            ["🎵 Трек", "💿 Альбом"],                # ← КНОПКИ СЛЕВА И СПРАВА
+            ["↩️ Главное меню", "↩️ Назад"]         # ← КНОПКИ СЛЕВА И СПРАВА
         ], resize_keyboard=True)
     
     @staticmethod
     def get_12_hours_options():
         return ReplyKeyboardMarkup([
-            ["☀️ День (9-21)", "🌙 Ночь (21-9)"],
-            ["↩️ Главное меню", "↩️ Назад"]
+            ["☀️ День (9-21)", "🌙 Ночь (21-9)"],   # ← КНОПКИ СЛЕВА И СПРАВА
+            ["↩️ Главное меню", "↩️ Назад"]         # ← КНОПКИ СЛЕВА И СПРАВА
         ], resize_keyboard=True)
     
     @staticmethod
@@ -6665,14 +6664,14 @@ class KeyboardManager:
             row = colored_dates[i:i+2]
             keyboard.append(row)
         
-        keyboard.append(["↩️ Главное меню", "↩️ Назад"])
+        keyboard.append(["↩️ Главное меню", "↩️ Назад"])  # ← КНОПКИ СЛЕВА И СПРАВА
         return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
     
     @staticmethod
     def get_confirmation():
         return ReplyKeyboardMarkup([
-            ["✅ Всё верно, отправить!", "✏️ Исправить данные"],
-            ["❌ Отменить"]
+            ["✅ Всё верно, отправить!", "✏️ Исправить данные"],  # ← КНОПКИ СЛЕВА И СПРАВА
+            ["❌ Отменить"]                                       # ← ЦЕНТР
         ], resize_keyboard=True)
     
     @staticmethod
@@ -6682,7 +6681,7 @@ class KeyboardManager:
     @staticmethod
     def get_time_input():
         return ReplyKeyboardMarkup([
-            ["↩️ Главное меню", "↩️ Назад"]
+            ["↩️ Главное меню", "↩️ Назад"]         # ← КНОПКИ СЛЕВА И СПРАВА
         ], resize_keyboard=True)
     
     @staticmethod
@@ -6694,21 +6693,21 @@ class KeyboardManager:
     @staticmethod
     def get_admin_record_type():
         return ReplyKeyboardMarkup([
-            ["📝 Договорная запись", "🎤 Запись в студии"],
-            ["↩️ Главное меню", "↩️ Назад"]
+            ["📝 Договорная запись", "🎤 Запись в студии"],  # ← КНОПКИ СЛЕВА И СПРАВА
+            ["↩️ Главное меню", "↩️ Назад"]                 # ← КНОПКИ СЛЕВА И СПРАВА
         ], resize_keyboard=True)
     
     @staticmethod
     def get_admin_price_input():
         return ReplyKeyboardMarkup([
-            ["↩️ Главное меню", "↩️ Назад"]
+            ["↩️ Главное меню", "↩️ Назад"]         # ← КНОПКИ СЛЕВА И СПРАВА
         ], resize_keyboard=True)
     
     @staticmethod
     def get_admin_confirmation():
         return ReplyKeyboardMarkup([
-            ["✅ Да, создать запись", "✏️ Исправить данные"],
-            ["❌ Отменить", "↩️ Назад"]
+            ["✅ Да, создать запись", "✏️ Исправить данные"],  # ← КНОПКИ СЛЕВА И СПРАВА
+            ["❌ Отменить", "↩️ Назад"]                       # ← КНОПКИ СЛЕВА И СПРАВА
         ], resize_keyboard=True)
     
     @staticmethod
@@ -6718,21 +6717,21 @@ class KeyboardManager:
     @staticmethod
     def get_admin_achievement_back():
         return ReplyKeyboardMarkup([
-            ["↩️ Главное меню", "↩️ Назад"]
+            ["↩️ Главное меню", "↩️ Назад"]         # ← КНОПКИ СЛЕВА И СПРАВА
         ], resize_keyboard=True)
     
     @staticmethod
     def get_promo_keyboard():
         return ReplyKeyboardMarkup([
             ["🎟 Ввести промокод"],
-            ["↩️ Главное меню", "↩️ Назад"]
+            ["↩️ Главное меню", "↩️ Назад"]         # ← КНОПКИ СЛЕВА И СПРАВА
         ], resize_keyboard=True)
     
     @staticmethod
     def get_referral_keyboard():
         return ReplyKeyboardMarkup([
-            ["👥 Мои рефералы", "🎟 Ввести код друга"],
-            ["↩️ Главное меню", "↩️ Назад"]
+            ["👥 Мои рефералы", "🎟 Ввести код друга"],  # ← КНОПКИ СЛЕВА И СПРАВА
+            ["↩️ Главное меню", "↩️ Назад"]             # ← КНОПКИ СЛЕВА И СПРАВА
         ], resize_keyboard=True)
     
     # ===== МЕТОДЫ ДЛЯ ПРОМОКОДОВ (INLINE-КЛАВИАТУРЫ) =====
@@ -6755,9 +6754,9 @@ class KeyboardManager:
     @staticmethod
     def get_admin_promo_type_keyboard():
         return ReplyKeyboardMarkup([
-            ["💰 % на все", "🎯 % на услугу"],
-            ["⏱️ Бесплатный час", "🎵 Бесплатная услуга"],
-            ["↩️ Главное меню", "↩️ Назад"]
+            ["💰 % на все", "🎯 % на услугу"],           # ← КНОПКИ СЛЕВА И СПРАВА
+            ["⏱️ Бесплатный час", "🎵 Бесплатная услуга"], # ← КНОПКИ СЛЕВА И СПРАВА
+            ["↩️ Главное меню", "↩️ Назад"]              # ← КНОПКИ СЛЕВА И СПРАВА
         ], resize_keyboard=True)
     
     @staticmethod
@@ -6765,34 +6764,34 @@ class KeyboardManager:
         return ReplyKeyboardMarkup([
             ["🎤 Вокал", "🎸 Инструмент", "⏰ Аренда"],
             ["🎚️ Сведение", "🎵 Создание трека"],
-            ["↩️ Главное меню", "↩️ Назад"]
+            ["↩️ Главное меню", "↩️ Назад"]              # ← КНОПКИ СЛЕВА И СПРАВА
         ], resize_keyboard=True)
     
     @staticmethod
     def get_admin_promo_duration_keyboard():
         return ReplyKeyboardMarkup([
-            ["♾️ Бессрочный", "⏱️ Временный"],
-            ["↩️ Главное меню", "↩️ Назад"]
+            ["♾️ Бессрочный", "⏱️ Временный"],          # ← КНОПКИ СЛЕВА И СПРАВА
+            ["↩️ Главное меню", "↩️ Назад"]              # ← КНОПКИ СЛЕВА И СПРАВА
         ], resize_keyboard=True)
     
     @staticmethod
     def get_admin_promo_confirm_keyboard():
         return ReplyKeyboardMarkup([
-            ["✅ Да, создать промокод", "✏️ Исправить данные"],
-            ["❌ Отменить"]
+            ["✅ Да, создать промокод", "✏️ Исправить данные"],  # ← КНОПКИ СЛЕВА И СПРАВА
+            ["❌ Отменить"]                                      # ← ЦЕНТР
         ], resize_keyboard=True)
     
     @staticmethod
     def get_admin_promo_delete_type_keyboard():
         return ReplyKeyboardMarkup([
-            ["🌍 Общий промокод", "👤 Персональный промокод"],
+            ["🌍 Общий промокод", "👤 Персональный промокод"],  # ← КНОПКИ СЛЕВА И СПРАВА
             ["↩️ Главное меню"]
         ], resize_keyboard=True)
     
     @staticmethod
     def get_admin_promo_delete_user_keyboard():
         return ReplyKeyboardMarkup([
-            ["↩️ Главное меню", "↩️ Назад"]
+            ["↩️ Главное меню", "↩️ Назад"]              # ← КНОПКИ СЛЕВА И СПРАВА
         ], resize_keyboard=True)
     
     @staticmethod
