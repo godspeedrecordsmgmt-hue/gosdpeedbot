@@ -10266,14 +10266,13 @@ async def get_engineer_option(update: Update, context):
     
     await update.message.reply_text(
         "*📅 Шаг 5/7: Выбор даты*\n\n"
-        "*✨ Когда планируете записаться?*\n\n"
+        "*✨ Когда Вы планируете записаться?*\n\n"
         f"{rules_text}\n"
         "*🎨 Легенда цветов:*\n"
         "🟢 — Свободно более 18 часов \n"
         "🟡 — Свободно более 12 часов\n"
         "🟠 — Свободно более 6 часов\n"
         "🔴 — Свободно менее 6 часов\n\n"
-        "*🗓️ Доступные даты:*\n\n"
         "*👇 Выберите подходящий вариант:*",
         parse_mode="Markdown",
         reply_markup=reply_markup
@@ -10379,7 +10378,6 @@ async def get_twelve_hours_option(update: Update, context):
         "*🎨 Легенда цветов:*\n"
         "🟢 — Слот доступен для бронирования\n"
         "🔴 — Слот недоступен для бронирования\n\n"
-        "*🗓️ Доступные даты:*\n\n"
         "*👇 Выберите подходящий вариант:*",
         parse_mode="Markdown",
         reply_markup=KeyboardManager.get_dates(service_type, False)
@@ -10564,7 +10562,7 @@ async def get_track_creation_type(update: Update, context):
         
         await update.message.reply_text(
             "*📅 Шаг 5/7: Выбор даты*\n\n"
-            "*✨ Когда планируете записать трек?*\n\n"
+            "*✨ Когда Вы планируете записать трек?*\n\n"
             "*⏰ Правила для создания трека:*\n"
             "• Запись минимально за 72 часа\n"
             "• От 4 часов работы в студии\n"
@@ -10573,7 +10571,6 @@ async def get_track_creation_type(update: Update, context):
             "🟢 — Есть 4-часовые слоты\n"
             "🟠 — Есть 4-часовые слоты только через полночь\n"
             "🔴 — Нет 4-часовых слотов\n\n"
-            "*🗓️ Доступные даты:*\n\n"
             "*👇 Выберите подходящий вариант:*",
             parse_mode="Markdown",
             reply_markup=KeyboardManager.get_dates("track_creation", True)
@@ -16227,7 +16224,7 @@ async def show_slots(update: Update, context):
         if is_track_creation:
             await update.message.reply_text(
                 "*📅 Шаг 5/7: Выбор даты*\n\n"
-                "*✨ Когда планируете записать трек?*\n\n"
+                "*✨ Когда Вы планируете записать трек?*\n\n"
                 "*⏰ Правила для создания трека:*\n"
                 "• Запись минимально за 72 часа\n"
                 "• От 4 часов работы в студии\n"
@@ -16236,7 +16233,6 @@ async def show_slots(update: Update, context):
                 "🟢 — Есть 4-часовые слоты\n"
                 "🟠 — Есть 4-часовые слоты только через полночь\n"
                 "🔴 — Нет 4-часовых слотов\n\n"
-                "*🗓️ Доступные даты:*\n\n"
                 "*👇 Выберите подходящий вариант:*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_dates("track_creation", True)
@@ -16255,7 +16251,6 @@ async def show_slots(update: Update, context):
                 "*🎨 Легенда цветов:*\n"
                 "🟢 — Слот доступен для бронирования\n"
                 "🔴 — Слот недоступен для бронирования\n\n"
-                "*🗓️ Доступные даты:*\n\n"
                 "*👇 Выберите подходящий вариант:*", 
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_dates(service_type, False)
@@ -16274,7 +16269,6 @@ async def show_slots(update: Update, context):
                     "🟡 — Свободно более 12 часов\n"
                     "🟠 — Свободно более 6 часов\n"
                     "🔴 — Свободно менее 6 часов\n\n"
-                    "*🗓️ Доступные даты:*\n\n"
                     "*👇 Выберите подходящий вариант:*",
                     parse_mode="Markdown",
                     reply_markup=KeyboardManager.get_dates("vocal", True)
@@ -16290,7 +16284,6 @@ async def show_slots(update: Update, context):
                     "🟡 — Свободно более 12 часов\n"
                     "🟠 — Свободно более 6 часов\n"
                     "🔴 — Свободно менее 6 часов\n\n"
-                    "*🗓️ Доступные даты:*\n\n"
                     "*👇 Выберите подходящий вариант:*",
                     parse_mode="Markdown",
                     reply_markup=KeyboardManager.get_dates("vocal", False)
@@ -16801,7 +16794,7 @@ async def handle_back_button(update: Update, context):
         if is_track_creation:
             await update.message.reply_text(
                 "*📅 Шаг 5/7: Выбор даты*\n\n"
-                "*✨ Когда планируете записать трек?*\n\n"
+                "*✨ Когда Вы планируете записать трек?*\n\n"
                 "*⏰ Правила для создания трека:*\n"
                 "• Запись минимально за 72 часа\n"
                 "• От 4 часов работы в студии\n"
@@ -16810,7 +16803,6 @@ async def handle_back_button(update: Update, context):
                 "🟢 — Есть 4-часовые слоты\n"
                 "🟠 — Есть 4-часовые слоты только через полночь\n"
                 "🔴 — Нет 4-часовых слотов\n\n"
-                "*🗓️ Доступные даты:*\n\n"
                 "*👇 Выберите подходящий вариант:*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_dates("track_creation", True)
@@ -16829,7 +16821,6 @@ async def handle_back_button(update: Update, context):
                 "*🎨 Легенда цветов:*\n"
                 "🟢 — Слот доступен для бронирования\n"
                 "🔴 — Слот недоступен для бронирования\n\n"
-                "*🗓️ Доступные даты:*\n\n"
                 "*👇 Выберите подходящий вариант:*", 
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_dates(service_type, False)
@@ -16848,7 +16839,6 @@ async def handle_back_button(update: Update, context):
                     "🟡 — Свободно более 12 часов\n"
                     "🟠 — Свободно более 6 часов\n"
                     "🔴 — Свободно менее 6 часов\n\n"
-                    "*🗓️ Доступные даты:*\n\n"
                     "*👇 Выберите подходящий вариант:*",
                     parse_mode="Markdown",
                     reply_markup=KeyboardManager.get_dates("vocal", True)
@@ -16864,7 +16854,6 @@ async def handle_back_button(update: Update, context):
                     "🟡 — Свободно более 12 часов\n"
                     "🟠 — Свободно более 6 часов\n"
                     "🔴 — Свободно менее 6 часов\n\n"
-                    "*🗓️ Доступные даты:*\n\n"
                     "*👇 Выберите подходящий вариант:*",
                     parse_mode="Markdown",
                     reply_markup=KeyboardManager.get_dates("vocal", False)
@@ -17222,7 +17211,7 @@ async def handle_back_in_date(update: Update, context):
         else:
             await update.message.reply_text(
                 "*📅 Шаг 5/7: Выбор даты*\n\n"
-                "*✨ Когда планируете записать трек?*\n\n"
+                "*✨ Когда Вы планируете записать трек?*\n\n"
                 "*⏰ Правила для создания трека:*\n"
                 "• Запись минимально за 72 часа\n"
                 "• От 4 часов работы в студии\n"
@@ -17231,7 +17220,6 @@ async def handle_back_in_date(update: Update, context):
                 "🟢 — Есть 4-часовые слоты\n"
                 "🟠 — Есть 4-часовые слоты только через полночь\n"
                 "🔴 — Нет 4-часовых слотов\n\n"
-                "*🗓️ Доступные даты:*\n\n"
                 "*👇 Выберите подходящий вариант:*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_dates("track_creation", True)
@@ -17249,7 +17237,6 @@ async def handle_back_in_date(update: Update, context):
             "*🎨 Легенда цветов:*\n"
             "🟢 — Слот доступен для бронирования\n"
             "🔴 — Слот недоступен для бронирования\n\n"
-            "*🗓️ Доступные даты:*\n\n"
             "*👇 Выберите подходящий вариант:*", 
             parse_mode="Markdown",
             reply_markup=KeyboardManager.get_12_hours_options()
@@ -17286,7 +17273,6 @@ async def handle_back_in_date(update: Update, context):
                 "🟡 — Свободно более 12 часов\n"
                 "🟠 — Свободно более 6 часов\n"
                 "🔴 — Свободно менее 6 часов\n\n"
-                "*🗓️ Доступные даты:*\n\n"
                 "*👇 Выберите подходящий вариант:*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_dates("vocal", True)
@@ -17302,7 +17288,6 @@ async def handle_back_in_date(update: Update, context):
                 "🟡 — Свободно более 12 часов\n"
                 "🟠 — Свободно более 6 часов\n"
                 "🔴 — Свободно менее 6 часов\n\n"
-                "*🗓️ Доступные даты:*\n\n"
                 "*👇 Выберите подходящий вариант:*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_dates("vocal", False)
