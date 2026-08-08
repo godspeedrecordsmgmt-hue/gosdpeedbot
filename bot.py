@@ -9016,7 +9016,7 @@ async def start_booking(update: Update, context):
         "• Настоящее имя — Алексей\n"
         "• Творческий псевдоним — Ex Sinner\n"
         "• Любое удобное для Вас имя\n\n"
-        "*✏️ Введите своё имя в чат:*",
+        "*✏️ Введите ваше имя:*",
         parse_mode="Markdown",
         reply_markup=KeyboardManager.get_main_menu_only_keyboard()
     )
@@ -9786,7 +9786,7 @@ async def get_contact(update: Update, context):
                 "• Настоящее имя — Алексей\n"
                 "• Творческий псевдоним — Ex Sinner\n"
                 "• Любое удобное для Вас имя\n\n"
-                "*✏️ Введите своё имя в чат:*",
+                "*✏️ Введите ваше имя:*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_main_menu_only_keyboard()
             )
