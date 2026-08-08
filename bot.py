@@ -10082,7 +10082,7 @@ async def get_service(update: Update, context):
         
         await update.message.reply_text(
             "*🎚️ Шаг 4/5: Выбор сведения*\n\n"
-            "*✨ Что именно требуется свести?*\n\n"
+            "*✨ Что Вам нужно свести?*\n\n"
             "*🎵 Трек — 2500₽*\n"
             "• Профессиональное сведение\n"
             "• Мастеринг готового микса\n\n"
@@ -10984,7 +10984,7 @@ async def get_date(update: Update, context):
         elif is_mixing:
             await update.message.reply_text(
                 "🎚️ Шаг 4/5: Тип сведения\n\n"
-                "✨ Что именно требуется свести?\n\n"
+                "✨ Что Вам нужно свести?\n\n"
                 "🎵 Трек — 2 500₽\n"
                 "• Профессиональное сведение\n"
                 "• Мастеринг готового микса\n\n"
@@ -16915,7 +16915,7 @@ async def handle_back_button(update: Update, context):
         elif service == "🎚️ Сведение/мастеринг":
             await update.message.reply_text(
                 "*🎚️ Шаг 4/5: Выбор сведения*\n\n"
-                "*✨ Что именно требуется свести?*\n\n"
+                "*✨ Что Вам нужно свести?*\n\n"
                 "*🎵 Трек — 2500₽*\n"
                 "• Профессиональное сведение\n"
                 "• Мастеринг готового микса\n\n"
@@ -17259,7 +17259,7 @@ async def handle_back_in_date(update: Update, context):
     elif is_mixing:
         await update.message.reply_text(
             "*🎚️ Шаг 4/5: Выбор сведения*\n\n"
-            "*✨ Что именно требуется свести?*\n\n"
+            "*✨ Что Вам нужно свести?*\n\n"
             "*🎵 Трек — 2500₽*\n"
             "• Профессиональное сведение\n"
             "• Мастеринг готового микса\n\n"
