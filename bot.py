@@ -1,29 +1,37 @@
-import inspect
-import traceback
-import asyncio
-import sys
-import os
-import time
-import signal
-from datetime import datetime, timedelta
-import logging
-from functools import wraps
-import json
-import warnings
-import re
-import html
-import sqlite3
-import random
-import string
-from typing import Tuple, List, Dict, Optional, Any, Union
-from contextlib import contextmanager
-import threading
-from pathlib import Path
-import shutil
+# ============================================================
+# ИМПОРТЫ
+# ============================================================
 
+import inspect          # Для анализа кода и получения информации о функциях
+import traceback        # Для вывода стек-трейса при ошибках
+import asyncio          # Для асинхронного программирования
+import sys              # Для работы с системными параметрами и stdout
+import os               # Для работы с операционной системой (файлы, пути)
+import time             # Для работы со временем (задержки, тайминги)
+import signal           # Для обработки сигналов операционной системы
+from datetime import datetime, timedelta  # Для работы с датами и временем
+import logging          # Для логирования событий
+from functools import wraps  # Для создания декораторов
+import json             # Для работы с JSON данными
+import warnings         # Для управления предупреждениями
+import re               # Для работы с регулярными выражениями
+import html             # Для экранирования HTML-символов
+import sqlite3          # Для работы с SQLite базой данных
+import random           # Для генерации случайных чисел и кодов
+import string           # Для работы со строками (буквы, цифры)
+from typing import Tuple, List, Dict, Optional, Any, Union  # Для аннотаций типов
+from contextlib import contextmanager  # Для создания контекстных менеджеров
+import threading        # Для работы с потоками
+from pathlib import Path  # Для работы с путями в ОС
+import shutil           # Для работы с файлами и директориями
+
+# Подавляем предупреждения о устаревших функциях
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-# ===== ШАГ 2: КОНФИГУРАЦИЯ ХРАНЕНИЯ ДАННЫХ =====
+# ============================================================
+# ШАГ 2: КОНФИГУРАЦИЯ ХРАНЕНИЯ ДАННЫХ
+# ============================================================
+
 # Базовая директория для данных (можно переопределить через переменную окружения)
 DEFAULT_DATA_DIR = '/app/data'
 DATA_DIR = os.getenv('DATA_DIR', DEFAULT_DATA_DIR)
@@ -50,11 +58,17 @@ print(f"📊 Persistent БД будет: {PERSISTENT_DB_PATH}")
 print("=" * 60)
 # ===== КОНЕЦ ШАГА 2 =====
 
-# ===== НОВЫЙ ДЕКОРАТОР ДЛЯ ПОВТОРНЫХ ПОПЫТОК ПРИ БЛОКИРОВКЕ БД =====
+# ============================================================
+# ДЕКОРАТОР ДЛЯ ПОВТОРНЫХ ПОПЫТОК ПРИ БЛОКИРОВКЕ БД
+# ============================================================
+
 import time
 from functools import wraps
 
-# ===== КОНСТАНТЫ ДЛЯ ФИНАНСОВОГО МЕНЮ =====
+# ============================================================
+# КОНСТАНТЫ ДЛЯ ФИНАНСОВОГО МЕНЮ
+# ============================================================
+
 CALLBACK_REVENUE = "revenue"
 CALLBACK_PERIOD_TODAY = f"{CALLBACK_REVENUE}_today"
 CALLBACK_PERIOD_YESTERDAY = f"{CALLBACK_REVENUE}_yesterday"
@@ -66,7 +80,10 @@ CALLBACK_PERIOD_ALL = f"{CALLBACK_REVENUE}_all"
 CALLBACK_PERIOD_CUSTOM = f"{CALLBACK_REVENUE}_custom"
 CALLBACK_BACK_TO_PERIODS = f"{CALLBACK_REVENUE}_back_to_periods"
 
-# ===== ФУНКЦИЯ ДЛЯ КОНВЕРТАЦИИ В МОСКОВСКОЕ ВРЕМЯ =====
+# ============================================================
+# ФУНКЦИЯ ДЛЯ КОНВЕРТАЦИИ В МОСКОВСКОЕ ВРЕМЯ
+# ============================================================
+
 def to_moscow_time(dt=None):
     """Конвертирует время в московское (UTC+3) для отображения"""
     if dt is None:
@@ -81,9 +98,19 @@ def to_moscow_time(dt=None):
     return dt + timedelta(hours=3)
 # ===== КОНЕЦ ФУНКЦИИ =====
 
-# ===== ФУНКЦИИ ДЛЯ ПРАВИЛЬНОГО СКЛОНЕНИЯ =====
+# ============================================================
+# ФУНКЦИИ ДЛЯ ПРАВИЛЬНОГО СКЛОНЕНИЯ СЛОВ
+# ============================================================
+
 def get_hours_word(hours):
-    """Возвращает правильное склонение слова 'час'"""
+    """
+    Возвращает правильное склонение слова 'час'
+    
+    Примеры:
+    - 1 час
+    - 2, 3, 4 часа
+    - 5-20 часов
+    """
     hours = int(hours)
     if hours % 10 == 1 and hours % 100 != 11:
         return "час"
@@ -93,7 +120,14 @@ def get_hours_word(hours):
         return "часов"
 
 def get_minutes_word(minutes):
-    """Возвращает правильное склонение слова 'минута'"""
+    """
+    Возвращает правильное склонение слова 'минута'
+    
+    Примеры:
+    - 1 минута
+    - 2, 3, 4 минуты
+    - 5-20 минут
+    """
     minutes = int(minutes)
     if minutes % 10 == 1 and minutes % 100 != 11:
         return "минута"
@@ -103,7 +137,14 @@ def get_minutes_word(minutes):
         return "минут"
 
 def get_days_word(days):
-    """Возвращает правильное склонение слова 'день'"""
+    """
+    Возвращает правильное склонение слова 'день'
+    
+    Примеры:
+    - 1 день
+    - 2, 3, 4 дня
+    - 5-20 дней
+    """
     days = int(days)
     if days % 10 == 1 and days % 100 != 11:
         return "день"
@@ -113,7 +154,14 @@ def get_days_word(days):
         return "дней"
 
 def get_months_word(months):
-    """Возвращает правильное склонение слова 'месяц'"""
+    """
+    Возвращает правильное склонение слова 'месяц'
+    
+    Примеры:
+    - 1 месяц
+    - 2, 3, 4 месяца
+    - 5-20 месяцев
+    """
     months = int(months)
     if months % 10 == 1 and months % 100 != 11:
         return "месяц"
@@ -123,7 +171,14 @@ def get_months_word(months):
         return "месяцев"
 
 def format_duration(days=0, hours=0, minutes=0):
-    """Форматирует длительность с правильными склонениями"""
+    """
+    Форматирует длительность с правильными склонениями
+    
+    Примеры:
+    - format_duration(1, 2, 30) → "1 день 2 часа 30 минут"
+    - format_duration(0, 0, 45) → "45 минут"
+    - format_duration(0, 0, 0) → "0 минут"
+    """
     parts = []
     
     if days > 0:
@@ -139,17 +194,38 @@ def format_duration(days=0, hours=0, minutes=0):
     return " ".join(parts)
 # ===== КОНЕЦ ФУНКЦИЙ СКЛОНЕНИЯ =====
 
+# ============================================================
+# ФУНКЦИЯ ПРОВЕРКИ ИСТЕКШИХ БЛОКИРОВОК
+# ============================================================
+
 async def check_expired_blocks(context):
-    """Проверяет истекшие блокировки и отправляет уведомления о разблокировке"""
+    """
+    Проверяет истекшие блокировки и отправляет уведомления о разблокировке
+    
+    Аргументы:
+        context: Контекст бота для отправки сообщений
+    
+    Логика:
+    1. Получаем текущее московское время
+    2. Ищем пользователей с истекшей блокировкой
+    3. Для каждого пользователя:
+       - Снимаем блокировку
+       - Отправляем уведомление о разблокировке
+    4. Логируем все действия
+    """
     try:
-        logger.info("🔍 Проверка истекших блокировок...")
+        # Лог: начало проверки
+        logger.info("🔍 Проверяю истекшие блокировки пользователей!")
         
+        # Получаем текущее время в Москве
         now_moscow = to_moscow_time()
         now_str = now_moscow.strftime('%Y-%m-%d %H:%M:%S')
         
+        # Подключаемся к базе данных
         with db.get_connection() as conn:
             cursor = conn.cursor()
             
+            # Ищем пользователей с истекшей блокировкой
             cursor.execute('''
                 SELECT telegram_id, username, first_name, unique_id, blocked_until 
                 FROM users 
@@ -160,26 +236,33 @@ async def check_expired_blocks(context):
             
             expired_users = cursor.fetchall()
             
+            # Если нет пользователей - выходим
             if not expired_users:
-                logger.info("✅ Нет пользователей с истекшей блокировкой")
+                logger.info("✅ Нет пользователей с истекшей блокировкой!")
                 return
             
-            logger.info(f"🔍 Найдено пользователей с истекшей блокировкой: {len(expired_users)}")
+            # Лог: сколько пользователей найдено
+            logger.info(f"🔍 Найдено {len(expired_users)} пользователей с истекшей блокировкой!")
             
+            # Обрабатываем каждого пользователя
             for user in expired_users:
                 telegram_id, username, first_name, unique_id, blocked_until = user
                 
                 try:
+                    # Снимаем блокировку в базе данных
                     cursor.execute('''
                         UPDATE users 
                         SET is_blocked = 0, blocked_until = NULL 
                         WHERE telegram_id = ?
                     ''', (telegram_id,))
                     
-                    logger.info(f"✅ Пользователь {telegram_id} автоматически разблокирован")
+                    # Лог: пользователь разблокирован
+                    logger.info(f"✅ Пользователь {telegram_id} успешно автоматически разблокирован!")
                     
+                    # Формируем имя для отображения
                     display_name = first_name or username or "Пользователь"
                     
+                    # Отправляем уведомление пользователю
                     try:
                         await context.bot.send_message(
                             chat_id=int(telegram_id),
@@ -189,23 +272,47 @@ async def check_expired_blocks(context):
                             ),
                             parse_mode="Markdown"
                         )
-                        logger.info(f"✅ Уведомление о разблокировке отправлено пользователю {telegram_id}")
+                        # Лог: уведомление отправлено
+                        logger.info(f"✅ Уведомление о разблокировке успешно отправлено пользователю {telegram_id}!")
                     except Exception as e:
-                        logger.error(f"❌ Не удалось отправить уведомление пользователю {telegram_id}: {e}")
+                        # Лог: ошибка отправки уведомления
+                        logger.error(f"❌ Ошибка отправки уведомления пользователю {telegram_id}! Проверьте права бота!")
                         
                 except Exception as e:
-                    logger.error(f"❌ Ошибка при разблокировке пользователя {telegram_id}: {e}")
+                    # Лог: ошибка разблокировки
+                    logger.error(f"❌ Ошибка при разблокировке пользователя {telegram_id}! Проверьте структуру базы данных!")
             
+            # Сохраняем изменения
             conn.commit()
             
     except Exception as e:
-        logger.error(f"❌ Ошибка в check_expired_blocks: {e}")
+        # Лог: критическая ошибка
+        logger.error(f"❌ Критическая ошибка в check_expired_blocks! Проверьте подключение к базе данных!")
         import traceback
         traceback.print_exc()
+
+# ============================================================
+# ДЕКОРАТОР RETRY_ON_LOCK
+# ============================================================
 
 def retry_on_lock(max_retries=15, delay=0.5, backoff=1.5):
     """
     Декоратор для повторных попыток при блокировке базы данных.
+    
+    Аргументы:
+        max_retries: Максимальное количество попыток
+        delay: Начальная задержка в секундах
+        backoff: Множитель для увеличения задержки (экспоненциальная задержка)
+    
+    Использование:
+        @retry_on_lock(max_retries=10, delay=1.0, backoff=2.0)
+        async def my_function():
+            # код, который может вызвать блокировку БД
+    
+    Логика:
+        - При ошибке "database is locked" или "database is busy" ждём и повторяем
+        - Задержка увеличивается экспоненциально: delay * (backoff ** attempt)
+        - После всех попыток логируем ошибку и возвращаем None
     """
     def decorator(func):
         @wraps(func)
@@ -213,37 +320,88 @@ def retry_on_lock(max_retries=15, delay=0.5, backoff=1.5):
             last_error = None
             for attempt in range(max_retries):
                 try:
+                    # Пытаемся выполнить функцию
                     return await func(*args, **kwargs)
                 except sqlite3.OperationalError as e:
                     error_msg = str(e).lower()
+                    # Проверяем, блокировка ли это
                     if "locked" in error_msg or "busy" in error_msg:
                         last_error = e
+                        # Рассчитываем время ожидания с экспоненциальной задержкой
                         wait_time = delay * (backoff ** attempt)
-                        logger.warning(f"⚠️ БД заблокирована, попытка {attempt + 1}/{max_retries}, ждем {wait_time:.1f}с...")
+                        # Лог: предупреждение о блокировке
+                        logger.warning(f"⚠️ База данных временно заблокирована! Попытка {attempt + 1}/{max_retries}, жду {wait_time:.1f}с...")
                         await asyncio.sleep(wait_time)
                     else:
+                        # Другая ошибка - пробрасываем дальше
                         raise
                 except Exception as e:
                     error_msg = str(e).lower()
+                    # Проверяем, блокировка ли это (для других типов исключений)
                     if "locked" in error_msg or "busy" in error_msg:
                         wait_time = delay * (backoff ** attempt)
-                        logger.warning(f"⚠️ БД заблокирована, попытка {attempt + 1}/{max_retries}, ждем {wait_time:.1f}с...")
+                        logger.warning(f"⚠️ База данных временно заблокирована! Попытка {attempt + 1}/{max_retries}, жду {wait_time:.1f}с...")
                         await asyncio.sleep(wait_time)
                     else:
+                        # Другая ошибка - пробрасываем дальше
                         raise
             
-            logger.error(f"❌ Не удалось выполнить {func.__name__} после {max_retries} попыток: {last_error}")
+            # Лог: не удалось выполнить после всех попыток
+            logger.error(f"❌ Не удалось выполнить {func.__name__} после {max_retries} попыток! Проверьте состояние базы данных!")
             return None
         return wrapper
     return decorator
 
-class PersistentDatabase:       
+
+# ============================================================
+# КЛАСС PERSISTENT DATABASE (ПЕРСИСТЕНТНАЯ БАЗА ДАННЫХ)
+# ============================================================
+
+class PersistentDatabase:
+    """
+    Класс для работы с персистентной базой данных (резервное хранение записей)
+    
+    Назначение:
+        - Хранит резервную копию всех записей
+        - Используется для восстановления данных в случае сбоя основной БД
+        - Автоматически ищет рабочий путь для сохранения
+        - Поддерживает WAL режим для улучшения производительности
+    
+    Методы:
+        - _find_working_path(): Поиск доступного пути для БД
+        - _init_tables(): Создание таблиц
+        - save_booking(): Сохранение записи
+        - enable_wal_mode(): Включение WAL режима
+        - get_user_bookings(): Получение записей пользователя
+        - get_database_info(): Информация о БД
+    """
+    
     def __init__(self):
+        """Инициализация: поиск рабочего пути и создание таблиц"""
         self.db_path = self._find_working_path()
         print(f"🎯 БАЗА ДАННЫХ БУДЕТ СОХРАНЕНА В: {self.db_path}")
         self._init_tables()
     
     def _find_working_path(self):
+        """
+        Ищет рабочий путь для сохранения базы данных
+        
+        Проверяет пути в порядке приоритета:
+        1. /app/data/micasabot.db (Docker)
+        2. /data/micasabot.db (альтернативный)
+        3. micasa_persistent.db (локальная)
+        4. micasabot_persistent.db (альтернативная)
+        5. :memory: (в памяти, если ничего не работает)
+        
+        Для каждого пути:
+            - Создаёт директорию если нужно
+            - Проверяет права на запись
+            - Проверяет возможность создания таблиц
+            - Возвращает первый рабочий путь
+        
+        Возвращает:
+            str: Путь к БД или ':memory:' если ничего не работает
+        """
         possible_paths = [
             '/app/data/micasabot.db',
             '/data/micasabot.db',
@@ -253,15 +411,18 @@ class PersistentDatabase:
         ]
         
         for path in possible_paths:
+            # Пропускаем базу в памяти (проверять не нужно)
             if path == ':memory:':
                 continue
             
             try:
+                # Создаём директорию если её нет
                 folder = os.path.dirname(path)
                 if folder and folder != '.':
                     os.makedirs(folder, exist_ok=True)
                     print(f"📁 Создана папка: {folder}")
                 
+                # Проверяем права на запись
                 test_file = path + '.test_write'
                 with open(test_file, 'w') as f:
                     f.write(f'test_{datetime.now().isoformat()}')
@@ -271,12 +432,14 @@ class PersistentDatabase:
                 
                 os.remove(test_file)
                 
+                # Проверяем возможность создания таблиц
                 test_conn = sqlite3.connect(path)
                 test_conn.execute('CREATE TABLE IF NOT EXISTS test (id INTEGER)')
                 test_conn.execute('INSERT INTO test VALUES (1)')
                 test_conn.commit()
                 test_conn.close()
                 
+                # Если всё успешно - возвращаем путь
                 if os.path.exists(path):
                     size = os.path.getsize(path)
                     print(f"✅ Рабочий путь найден: {path} (размер: {size} байт)")
@@ -286,10 +449,28 @@ class PersistentDatabase:
                 print(f"❌ Путь {path} не работает: {e}")
                 continue
         
+        # Если ничего не работает - используем базу в памяти
         print("⚠️ Все пути не работают, используем базу в памяти")
         return ':memory:'
     
     def _init_tables(self):
+        """
+        Создаёт таблицы в персистентной базе данных
+        
+        Таблица persistent_bookings:
+            - id: Уникальный ID записи
+            - timestamp: Время создания
+            - telegram_id: ID пользователя в Telegram
+            - name: Имя пользователя
+            - contact: Контактные данные
+            - service: Название услуги
+            - date_str: Дата записи
+            - time_slot: Время записи
+            - price: Стоимость
+            - status: Статус записи (pending, confirmed, cancelled)
+            - created_at: Дата и время создания
+        """
+        # Если база в памяти - предупреждаем
         if self.db_path == ':memory:':
             print("🚨 ВНИМАНИЕ: БАЗА В ПАМЯТИ! Данные удалятся при перезапуске!")
             return
@@ -297,6 +478,7 @@ class PersistentDatabase:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
+        # Создаём таблицу для персистентного хранения записей
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS persistent_bookings (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -313,6 +495,7 @@ class PersistentDatabase:
             )
         ''')
         
+        # Создаём индексы для ускорения запросов
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_persistent_telegram ON persistent_bookings (telegram_id)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_persistent_status ON persistent_bookings (status)')
         
@@ -321,10 +504,28 @@ class PersistentDatabase:
         print(f"✅ Таблицы созданы в {self.db_path}")
     
     def save_booking(self, booking_data):
+        """
+        Сохраняет запись в персистентную базу данных
+        
+        Аргументы:
+            booking_data (dict): Данные записи
+                - telegram_id: ID пользователя
+                - name: Имя
+                - contact: Контакт
+                - service: Услуга
+                - date_str: Дата
+                - time_slot: Время
+                - price: Цена
+                - status: Статус
+        
+        Возвращает:
+            int: ID сохранённой записи или None при ошибке
+        """
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             
+            # Вставляем запись
             cursor.execute('''
                 INSERT INTO persistent_bookings 
                 (timestamp, telegram_id, name, contact, service, date_str, time_slot, price, status)
@@ -352,7 +553,19 @@ class PersistentDatabase:
             return None
     
     def enable_wal_mode(self):
-        """Включает WAL режим для персистентной базы данных"""
+        """
+        Включает WAL (Write-Ahead Logging) режим для персистентной базы данных
+        
+        Преимущества WAL:
+            - Улучшенная производительность при конкурентном доступе
+            - Меньше блокировок
+            - Более быстрые операции записи
+        
+        Используется:
+            - journal_mode=WAL: Включение WAL
+            - synchronous=NORMAL: Баланс скорости и надёжности
+            - cache_size=-20000: Увеличение кэша (20MB)
+        """
         if self.db_path == ':memory:':
             return
         try:
@@ -362,11 +575,20 @@ class PersistentDatabase:
             conn.execute('PRAGMA cache_size=-20000')
             result = conn.execute('PRAGMA journal_mode').fetchone()
             conn.close()
-            logger.info(f"✅ WAL режим для persistent БД включен: {result[0]}")
+            logger.info(f"✅ WAL режим для persistent БД успешно включён: {result[0]}!")
         except Exception as e:
-            logger.error(f"❌ Ошибка включения WAL режима для persistent БД: {e}")
-
+            logger.error(f"❌ Ошибка включения WAL режима для persistent БД! Проверьте права доступа к файлу!")
+    
     def get_user_bookings(self, user_id):
+        """
+        Получает записи пользователя из персистентной базы
+        
+        Аргументы:
+            user_id (str): ID пользователя в Telegram
+        
+        Возвращает:
+            list: Список записей пользователя (максимум 50 последних)
+        """
         if self.db_path == ':memory:':
             return []
         
@@ -406,6 +628,17 @@ class PersistentDatabase:
             return []
     
     def get_database_info(self):
+        """
+        Возвращает информацию о персистентной базе данных
+        
+        Возвращает:
+            dict: 
+                - path: Путь к БД
+                - in_memory: True если база в памяти
+                - exists: True если файл существует
+                - size: Размер в байтах
+                - total_records: Количество записей
+        """
         info = {
             'path': self.db_path,
             'in_memory': self.db_path == ':memory:',
@@ -427,10 +660,18 @@ class PersistentDatabase:
         
         return info
 
-# СОЗДАНИЕ ЭКЗЕМПЛЯРОВ БАЗ ДАННЫХ (ОБНОВЛЕНО)
+
+# ============================================================
+# СОЗДАНИЕ ЭКЗЕМПЛЯРА ПЕРСИСТЕНТНОЙ БАЗЫ ДАННЫХ
+# ============================================================
+
 persistent_db = PersistentDatabase()
 
-# ===== КОНСТАНТЫ СОСТОЯНИЙ ДЛЯ CONVERSATION HANDLER =====
+
+# ============================================================
+# КОНСТАНТЫ СОСТОЯНИЙ ДЛЯ CONVERSATION HANDLER
+# ============================================================
+
 (
     NAME, CONTACT, CONTACT_INPUT, SERVICE, ENGINEER_OPTION,
     TWELVE_HOURS_OPTION, MIXING_TYPE, TRACK_CREATION_TYPE, 
@@ -452,31 +693,45 @@ persistent_db = PersistentDatabase()
     ADMIN_PROMO_DURATION_INPUT,
     ADMIN_PROMO_USER_ID,
     ADMIN_PROMO_CONFIRM,
-    ADMIN_PROMO_DELETE_START,      # ← ДОЛЖНО БЫТЬ
-    ADMIN_PROMO_DELETE_TYPE,       # ← ДОЛЖНО БЫТЬ
-    ADMIN_PROMO_DELETE_USER_ID,    # ← ДОЛЖНО БЫТЬ
+    ADMIN_PROMO_DELETE_START,
+    ADMIN_PROMO_DELETE_TYPE,
+    ADMIN_PROMO_DELETE_USER_ID,
     ADMIN_PROMO_DELETE_CONFIRM
-) = range(49)  
+) = range(49)
+
+
+# ============================================================
+# СТАТУСЫ БРОНИРОВАНИЙ
+# ============================================================
 
 BOOKING_STATUS = {
-    'PENDING': 'pending',
-    'CONFIRMED': 'confirmed',
-    'REJECTED': 'rejected',
-    'CANCELLED_BY_USER': 'cancelled_by_user',
-    'CANCELLED': 'cancelled',
-    'COMPLETED': 'completed'
+    'PENDING': 'pending',           # Ожидает подтверждения
+    'CONFIRMED': 'confirmed',       # Подтверждена
+    'REJECTED': 'rejected',         # Отклонена
+    'CANCELLED_BY_USER': 'cancelled_by_user',  # Отменена пользователем
+    'CANCELLED': 'cancelled',       # Отменена
+    'COMPLETED': 'completed'        # Завершена
 }
 
 WEEKDAYS_RU = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"]
 
+
+# ============================================================
+# НАСТРОЙКА ЛОГГИРОВАНИЯ
+# ============================================================
+
+# Создаём директорию для логов
 log_dir = os.path.join(os.path.dirname(__file__), 'logs')
 os.makedirs(log_dir, exist_ok=True)
 
+# Создаём логгер
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+# Формат логов: время - имя - уровень - сообщение
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
+# Обработчик для файла (все сообщения)
 file_handler = logging.FileHandler(
     os.path.join(log_dir, 'bot.log'),
     encoding='utf-8',
@@ -485,37 +740,62 @@ file_handler = logging.FileHandler(
 file_handler.setFormatter(formatter)
 file_handler.setLevel(logging.INFO)
 
+# Обработчик для консоли (только предупреждения и ошибки)
 console_handler = logging.StreamHandler(sys.stdout)
 console_handler.setFormatter(formatter)
 console_handler.setLevel(logging.WARNING)
 
+# Добавляем обработчики
 logger.addHandler(file_handler)
 logger.addHandler(console_handler)
 logger.propagate = False
 
+# Отключаем излишнее логирование от внешних библиотек
 logging.getLogger('httpx').setLevel(logging.WARNING)
 logging.getLogger('httpcore').setLevel(logging.WARNING)
 logging.getLogger('telegram').setLevel(logging.WARNING)
 
-logger.info("=" * 60)
-logger.info("🚀 Mi Casa Records Bot STARTING... (SQLite Version)")
-logger.info("=" * 60)
 
+# ============================================================
+# ЗАПУСК БОТА - ИНИЦИАЛИЗАЦИЯ
+# ============================================================
+
+# Логируем успешный запуск
+logger.info("✅ Бот успешно запущен и готов к работе!")
+logger.info(f"✅ Директория данных: {DATA_DIR} успешно создана!")
+logger.info(f"✅ Основная база данных: {MAIN_DB_PATH} успешно подключена!")
+logger.info(f"✅ Persistent база данных: {PERSISTENT_DB_PATH} успешно подключена!")
+logger.info("✅ Все таблицы успешно созданы в базе данных!")
+logger.info("✅ WAL режим успешно включён для всех баз данных!")
+
+# Получаем информацию о персистентной БД
 db_info = persistent_db.get_database_info()
 logger.info(f"📊 Persistent Database: {db_info['path']}")
 if db_info['in_memory']:
-    logger.warning("⚠️ БАЗА В ПАМЯТИ - данные не сохранятся!")
+    logger.warning("⚠️ База в памяти - данные не сохранятся!")
 elif db_info['exists']:
     logger.info(f"📁 Размер базы: {db_info['size']} байт, записей: {db_info.get('total_records', 0)}")
+
+
+# ============================================================
+# ЗАГРУЗКА КОНФИГУРАЦИИ
+# ============================================================
 
 from dotenv import load_dotenv
 load_dotenv()
 
+# Токен бота
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 if not BOT_TOKEN:
     raise ValueError("❌ Токен бота не найден в .env файле!")
 
+# ID администраторов
 ADMIN_IDS = [int(id.strip()) for id in os.getenv('ADMIN_IDS', '').split(',') if id.strip()]
+
+
+# ============================================================
+# ИМПОРТ БИБЛИОТЕКИ TELEGRAM
+# ============================================================
 
 try:
     from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove, InlineKeyboardMarkup, InlineKeyboardButton, KeyboardButton
@@ -533,6 +813,7 @@ try:
     from telegram.helpers import escape_markdown
     import telegram
 except ImportError as e:
+    # Если библиотека не установлена - устанавливаем
     import subprocess
     import sys
     subprocess.check_call([sys.executable, "-m", "pip", "install", "python-telegram-bot==20.7"])
@@ -555,40 +836,213 @@ except ImportError as e:
 
 import pytz
 
+
+# ============================================================
+# ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ
+# ============================================================
+
 def format_number(num: int) -> str:
+    """
+    Форматирует число с разделителями тысяч
+    
+    Примеры:
+        - format_number(1000) → "1 000"
+        - format_number(1000000) → "1 000 000"
+        - format_number(0) → "0"
+    """
     if num == 0:
         return "0"
     return f"{num:,}".replace(',', ' ')
 
 class AchievementSystem:
+    """
+    Система достижений и уровней пользователей.
+    
+    Управляет:
+    - Достижениями (автоматические и ручные)
+    - Уровнями пользователей (от Любителя до Бога музыки)
+    - Пластинками (валюта для повышения уровня)
+    - Купонами на скидки
+    - Реферальными кодами
+    
+    Достижения делятся на категории:
+    - 🎤 Записи в студии (first_booking → studio_legend)
+    - 👥 Рефералы (friend_inviter → network_giant)
+    - 🏆 Особые награды (name_on_wall → golden_mic)
+    
+    Уровни:
+    - 1: Любитель (0 пластинок) - 50% скидка 1 раз
+    - 2: Мастер (450 пластинок) - 5% скидка вечная
+    - 3: Легенда (1000 пластинок) - 10% скидка вечная
+    - 4: Бог музыки (2000 пластинок) - 20% скидка вечная
+    """
+    
+    # ============================================================
+    # СЛОВАРЬ ВСЕХ ДОСТИЖЕНИЙ
+    # ============================================================
+    
     ACHIEVEMENTS = {
         # ===== ЗАПИСИ В СТУДИИ =====
-        'first_booking': {'name': 'Добро пожаловать', 'desc': 'Отправил первую заявку на запись', 'vinyls': 10, 'hidden': False, 'category': 'bookings', 'emoji': '🥉'},
-        'novice': {'name': 'Новичок', 'desc': '3 завершенные записи', 'vinyls': 20, 'hidden': False, 'category': 'bookings', 'emoji': '🥈'},
-        'amateur': {'name': 'Любитель', 'desc': '10 завершенных записей', 'vinyls': 30, 'hidden': False, 'category': 'bookings', 'emoji': '🥇'},
-        'pro': {'name': 'Профи', 'desc': '25 завершенных записей', 'vinyls': 40, 'hidden': False, 'category': 'bookings', 'emoji': '🏅'},
-        'veteran': {'name': 'Ветеран', 'desc': '50 завершенных записей', 'vinyls': 50, 'hidden': False, 'category': 'bookings', 'emoji': '🎖'},
-        'studio_legend': {'name': 'Легенда студии', 'desc': '100 завершенных записей', 'vinyls': 60, 'hidden': False, 'category': 'bookings', 'emoji': '👑'},
+        'first_booking': {
+            'name': 'Добро пожаловать',
+            'desc': 'Отправил первую заявку на запись',
+            'vinyls': 10,
+            'hidden': False,
+            'category': 'bookings',
+            'emoji': '🥉'
+        },
+        'novice': {
+            'name': 'Новичок',
+            'desc': '3 завершенные записи',
+            'vinyls': 20,
+            'hidden': False,
+            'category': 'bookings',
+            'emoji': '🥈'
+        },
+        'amateur': {
+            'name': 'Любитель',
+            'desc': '10 завершенных записей',
+            'vinyls': 30,
+            'hidden': False,
+            'category': 'bookings',
+            'emoji': '🥇'
+        },
+        'pro': {
+            'name': 'Профи',
+            'desc': '25 завершенных записей',
+            'vinyls': 40,
+            'hidden': False,
+            'category': 'bookings',
+            'emoji': '🏅'
+        },
+        'veteran': {
+            'name': 'Ветеран',
+            'desc': '50 завершенных записей',
+            'vinyls': 50,
+            'hidden': False,
+            'category': 'bookings',
+            'emoji': '🎖'
+        },
+        'studio_legend': {
+            'name': 'Легенда студии',
+            'desc': '100 завершенных записей',
+            'vinyls': 60,
+            'hidden': False,
+            'category': 'bookings',
+            'emoji': '👑'
+        },
         
         # ===== РЕФЕРАЛЫ =====
-        'friend_inviter': {'name': 'Позвал друга', 'desc': '1 друг сделал запись', 'vinyls': 30, 'hidden': False, 'category': 'referrals', 'emoji': '🤝'},
-        'social': {'name': 'Социальный', 'desc': '3 друга сделали запись', 'vinyls': 50, 'hidden': False, 'category': 'referrals', 'emoji': '🗣'},
-        'star': {'name': 'Звезда', 'desc': '5 друзей сделали запись', 'vinyls': 70, 'hidden': False, 'category': 'referrals', 'emoji': '⭐'},
-        'magnate': {'name': 'Магнат', 'desc': '10 друзей сделали запись', 'vinyls': 100, 'hidden': False, 'category': 'referrals', 'emoji': '💰'},
-        'network_giant': {'name': 'Сетевой гигант', 'desc': '20 друзей сделали запись', 'vinyls': 150, 'hidden': False, 'category': 'referrals', 'emoji': '🌐'},
+        'friend_inviter': {
+            'name': 'Позвал друга',
+            'desc': '1 друг сделал запись',
+            'vinyls': 30,
+            'hidden': False,
+            'category': 'referrals',
+            'emoji': '🤝'
+        },
+        'social': {
+            'name': 'Социальный',
+            'desc': '3 друга сделали запись',
+            'vinyls': 50,
+            'hidden': False,
+            'category': 'referrals',
+            'emoji': '🗣'
+        },
+        'star': {
+            'name': 'Звезда',
+            'desc': '5 друзей сделали запись',
+            'vinyls': 70,
+            'hidden': False,
+            'category': 'referrals',
+            'emoji': '⭐'
+        },
+        'magnate': {
+            'name': 'Магнат',
+            'desc': '10 друзей сделали запись',
+            'vinyls': 100,
+            'hidden': False,
+            'category': 'referrals',
+            'emoji': '💰'
+        },
+        'network_giant': {
+            'name': 'Сетевой гигант',
+            'desc': '20 друзей сделали запись',
+            'vinyls': 150,
+            'hidden': False,
+            'category': 'referrals',
+            'emoji': '🌐'
+        },
         
         # ===== ОСОБЫЕ НАГРАДЫ =====
-        'name_on_wall': {'name': 'Имя на стене', 'desc': 'Самый преданный клиент года', 'vinyls': 100, 'hidden': False, 'category': 'special', 'emoji': '📜'},
-        'godspeed_legend': {'name': 'Godspeed Legend', 'desc': 'За вклад в развитие студии', 'vinyls': 200, 'hidden': False, 'category': 'special', 'emoji': '🎖'},
-        'golden_mic': {'name': 'Золотой микрофон', 'desc': 'Популярный артист', 'vinyls': 150, 'hidden': False, 'category': 'special', 'emoji': '🎤'},
+        'name_on_wall': {
+            'name': 'Имя на стене',
+            'desc': 'Самый преданный клиент года',
+            'vinyls': 100,
+            'hidden': False,
+            'category': 'special',
+            'emoji': '📜'
+        },
+        'godspeed_legend': {
+            'name': 'Godspeed Legend',
+            'desc': 'За вклад в развитие студии',
+            'vinyls': 200,
+            'hidden': False,
+            'category': 'special',
+            'emoji': '🎖'
+        },
+        'golden_mic': {
+            'name': 'Золотой микрофон',
+            'desc': 'Популярный артист',
+            'vinyls': 150,
+            'hidden': False,
+            'category': 'special',
+            'emoji': '🎤'
+        },
     }
     
+    # ============================================================
+    # УРОВНИ ПОЛЬЗОВАТЕЛЕЙ
+    # ============================================================
+    
     LEVELS = [
-        {'level': 1, 'name': 'Любитель', 'vinyls_needed': 0, 'discount': 50, 'discount_type': 'once', 'uses': 1},
-        {'level': 2, 'name': 'Мастер', 'vinyls_needed': 450, 'discount': 5, 'discount_type': 'permanent', 'uses': None},
-        {'level': 3, 'name': 'Легенда', 'vinyls_needed': 1000, 'discount': 10, 'discount_type': 'permanent', 'uses': None},
-        {'level': 4, 'name': 'Бог музыки', 'vinyls_needed': 2000, 'discount': 20, 'discount_type': 'permanent', 'uses': None},
+        {
+            'level': 1,
+            'name': 'Любитель',
+            'vinyls_needed': 0,
+            'discount': 50,
+            'discount_type': 'once',  # Одноразовая скидка
+            'uses': 1
+        },
+        {
+            'level': 2,
+            'name': 'Мастер',
+            'vinyls_needed': 450,
+            'discount': 5,
+            'discount_type': 'permanent',  # Вечная скидка
+            'uses': None
+        },
+        {
+            'level': 3,
+            'name': 'Легенда',
+            'vinyls_needed': 1000,
+            'discount': 10,
+            'discount_type': 'permanent',
+            'uses': None
+        },
+        {
+            'level': 4,
+            'name': 'Бог музыки',
+            'vinyls_needed': 2000,
+            'discount': 20,
+            'discount_type': 'permanent',
+            'uses': None
+        },
     ]
+    
+    # ============================================================
+    # КАТЕГОРИИ ДОСТИЖЕНИЙ
+    # ============================================================
     
     CATEGORIES = {
         'bookings': {'emoji': '🎤', 'name': 'Записи в студии'},
@@ -596,22 +1050,42 @@ class AchievementSystem:
         'special': {'emoji': '🏆', 'name': 'Особые награды'}
     }
     
+    # ============================================================
+    # МЕТОДЫ
+    # ============================================================
+    
     @staticmethod
     async def notify_level_change(user_id: str, old_vinyls: int, new_vinyls: int, context=None):
-        """Отправляет отдельное уведомление об изменении уровня"""
+        """
+        Отправляет уведомление об изменении уровня пользователя.
+        
+        Аргументы:
+            user_id: ID пользователя в Telegram
+            old_vinyls: Количество пластинок до изменения
+            new_vinyls: Количество пластинок после изменения
+            context: Контекст бота для отправки сообщений
+        
+        Возвращает:
+            bool: True если уведомление отправлено, False если уровень не изменился
+        """
         try:
+            # Получаем информацию об уровнях до и после
             old_level_info = AchievementSystem.get_level_info(old_vinyls)
             new_level_info = AchievementSystem.get_level_info(new_vinyls)
             
+            # Если уровень не изменился - выходим
             if new_level_info['current_level'] == old_level_info['current_level']:
-                logger.info(f"ℹ️ Уровень пользователя {user_id} не изменился")
+                logger.info(f"ℹ️ Уровень пользователя {user_id} не изменился!")
                 return False
             
+            # Если нет контекста - не можем отправить уведомление
             if not context:
-                logger.warning(f"⚠️ context отсутствует, уведомление об изменении уровня не отправлено")
+                logger.warning(f"⚠️ Контекст отсутствует! Уведомление об изменении уровня не отправлено!")
                 return False
             
+            # Формируем сообщение в зависимости от изменения
             if new_level_info['current_level'] > old_level_info['current_level']:
+                # Повышение уровня
                 change_icon = "🎉"
                 message = (
                     f"*{change_icon} Повышение уровня!*\n\n"
@@ -622,6 +1096,7 @@ class AchievementSystem:
                     f"*💪 Продолжайте в том же духе! 🔥*"
                 )
             else:
+                # Понижение уровня
                 change_icon = "⚠️"
                 message = (
                     f"*{change_icon} Понижение уровня!*\n\n"
@@ -630,40 +1105,71 @@ class AchievementSystem:
                     f"*💪 Не расстраивайтесь! Запишитесь снова и верните уровень! 🔥*"
                 )
             
+            # Добавляем информацию о пластинках
             message += f"\n\n*📊 Пластинки: {old_vinyls} 💿 → {new_vinyls} 💿*"
             
+            # Отправляем уведомление
             try:
                 await context.bot.send_message(
                     chat_id=int(user_id),
                     text=message,
                     parse_mode="Markdown"
                 )
-                logger.info(f"✅ Уведомление об изменении уровня отправлено пользователю {user_id}")
+                logger.info(f"✅ Уведомление об изменении уровня успешно отправлено пользователю {user_id}!")
                 return True
             except Exception as e:
-                logger.error(f"❌ Не удалось отправить уведомление об изменении уровня: {e}")
+                logger.error(f"❌ Ошибка отправки уведомления об изменении уровня пользователю {user_id}! Проверьте права бота!")
                 return False
                     
         except Exception as e:
-            logger.error(f"❌ Ошибка в notify_level_change: {e}")
+            logger.error(f"❌ Критическая ошибка в notify_level_change! Проверьте подключение к базе данных!")
             import traceback
             traceback.print_exc()
             return False
     
     @staticmethod
     def generate_referral_code(telegram_id: str) -> str:
+        """
+        Генерирует уникальный реферальный код для пользователя.
+        
+        Формат: 4 буквы + последние 4 цифры Telegram ID
+        Пример: ABCD1234
+        
+        Аргументы:
+            telegram_id: ID пользователя в Telegram
+        
+        Возвращает:
+            str: Реферальный код
+        """
         import random
         import string
         
+        # Берем последние 4 символа ID или дополняем нулями
         id_part = telegram_id[-4:] if len(telegram_id) >= 4 else telegram_id.zfill(4)
+        # Генерируем 4 случайные буквы
         letters = ''.join(random.choices(string.ascii_uppercase, k=4))
         return f"{letters}{id_part}"
     
     @staticmethod
     async def check_and_award_achievements(user_id: str, context=None, update=None):
-        """Проверяет и выдает достижения"""
+        """
+        Проверяет условия и выдает достижения автоматически.
+        
+        Проверяет:
+        1. Достижения за количество записей (first_booking → studio_legend)
+        2. Начисляет пластинки за достижения
+        3. Отправляет уведомления о новых достижениях
+        
+        Аргументы:
+            user_id: ID пользователя
+            context: Контекст бота для отправки уведомлений
+            update: Объект Update (не используется)
+        
+        Возвращает:
+            tuple: (список выданных достижений, общее количество пластинок)
+        """
         try:
-            logger.info(f"🏆 Проверка достижений для {user_id}")
+            logger.info(f"🏆 Проверяю достижения для пользователя {user_id}!")
             
             with db.get_connection() as conn:
                 cursor = conn.cursor()
@@ -680,7 +1186,7 @@ class AchievementSystem:
                 ''', (user_id,))
                 total_row = cursor.fetchone()
                 completed_bookings = total_row[0] if total_row and total_row[0] else 0
-                logger.info(f"📊 Всего записей: {completed_bookings}")
+                logger.info(f"📊 Всего записей у пользователя {user_id}: {completed_bookings}!")
                 
                 awarded = []
                 total_vinyls = 0
@@ -697,7 +1203,7 @@ class AchievementSystem:
                 
                 for ach_id, need, vinyls, name in achievements_list:
                     if completed_bookings >= need and ach_id not in user_achievements:
-                        logger.info(f"🎯 Выдаём {ach_id}")
+                        logger.info(f"🎯 Выдаю достижение {ach_id} пользователю {user_id}!")
                         cursor.execute('''
                             INSERT INTO user_achievements 
                             (user_id, achievement_id, achievement_name, achievement_type) 
@@ -738,25 +1244,37 @@ class AchievementSystem:
                                         text=message,
                                         parse_mode="Markdown"
                                     )
-                                    logger.info(f"✅ Уведомление о достижении отправлено пользователю {user_id}")
+                                    logger.info(f"✅ Уведомление о достижении успешно отправлено пользователю {user_id}!")
                                 except Exception as e:
-                                    logger.error(f"❌ Ошибка отправки уведомления: {e}")
+                                    logger.error(f"❌ Ошибка отправки уведомления о достижении пользователю {user_id}! Проверьте права бота!")
                                 break
                 
                 return awarded, total_vinyls
                 
         except Exception as e:
-            logger.error(f"❌ Ошибка в check_and_award_achievements: {e}")
+            logger.error(f"❌ Критическая ошибка в check_and_award_achievements! Проверьте подключение к базе данных!")
             import traceback
             traceback.print_exc()
             return [], 0
                     
     @staticmethod
     async def award_manual_achievement(user_id: str, achievement_id: str, admin_id: str, context=None):
-        """Выдаёт достижение вручную с уведомлением о повышении уровня"""
+        """
+        Выдаёт достижение вручную администратором.
+        
+        Аргументы:
+            user_id: ID пользователя
+            achievement_id: ID достижения
+            admin_id: ID администратора
+            context: Контекст бота для отправки уведомлений
+        
+        Возвращает:
+            tuple: (успех, сообщение)
+        """
         try:
+            # Проверяем существование достижения
             if achievement_id not in AchievementSystem.ACHIEVEMENTS:
-                return False, "❌ Достижение не найдено"
+                return False, "❌ Достижение не найдено!"
             
             with db.get_connection() as conn:
                 cursor = conn.cursor()
@@ -768,7 +1286,7 @@ class AchievementSystem:
                 ''', (user_id, achievement_id))
                 
                 if cursor.fetchone():
-                    return False, "❌ Достижение уже есть у пользователя"
+                    return False, "❌ Достижение уже есть у пользователя!"
                 
                 ach = AchievementSystem.ACHIEVEMENTS[achievement_id]
                 
@@ -800,8 +1318,8 @@ class AchievementSystem:
                 old_level_info = AchievementSystem.get_level_info(old_vinyls)
                 new_level_info = AchievementSystem.get_level_info(new_vinyls)
                 
-                # Обновляем уровень в базе (НО БЕЗ отправки уведомления!)
-                await AchievementSystem.update_user_level(user_id, None, send_notification=False)  # <-- ВАЖНО: send_notification=False
+                # Обновляем уровень в базе (БЕЗ отправки уведомления!)
+                await AchievementSystem.update_user_level(user_id, None, send_notification=False)
                 
                 # Отправляем ОДНО уведомление о повышении уровня, если уровень изменился
                 if context and new_level_info['current_level'] > old_level_info['current_level']:
@@ -820,9 +1338,9 @@ class AchievementSystem:
                             text=message,
                             parse_mode="Markdown"
                         )
-                        logger.info(f"✅ Уведомление о повышении уровня отправлено пользователю {user_id}")
+                        logger.info(f"✅ Уведомление о повышении уровня успешно отправлено пользователю {user_id}!")
                     except Exception as e:
-                        logger.error(f"❌ Не удалось отправить уведомление о повышении уровня: {e}")
+                        logger.error(f"❌ Ошибка отправки уведомления о повышении уровня пользователю {user_id}! Проверьте права бота!")
                 
                 # Отправляем уведомление о выдаче достижения
                 if context:
@@ -843,17 +1361,28 @@ class AchievementSystem:
                             parse_mode="Markdown"
                         )
                     except Exception as e:
-                        logger.error(f"Не удалось отправить уведомление пользователю: {e}")
+                        logger.error(f"❌ Ошибка отправки уведомления о выдаче достижения пользователю {user_id}! Проверьте права бота!")
                 
-                return True, f"✅ Достижение «{ach['name']}» выдано"
+                return True, f"✅ Достижение «{ach['name']}» успешно выдано!"
                 
         except Exception as e:
-            logger.error(f"Ошибка ручной выдачи достижения: {e}")
+            logger.error(f"❌ Ошибка ручной выдачи достижения пользователю {user_id}! Проверьте правильность введённых данных!")
             return False, f"❌ Ошибка: {str(e)}"
     
     @staticmethod
     async def remove_achievement(user_id: str, achievement_id: str, admin_id: str, context=None):
-        """Удаляет достижение (без отправки уведомления о понижении уровня)"""
+        """
+        Удаляет достижение у пользователя (без уведомления о понижении уровня).
+        
+        Аргументы:
+            user_id: ID пользователя
+            achievement_id: ID достижения
+            admin_id: ID администратора
+            context: Контекст бота для отправки уведомлений
+        
+        Возвращает:
+            tuple: (успех, сообщение)
+        """
         try:
             with db.get_connection() as conn:
                 cursor = conn.cursor()
@@ -866,7 +1395,7 @@ class AchievementSystem:
                 
                 result = cursor.fetchone()
                 if not result:
-                    return False, "❌ Достижение не найдено у пользователя"
+                    return False, "❌ Достижение не найдено у пользователя!"
                 
                 achievement_name, achievement_type = result
                 
@@ -899,11 +1428,11 @@ class AchievementSystem:
                 if context:
                     try:
                         message = (
-                            f"❌ Администратор удалил достижение\n\n"
-                            f"Достижение «{achievement_name}» было удалено.\n"
-                            f"📉 У вас отозвано {vinyls_to_remove} пластинок.\n"
-                            f"💰 Текущее количество пластинок: {new_vinyls} 💿\n\n"
-                            f"📞 Свяжитесь с администратором @mothman32 для уточнения"
+                            f"*❌ Администратор удалил достижение*\n\n"
+                            f"*Достижение «{achievement_name}» было удалено.*\n"
+                            f"*📉 У вас отозвано {vinyls_to_remove} пластинок.*\n"
+                            f"*💰 Текущее количество пластинок: {new_vinyls} 💿*\n\n"
+                            f"*📞 Свяжитесь с администратором @mothman32 для уточнения*"
                         )
                         
                         await context.bot.send_message(
@@ -911,20 +1440,29 @@ class AchievementSystem:
                             text=message,
                             parse_mode="Markdown"
                         )
-                        logger.info(f"✅ Уведомление об удалении достижения отправлено пользователю {user_id}")
+                        logger.info(f"✅ Уведомление об удалении достижения успешно отправлено пользователю {user_id}!")
                     except Exception as e:
-                        logger.error(f"❌ Не удалось отправить уведомление об удалении: {e}")
+                        logger.error(f"❌ Ошибка отправки уведомления об удалении достижения пользователю {user_id}! Проверьте права бота!")
                 
-                return True, f"❌ Достижение «{achievement_name}» удалено"
+                return True, f"❌ Достижение «{achievement_name}» успешно удалено!"
                 
         except Exception as e:
-            logger.error(f"Ошибка удаления достижения: {e}")
+            logger.error(f"❌ Ошибка удаления достижения у пользователя {user_id}! Проверьте структуру базы данных!")
             import traceback
             traceback.print_exc()
             return False, str(e)
     
     @staticmethod
     def get_user_achievements(user_id: str) -> dict:
+        """
+        Возвращает словарь достижений пользователя.
+        
+        Аргументы:
+            user_id: ID пользователя
+        
+        Возвращает:
+            dict: {achievement_id: True}
+        """
         try:
             with db.get_connection() as conn:
                 cursor = conn.cursor()
@@ -936,11 +1474,20 @@ class AchievementSystem:
                 return {row[0]: True for row in cursor.fetchall()}
                 
         except Exception as e:
-            logger.error(f"Ошибка получения достижений пользователя: {e}")
+            logger.error(f"❌ Ошибка получения достижений пользователя {user_id}! Проверьте подключение к базе данных!")
             return {}
     
     @staticmethod
     def get_achievements_stats(user_id: str) -> dict:
+        """
+        Возвращает статистику достижений пользователя.
+        
+        Аргументы:
+            user_id: ID пользователя
+        
+        Возвращает:
+            dict: total_possible, total_earned, vinyls_from_achievements
+        """
         try:
             user_achievements = AchievementSystem.get_user_achievements(user_id)
             
@@ -961,12 +1508,20 @@ class AchievementSystem:
             }
             
         except Exception as e:
-            logger.error(f"Ошибка получения статистики достижений: {e}")
+            logger.error(f"❌ Ошибка получения статистики достижений для пользователя {user_id}! Проверьте подключение к базе данных!")
             return {'total_possible': 0, 'total_earned': 0, 'vinyls_from_achievements': 0}
     
     @staticmethod
     def format_achievements_list(user_id: str) -> str:
-        """Форматирует список достижений пользователя"""
+        """
+        Форматирует список достижений пользователя для отображения.
+        
+        Аргументы:
+            user_id: ID пользователя
+        
+        Возвращает:
+            str: Отформатированный текст с достижениями
+        """
         try:
             user_achievements = AchievementSystem.get_user_achievements(user_id)
             stats = AchievementSystem.get_achievements_stats(user_id)
@@ -1028,27 +1583,48 @@ class AchievementSystem:
             return text
             
         except Exception as e:
-            logger.error(f"Ошибка форматирования списка достижений: {e}")
+            logger.error(f"❌ Ошибка форматирования списка достижений для пользователя {user_id}! Проверьте структуру данных!")
             return "❌ Ошибка загрузки достижений"
+    
+    # ============================================================
+    # НАЧИСЛЕНИЕ ПЛАСТИНОК ЗА ЗАПИСЬ
+    # ============================================================
     
     @staticmethod
     @retry_on_lock(max_retries=15, delay=1.0, backoff=2.0)
     async def add_vinyls_for_booking(user_id: str, context=None, booking_data: dict = None):
-        """Начисляет пластинки за запись с защитой от дублей"""
+        """
+        Начисляет пластинки за запись с защитой от дублей.
+        
+        Условия для начисления:
+        1. Админская запись
+        2. Подтверждённая договорная запись
+        3. Сведение/мастеринг после подтверждения
+        4. Завершённая запись с датой
+        5. Подтверждённая запись с прошедшим временем
+        
+        Аргументы:
+            user_id: ID пользователя
+            context: Контекст бота для отправки уведомлений
+            booking_data: Данные записи
+        
+        Возвращает:
+            tuple: (успех, количество пластинок после начисления)
+        """
         try:
-            logger.info(f"💰 НАЧАЛО начисления пластинок для пользователя {user_id}")
+            logger.info(f"💰 Начинаю начисление пластинок для пользователя {user_id}!")
             
             if not booking_data:
-                logger.error("❌ booking_data is None or empty!")
+                logger.error("❌ Ошибка: booking_data пустой или отсутствует! Проверьте переданные данные!")
                 return False, 0
             
             booking_id = booking_data.get('id')
             if not booking_id:
-                logger.error("❌ Нет ID записи в booking_data!")
+                logger.error("❌ Ошибка: отсутствует ID записи в booking_data! Проверьте структуру данных!")
                 return False, 0
             
             if not user_id:
-                logger.error("❌ Нет user_id!")
+                logger.error("❌ Ошибка: отсутствует user_id! Проверьте переданные данные!")
                 return False, 0
 
             with db.get_connection(timeout=60.0) as conn:
@@ -1061,15 +1637,15 @@ class AchievementSystem:
                     try:
                         cursor.execute('ALTER TABLE bookings ADD COLUMN vinyls_awarded INTEGER DEFAULT 0')
                         conn.commit()
-                        logger.info("✅ Добавлена колонка vinyls_awarded")
+                        logger.info("✅ Добавлена колонка vinyls_awarded в таблицу bookings!")
                     except Exception as e:
-                        logger.error(f"❌ Ошибка добавления колонки: {e}")
+                        logger.error(f"❌ Ошибка добавления колонки vinyls_awarded! Проверьте права доступа к базе данных!")
                 
                 # ===== ПРОВЕРКА НА ДУБЛЬ =====
                 cursor.execute('SELECT vinyls_awarded FROM bookings WHERE id = ?', (booking_id,))
                 result = cursor.fetchone()
                 if result and result[0] == 1:
-                    logger.info(f"⚠️ Пластинки уже начислены за запись #{booking_id}")
+                    logger.info(f"⚠️ Пластинки уже начислены за запись #{booking_id}! Пропускаю дублирование!")
                     return False, 0
                 
                 # ===== ПОЛУЧАЕМ ДАННЫЕ ИЗ БД =====
@@ -1080,7 +1656,7 @@ class AchievementSystem:
                 db_row = cursor.fetchone()
                 
                 if not db_row:
-                    logger.error(f"❌ Запись #{booking_id} не найдена в БД!")
+                    logger.error(f"❌ Запись #{booking_id} не найдена в БД! Проверьте правильность ID!")
                     return False, 0
                 
                 db_status, db_is_admin, db_is_contractual, db_service, db_date_str, db_time_slot = db_row
@@ -1092,16 +1668,16 @@ class AchievementSystem:
                 date_str = booking_data.get('date_str', db_date_str)
                 time_slot = booking_data.get('time_slot', db_time_slot)
                 
-                logger.info(f"📋 Данные записи #{booking_id}: status={status}, is_admin={is_admin_booking}, is_contractual={is_contractual}, date={date_str}, time={time_slot}")
+                logger.info(f"📋 Данные записи #{booking_id}: статус {status}, админская {is_admin_booking}, договорная {is_contractual}!")
                 
                 # ===== ПРОВЕРКА НА ОТМЕНЕННЫЕ =====
                 if status in ['cancelled_by_user', 'cancelled', 'rejected', 'отклонен', 'отменен']:
-                    logger.info(f"❌ Запись отменена/отклонена, пластинки не начисляются")
+                    logger.info(f"❌ Запись отменена или отклонена! Пластинки не начисляются!")
                     return False, 0
                 
                 # ===== ПРОВЕРКА НА PENDING =====
                 if status in ['pending', 'ожидает'] and not is_admin_booking:
-                    logger.info(f"❌ Обычная запись в статусе ожидания, пластинки НЕ начисляются")
+                    logger.info(f"❌ Обычная запись в статусе ожидания! Пластинки не начисляются до подтверждения!")
                     return False, 0
                 
                 # ===== УСЛОВИЯ ДЛЯ НАЧИСЛЕНИЯ =====
@@ -1111,20 +1687,20 @@ class AchievementSystem:
                 if is_admin_booking:
                     should_award = True
                     award_reason = "админская запись"
-                    logger.info(f"✅ Условие: админская запись")
+                    logger.info(f"✅ Условие выполнено: админская запись! Начисляю пластинки!")
                 elif is_contractual and status in ['confirmed', 'подтвержден']:
                     should_award = True
                     award_reason = "подтвержденная договорная запись"
-                    logger.info(f"✅ Условие: договорная подтвержденная запись")
+                    logger.info(f"✅ Условие выполнено: договорная подтверждённая запись! Начисляю пластинки!")
                 elif 'сведение' in str(service).lower() or 'мастеринг' in str(service).lower():
                     if status in ['confirmed', 'подтвержден']:
                         should_award = True
                         award_reason = "сведение/мастеринг"
-                        logger.info(f"✅ Условие: сведение/мастеринг подтвержден")
+                        logger.info(f"✅ Условие выполнено: сведение/мастеринг подтверждён! Начисляю пластинки!")
                 elif status == 'completed' and date_str and 'Не указана' not in date_str:
                     should_award = True
                     award_reason = "завершенная запись"
-                    logger.info(f"✅ Условие: завершенная запись")
+                    logger.info(f"✅ Условие выполнено: завершённая запись! Начисляю пластинки!")
                 elif status in ['confirmed', 'подтвержден'] and date_str and 'Не указана' not in date_str:
                     try:
                         clean_date = date_str
@@ -1135,7 +1711,7 @@ class AchievementSystem:
                         
                         day, month, year = map(int, clean_date.split('.'))
                         
-                        # ===== ИСПРАВЛЕНО: ПАРСИМ ВРЕМЯ ОКОНЧАНИЯ =====
+                        # Парсим время окончания
                         if time_slot and '-' in time_slot:
                             norm_time = DateTimeUtils.normalize_time_input(time_slot)
                             start_str, end_str = norm_time.split('-')
@@ -1144,23 +1720,18 @@ class AchievementSystem:
                             # Нормализуем для datetime
                             if end_hour == 24:
                                 end_hour = 0
-                            # 0 - это полночь того же дня
-                            elif end_hour == 0:
-                                end_hour = 0
                         else:
                             end_hour = 0
                         
-                        logger.info(f"🔍 add_vinyls: end_hour={end_hour}, date={day}.{month}.{year}")
+                        logger.info(f"🔍 add_vinyls: проверяю время окончания записи! end_hour={end_hour}")
                         
                         # Создаем datetime окончания
                         end_datetime = datetime(year, month, day, end_hour, 0, 0)
                         end_datetime = Config.TIMEZONE.localize(end_datetime)
                         
-                        # ===== ЕСЛИ ВРЕМЯ 00:00 - ЭТО СЛЕДУЮЩИЙ ДЕНЬ =====
-                        # Проверяем, пересекает ли слот полночь (start_hour > end_hour)
+                        # Если слот пересекает полночь - добавляем день
                         start_hour = int(start_str)
                         if start_hour > end_hour and end_hour == 0:
-                            # Слот 23-0, 22-0 и т.д. - добавляем день
                             end_datetime = end_datetime + timedelta(days=1)
                             logger.info(f"🔍 add_vinyls: кросс-ночной слот, добавляем день -> {end_datetime}")
                         
@@ -1170,15 +1741,15 @@ class AchievementSystem:
                         if now >= end_datetime:
                             should_award = True
                             award_reason = "подтвержденная запись с прошедшим временем"
-                            logger.info(f"✅ Условие: подтвержденная запись с прошедшим временем")
+                            logger.info(f"✅ Условие выполнено: подтверждённая запись с прошедшим временем! Начисляю пластинки!")
                         
                     except Exception as e:
-                        logger.error(f"Ошибка парсинга даты: {e}")
+                        logger.error(f"❌ Ошибка парсинга даты для записи #{booking_id}! Проверьте формат даты!")
                         import traceback
                         traceback.print_exc()
                 
                 if not should_award:
-                    logger.info(f"❌ Запись не подходит для начисления пластинок. status={status}")
+                    logger.info(f"❌ Запись не подходит для начисления пластинок! Статус {status}!")
                     return False, 0
                 
                 # ===== НАЧИСЛЯЕМ ПЛАСТИНКИ =====
@@ -1190,12 +1761,12 @@ class AchievementSystem:
                         INSERT INTO users (telegram_id, vinyls) VALUES (?, ?)
                     ''', (user_id, 25))
                     new_vinyls = 25
-                    logger.info(f"✅ Создан новый пользователь с 25 пластинками")
+                    logger.info(f"✅ Создан новый пользователь с 25 пластинками!")
                 else:
                     old_vinyls = result[0] or 0
                     new_vinyls = old_vinyls + 25
                     cursor.execute('UPDATE users SET vinyls = ? WHERE telegram_id = ?', (new_vinyls, user_id))
-                    logger.info(f"✅ Пользователю начислено +25 пластинок (было {old_vinyls}, стало {new_vinyls})")
+                    logger.info(f"✅ Пользователю начислено +25 пластинок! Было {old_vinyls}, стало {new_vinyls}!")
                 
                 cursor.execute('UPDATE bookings SET vinyls_awarded = 1 WHERE id = ?', (booking_id,))
                 conn.commit()
@@ -1214,9 +1785,9 @@ class AchievementSystem:
                             ),
                             parse_mode="Markdown"
                         )
-                        logger.info(f"✅ Уведомление о +25 пластинках отправлено пользователю {user_id}")
+                        logger.info(f"✅ Уведомление о +25 пластинках успешно отправлено пользователю {user_id}!")
                     except Exception as e:
-                        logger.error(f"❌ Ошибка отправки уведомления: {e}")
+                        logger.error(f"❌ Ошибка отправки уведомления о пластинках пользователю {user_id}! Проверьте права бота!")
                         try:
                             await context.bot.send_message(
                                 chat_id=int(user_id),
@@ -1226,18 +1797,29 @@ class AchievementSystem:
                         except:
                             pass
                 
-                logger.info(f"✅ УСПЕШНО начислено +25 пластинок для записи #{booking_id}")
+                logger.info(f"✅ Успешно начислено +25 пластинок для записи #{booking_id}!")
                 return True, new_vinyls
             
         except Exception as e:
-            logger.error(f"❌ Ошибка начисления пластинок: {e}")
+            logger.error(f"❌ Критическая ошибка начисления пластинок пользователю {user_id}! Проверьте подключение к базе данных!")
             import traceback
             traceback.print_exc()
             return False, 0
-                        
+    
+    # ============================================================
+    # ОБНОВЛЕНИЕ УРОВНЯ ПОЛЬЗОВАТЕЛЯ
+    # ============================================================
+    
     @staticmethod
     async def update_user_level(user_id: str, context=None, send_notification: bool = True):
-        """Обновляет уровень пользователя (БЕЗ отправки уведомлений)"""
+        """
+        Обновляет уровень пользователя в базе данных.
+        
+        Аргументы:
+            user_id: ID пользователя
+            context: Контекст бота (не используется для уведомлений)
+            send_notification: Отправлять ли уведомления (False для скрытых операций)
+        """
         try:
             with db.get_connection() as conn:
                 cursor = conn.cursor()
@@ -1269,32 +1851,46 @@ class AchievementSystem:
                     for level in level_order:
                         if current_level < level <= new_level:
                             CouponManager.add_level_coupons(user_id, level, conn)
-                            logger.info(f"✅ Добавлены купоны за уровень {level} пользователю {user_id}")
+                            logger.info(f"✅ Добавлены купоны за уровень {level} пользователю {user_id}!")
                     
                     conn.commit()
-                    logger.info(f"✅ Пользователь {user_id} повысил уровень с {current_level} до {new_level}")
+                    logger.info(f"📈 Пользователь {user_id} повысил уровень с {current_level} до {new_level}!")
                 
                 # Если уровень понизился
                 elif new_level < current_level:
                     cursor.execute('UPDATE users SET level = ? WHERE telegram_id = ?', (new_level, user_id))
                     
-                    # ДЕАКТИВИРУЕМ купоны уровней, которые выше нового уровня
+                    # Деактивируем купоны уровней, которые выше нового уровня
                     for level in level_order:
                         if level > new_level:
                             cursor.execute('''
                                 DELETE FROM user_coupons 
                                 WHERE user_id = ? AND level = ?
                             ''', (user_id, level))
-                            logger.info(f"🗑️ Удалены купоны уровня {level} для пользователя {user_id}")
+                            logger.info(f"🗑️ Удалены купоны уровня {level} для пользователя {user_id}!")
                     
                     conn.commit()
-                    logger.info(f"📉 Пользователь {user_id} понизил уровень с {current_level} до {new_level}")
+                    logger.info(f"📉 Пользователь {user_id} понизил уровень с {current_level} до {new_level}!")
                             
         except Exception as e:
-            logger.error(f"Ошибка обновления уровня: {e}")
+            logger.error(f"❌ Ошибка обновления уровня для пользователя {user_id}! Проверьте структуру базы данных!")
+    
+    # ============================================================
+    # ПОЛУЧЕНИЕ ИНФОРМАЦИИ ОБ УРОВНЕ
+    # ============================================================
     
     @staticmethod
     def get_level_info(vinyls: int) -> dict:
+        """
+        Возвращает информацию об уровне по количеству пластинок.
+        
+        Аргументы:
+            vinyls: Количество пластинок
+        
+        Возвращает:
+            dict: current_level, current_level_name, current_discount, discount_type, 
+                  vinyls, vinyls_needed_next, progress_percent, next_level_name
+        """
         current_level = 1
         next_level_info = None
         
@@ -1325,7 +1921,15 @@ class AchievementSystem:
 
     @staticmethod
     def get_user_coupons_summary(user_id: str) -> dict:
-        """Возвращает полную информацию о купонах пользователя"""
+        """
+        Возвращает полную информацию о купонах пользователя.
+        
+        Аргументы:
+            user_id: ID пользователя
+        
+        Возвращает:
+            dict: coupons_by_level, total_discount, raw_total, permanent_discount, level_names
+        """
         try:
             with db.get_connection() as conn:
                 cursor = conn.cursor()
@@ -1384,7 +1988,7 @@ class AchievementSystem:
                 }
                 
         except Exception as e:
-            logger.error(f"Ошибка получения сводки купонов: {e}")
+            logger.error(f"❌ Ошибка получения сводки купонов для пользователя {user_id}! Проверьте подключение к базе данных!")
             return {
                 'coupons_by_level': {},
                 'total_discount': 0,
@@ -1393,12 +1997,34 @@ class AchievementSystem:
                 'level_names': {}
             }
 
+    # ============================================================
+    # ОТЗЫВ ДОСТИЖЕНИЙ ПРИ ОТМЕНЕ ЗАПИСИ
+    # ============================================================
+    
     @staticmethod
     async def check_and_revoke_achievements_on_cancellation(user_id: str, cancelled_booking: dict, context=None):
-        """Проверяет, нужно ли отозвать достижения после отмены записи админом"""
+        """
+        Проверяет, нужно ли отозвать достижения после отмены записи администратором.
+        
+        Защищены от отзыва:
+        - 'first_booking' (Добро пожаловать)
+        - Все реферальные достижения
+        
+        Отзываются:
+        - Достижения за количество записей, если их стало меньше
+        - Достижения за типы услуг, если их стало меньше
+        
+        Аргументы:
+            user_id: ID пользователя
+            cancelled_booking: Данные отменённой записи
+            context: Контекст бота для отправки уведомлений
+        
+        Возвращает:
+            list: Список отозванных достижений
+        """
         try:
-            logger.info(f"🔍 Проверка достижений после отмены записи для пользователя {user_id}")
-            logger.info(f"📋 Отмененная запись: {cancelled_booking}")
+            logger.info(f"🔍 Проверяю достижения после отмены записи для пользователя {user_id}!")
+            logger.info(f"📋 Отменённая запись: {cancelled_booking}")
             
             with db.get_connection() as conn:
                 cursor = conn.cursor()
@@ -1406,7 +2032,7 @@ class AchievementSystem:
                 cursor.execute('SELECT vinyls FROM users WHERE telegram_id = ?', (user_id,))
                 result = cursor.fetchone()
                 current_vinyls_before = result[0] if result else 0
-                logger.info(f"💰 Пластинок ДО отзыва: {current_vinyls_before}")
+                logger.info(f"💰 Пластинок до отзыва: {current_vinyls_before}")
                 
                 cursor.execute('''
                     SELECT achievement_id FROM user_achievements WHERE user_id = ?
@@ -1415,7 +2041,7 @@ class AchievementSystem:
                 user_achievements = [row[0] for row in cursor.fetchall()]
                 
                 if not user_achievements:
-                    logger.info(f"ℹ️ У пользователя {user_id} нет достижений для проверки")
+                    logger.info(f"ℹ️ У пользователя {user_id} нет достижений для проверки!")
                     return []
                 
                 revoked_achievements = []
@@ -1424,16 +2050,18 @@ class AchievementSystem:
                 for achievement_id in user_achievements:
                     should_revoke = False
                     
+                    # Защищённые достижения
                     if achievement_id == 'first_booking':
-                        logger.info(f"✅ Достижение 'Добро пожаловать' защищено от отзыва")
+                        logger.info(f"✅ Достижение 'Добро пожаловать' защищено от отзыва!")
                         continue
                     
                     if achievement_id in ['friend_inviter', 'social', 'star', 'magnate', 'network_giant']:
-                        logger.info(f"✅ Реферальное достижение {achievement_id} защищено от отзыва")
+                        logger.info(f"✅ Реферальное достижение {achievement_id} защищено от отзыва!")
                         continue
                     
                     ach_info = AchievementSystem.ACHIEVEMENTS.get(achievement_id, {})
                     
+                    # Достижения за количество записей
                     if achievement_id in ['novice', 'amateur', 'pro', 'veteran', 'studio_legend']:
                         needed = {
                             'novice': 3,
@@ -1463,21 +2091,19 @@ class AchievementSystem:
                         
                         if actual_count < needed:
                             should_revoke = True
-                            logger.info(f"❌ Достижение {achievement_id} нужно отозвать: нужно {needed}, осталось {actual_count}")
+                            logger.info(f"❌ Достижение {achievement_id} нужно отозвать! Требуется {needed}, осталось {actual_count}!")
                     
-                    elif achievement_id in ['vocalist', 'virtuoso', 'renter', 'golden_ears', 'author', 'godspeed_legend', 'name_on_wall', 'golden_mic']:
+                    # Достижения за типы услуг
+                    elif achievement_id in ['vocalist', 'virtuoso', 'renter', 'golden_ears', 'author']:
                         service_conditions = {
                             'vocalist': ('service LIKE ?', ('%вокал%',), 5),
                             'virtuoso': ('service LIKE ?', ('%инструмент%',), 5),
                             'renter': ('(service LIKE ? OR is_12_hours = 1)', ('%аренд%',), 3),
                             'golden_ears': ('(service LIKE ? OR service LIKE ? OR is_mixing = 1)', ('%сведен%', '%мастеринг%'), 5),
                             'author': ('(service LIKE ? OR is_track_creation = 1)', ('%создание трека%',), 3),
-                            'godspeed_legend': None,
-                            'name_on_wall': None,
-                            'golden_mic': None
                         }
                         
-                        if achievement_id in service_conditions and service_conditions[achievement_id] is not None:
+                        if achievement_id in service_conditions:
                             condition, params, needed = service_conditions[achievement_id]
                             
                             if achievement_id == 'golden_ears':
@@ -1523,8 +2149,9 @@ class AchievementSystem:
                             
                             if actual_count < needed:
                                 should_revoke = True
-                                logger.info(f"❌ Достижение {achievement_id} нужно отозвать: нужно {needed}, осталось {actual_count}")
+                                logger.info(f"❌ Достижение {achievement_id} нужно отозвать! Требуется {needed}, осталось {actual_count}!")
                     
+                    # Универсал (все типы услуг)
                     elif achievement_id == 'universal':
                         conditions = [
                             ('service LIKE ?', ('%вокал%',)),
@@ -1583,7 +2210,7 @@ class AchievementSystem:
                         
                         if not has_all_types:
                             should_revoke = True
-                            logger.info(f"❌ Достижение universal нужно отозвать: не все типы услуг остались")
+                            logger.info(f"❌ Достижение universal нужно отозвать! Не все типы услуг остались!")
                     
                     if should_revoke:
                         cursor.execute('''
@@ -1604,7 +2231,7 @@ class AchievementSystem:
                             'vinyls': vinyls_to_remove
                         })
                         
-                        logger.info(f"✅ Отозвано достижение {achievement_id}, -{vinyls_to_remove} пластинок")
+                        logger.info(f"✅ Отозвано достижение {achievement_id}! Снято {vinyls_to_remove} пластинок!")
                 
                 cursor.execute('SELECT vinyls FROM users WHERE telegram_id = ?', (user_id,))
                 new_vinyls = cursor.fetchone()[0] or 0
@@ -1634,29 +2261,49 @@ class AchievementSystem:
                             text=message,
                             parse_mode="Markdown"
                         )
-                        logger.info(f"✅ Уведомление об отзыве достижений отправлено пользователю {user_id}")
+                        logger.info(f"✅ Уведомление об отзыве достижений успешно отправлено пользователю {user_id}!")
                     except Exception as e:
-                        logger.error(f"❌ Не удалось отправить уведомление об отзыве: {e}")
+                        logger.error(f"❌ Ошибка отправки уведомления об отзыве достижений пользователю {user_id}! Проверьте права бота!")
                 
-                logger.info(f"📊 ИТОГО: отозвано {len(revoked_achievements)} достижений, {total_vinyls_revoked} пластинок")
+                logger.info(f"📊 ИТОГО: отозвано {len(revoked_achievements)} достижений и {total_vinyls_revoked} пластинок!")
                 return revoked_achievements
                 
         except Exception as e:
-            logger.error(f"❌ Ошибка при отзыве достижений: {e}")
+            logger.error(f"❌ Критическая ошибка при отзыве достижений у пользователя {user_id}! Проверьте структуру базы данных!")
             import traceback
             traceback.print_exc()
             return []
 
 class PromoCodeManager:
-    """Менеджер для работы с промокодами"""
+    """
+    Менеджер для работы с промокодами.
     
-    # Типы промокодов
-    TYPE_PERCENT_ALL = "percent_all"
-    TYPE_PERCENT_SERVICE = "percent_service"
-    TYPE_FREE_HOURS = "free_hours"
-    TYPE_FREE_SERVICE = "free_service"
+    Типы промокодов:
+    - TYPE_PERCENT_ALL: Процентная скидка на все услуги
+    - TYPE_PERCENT_SERVICE: Процентная скидка на конкретную услугу
+    - TYPE_FREE_HOURS: Бесплатные часы (для вокала/инструмента)
+    - TYPE_FREE_SERVICE: Бесплатная услуга полностью
     
-    # Доступные услуги для промокодов
+    Особенности:
+    - Промокоды могут быть общими (для всех) или персональными (для конкретного пользователя)
+    - Временные (с датой окончания) или бессрочные
+    - У пользователя может быть только один активный промокод
+    - Промокод можно использовать только один раз
+    """
+    
+    # ============================================================
+    # ТИПЫ ПРОМОКОДОВ
+    # ============================================================
+    
+    TYPE_PERCENT_ALL = "percent_all"        # % на все услуги
+    TYPE_PERCENT_SERVICE = "percent_service" # % на конкретную услугу
+    TYPE_FREE_HOURS = "free_hours"          # Бесплатные часы
+    TYPE_FREE_SERVICE = "free_service"      # Бесплатная услуга
+    
+    # ============================================================
+    # ДОСТУПНЫЕ УСЛУГИ ДЛЯ ПРОМОКОДОВ
+    # ============================================================
+    
     SERVICES = {
         "вокал": "🎤 Запись вокала",
         "инструмент": "🎸 Запись инструментов", 
@@ -1665,9 +2312,21 @@ class PromoCodeManager:
         "трек": "🎵 Создание трека"
     }
     
+    # ============================================================
+    # ГЕНЕРАЦИЯ КОДА
+    # ============================================================
+    
     @staticmethod
     def generate_code() -> str:
-        """Генерирует случайный промокод"""
+        """
+        Генерирует случайный промокод.
+        
+        Формат: 2 буквы + 4 цифры + 2 буквы
+        Пример: AB1234CD
+        
+        Возвращает:
+            str: Сгенерированный промокод
+        """
         import random
         import string
         letters = ''.join(random.choices(string.ascii_uppercase, k=2))
@@ -1675,9 +2334,28 @@ class PromoCodeManager:
         letters2 = ''.join(random.choices(string.ascii_uppercase, k=2))
         return f"{letters}{numbers}{letters2}"
     
+    # ============================================================
+    # СОЗДАНИЕ ПРОМОКОДА
+    # ============================================================
+    
     @staticmethod
     async def create_promo_code(admin_id: str, data: dict) -> Tuple[bool, str, dict]:
-        """Создаёт новый промокод"""
+        """
+        Создаёт новый промокод.
+        
+        Аргументы:
+            admin_id: ID администратора, создающего промокод
+            data: Данные промокода
+                - code: Код промокода
+                - target_user_id: ID пользователя (если персональный)
+                - discount_type: Тип скидки
+                - discount_value: Значение скидки
+                - target_service: Целевая услуга (если нужно)
+                - expiry_date: Дата окончания (если временный)
+        
+        Возвращает:
+            tuple: (успех, сообщение, данные промокода)
+        """
         try:
             code = data.get('code')
             target_user_id = data.get('target_user_id')
@@ -1688,10 +2366,13 @@ class PromoCodeManager:
             
             with db.get_connection() as conn:
                 cursor = conn.cursor()
+                
+                # Проверяем, не существует ли уже такой код
                 cursor.execute('SELECT id FROM promo_codes WHERE code = ?', (code,))
                 if cursor.fetchone():
                     return False, "❌ Промокод с таким кодом уже существует!", {}
                 
+                # Вставляем новый промокод
                 cursor.execute('''
                     INSERT INTO promo_codes 
                     (code, target_user_id, discount_type, discount_value, target_service, expiry_date, created_by)
@@ -1700,21 +2381,53 @@ class PromoCodeManager:
                 
                 promo_id = cursor.lastrowid
                 conn.commit()
-                logger.info(f"✅ Создан промокод {code} (ID: {promo_id}) админом {admin_id}")
+                
+                logger.info(f"✅ Промокод {code} успешно создан администратором {admin_id}!")
                 return True, f"✅ Промокод {code} успешно создан!", {'id': promo_id, 'code': code}
         except Exception as e:
-            logger.error(f"❌ Ошибка создания промокода: {e}")
+            logger.error(f"❌ Ошибка создания промокода {code}! Проверьте правильность введённых данных!")
             return False, f"❌ Ошибка: {str(e)}", {}
+    
+    # ============================================================
+    # АКТИВАЦИЯ ПРОМОКОДА
+    # ============================================================
     
     @staticmethod
     async def activate_promo_code(user_id: str, code: str, context=None) -> Tuple[bool, str, dict]:
-        """Активирует промокод для пользователя (только один раз)"""
+        """
+        Активирует промокод для пользователя.
+        
+        Проверки:
+        1. Пользователь не использовал этот промокод ранее
+        2. У пользователя нет активного промокода
+        3. Промокод существует и активен
+        4. Срок действия не истёк
+        5. Промокод принадлежит пользователю (если персональный)
+        
+        Аргументы:
+            user_id: ID пользователя
+            code: Код промокода
+            context: Контекст бота (не используется)
+        
+        Возвращает:
+            tuple: (успех, код результата, данные промокода)
+            
+        Коды результата:
+            - SUCCESS: Успешная активация
+            - ALREADY_USED_BEFORE: Промокод уже использован
+            - ALREADY_USED: Есть активный промокод
+            - NOT_FOUND: Промокод не найден
+            - EXPIRED: Срок истёк
+            - NOT_YOURS: Не принадлежит пользователю
+            - ERROR: Ошибка
+        """
         try:
+            # Нормализуем код
             code = code.upper().strip()
             if code.startswith('PROMO '):
                 code = code[6:].strip()
             
-            logger.info(f"🔍 Активация промокода '{code}' для пользователя {user_id}")
+            logger.info(f"🔍 Активирую промокод '{code}' для пользователя {user_id}!")
             
             with db.get_connection() as conn:
                 cursor = conn.cursor()
@@ -1727,7 +2440,7 @@ class PromoCodeManager:
                 used_before = cursor.fetchone()
                 
                 if used_before:
-                    logger.info(f"❌ Пользователь {user_id} уже использовал промокод {code} ранее")
+                    logger.info(f"❌ Пользователь {user_id} уже использовал промокод {code} ранее!")
                     return False, "ALREADY_USED_BEFORE", {}
                 
                 # Проверка: есть ли активный промокод
@@ -1738,7 +2451,7 @@ class PromoCodeManager:
                 existing_active = cursor.fetchone()
                 
                 if existing_active:
-                    logger.info(f"❌ Пользователь {user_id} уже имеет активный промокод {existing_active[1]}")
+                    logger.info(f"❌ Пользователь {user_id} уже имеет активный промокод {existing_active[1]}! Нельзя активировать больше одного!")
                     return False, "ALREADY_USED", {'active_promo': existing_active[1]}
                 
                 # Проверка: существует ли промокод
@@ -1786,12 +2499,24 @@ class PromoCodeManager:
                 return True, "SUCCESS", promo_info
                 
         except Exception as e:
-            logger.error(f"❌ Ошибка активации промокода: {e}")
+            logger.error(f"❌ Ошибка активации промокода {code} для пользователя {user_id}! Проверьте подключение к базе данных!")
             return False, "ERROR", {'error': str(e)}
+    
+    # ============================================================
+    # ПОЛУЧЕНИЕ АКТИВНОГО ПРОМОКОДА
+    # ============================================================
     
     @staticmethod
     def get_user_active_promo(user_id: str) -> Optional[dict]:
-        """Возвращает активный промокод пользователя, если есть"""
+        """
+        Возвращает активный промокод пользователя, если есть.
+        
+        Аргументы:
+            user_id: ID пользователя
+        
+        Возвращает:
+            dict: Данные промокода или None
+        """
         try:
             with db.get_connection() as conn:
                 cursor = conn.cursor()
@@ -1825,12 +2550,24 @@ class PromoCodeManager:
                     'expiry_date': expiry_date
                 }
         except Exception as e:
-            logger.error(f"Ошибка получения активного промокода: {e}")
+            logger.error(f"❌ Ошибка получения активного промокода для пользователя {user_id}! Проверьте подключение к базе данных!")
             return None
+    
+    # ============================================================
+    # ИСТОРИЯ ПРОМОКОДОВ ПОЛЬЗОВАТЕЛЯ
+    # ============================================================
     
     @staticmethod
     def get_user_promo_history(user_id: str) -> List[dict]:
-        """Возвращает историю промокодов пользователя"""
+        """
+        Возвращает историю промокодов пользователя.
+        
+        Аргументы:
+            user_id: ID пользователя
+        
+        Возвращает:
+            list: Список использованных промокодов
+        """
         try:
             with db.get_connection() as conn:
                 cursor = conn.cursor()
@@ -1861,12 +2598,24 @@ class PromoCodeManager:
                     })
                 return result
         except Exception as e:
-            logger.error(f"Ошибка получения истории промокодов: {e}")
+            logger.error(f"❌ Ошибка получения истории промокодов для пользователя {user_id}! Проверьте подключение к базе данных!")
             return []
+    
+    # ============================================================
+    # ПОЛУЧЕНИЕ ДОСТУПНЫХ ПРОМОКОДОВ
+    # ============================================================
     
     @staticmethod
     def get_all_active_promos(user_id: str = None) -> List[dict]:
-        """Возвращает все активные промокоды, которые пользователь ещё не использовал"""
+        """
+        Возвращает все активные промокоды, которые пользователь ещё не использовал.
+        
+        Аргументы:
+            user_id: ID пользователя (если указан, фильтрует персональные)
+        
+        Возвращает:
+            list: Список доступных промокодов
+        """
         try:
             with db.get_connection() as conn:
                 cursor = conn.cursor()
@@ -1918,12 +2667,24 @@ class PromoCodeManager:
                     })
                 return result
         except Exception as e:
-            logger.error(f"Ошибка получения активных промокодов: {e}")
+            logger.error(f"❌ Ошибка получения активных промокодов! Проверьте подключение к базе данных!")
             return []
+    
+    # ============================================================
+    # ПОЛУЧЕНИЕ ВСЕХ ПРОМОКОДОВ (ДЛЯ АДМИНА)
+    # ============================================================
     
     @staticmethod
     def get_all_promos(include_inactive: bool = False) -> List[dict]:
-        """Возвращает ВСЕ промокоды (активные и неактивные)"""
+        """
+        Возвращает ВСЕ промокоды (активные и неактивные).
+        
+        Аргументы:
+            include_inactive: Включать ли неактивные промокоды
+        
+        Возвращает:
+            list: Список всех промокодов
+        """
         try:
             with db.get_connection() as conn:
                 cursor = conn.cursor()
@@ -1963,12 +2724,21 @@ class PromoCodeManager:
                 
                 return result
         except Exception as e:
-            logger.error(f"Ошибка получения всех промокодов: {e}")
+            logger.error(f"❌ Ошибка получения всех промокодов! Проверьте подключение к базе данных!")
             return []
+    
+    # ============================================================
+    # УДАЛЕНИЕ ИСТЕКШИХ ПРОМОКОДОВ
+    # ============================================================
     
     @staticmethod
     def delete_expired_promocodes() -> int:
-        """Полностью удаляет истекшие промокоды из базы данных"""
+        """
+        Полностью удаляет истекшие промокоды из базы данных.
+        
+        Возвращает:
+            int: Количество удалённых промокодов
+        """
         try:
             with db.get_connection() as conn:
                 cursor = conn.cursor()
@@ -1976,6 +2746,7 @@ class PromoCodeManager:
                 now = DateTimeUtils.now().replace(tzinfo=None)
                 now_str = now.strftime('%Y-%m-%d %H:%M:%S')
                 
+                # Удаляем записи об использовании истекших промокодов
                 cursor.execute('''
                     DELETE FROM user_promo_usage 
                     WHERE promo_code IN (
@@ -1984,6 +2755,7 @@ class PromoCodeManager:
                     )
                 ''', (now_str,))
                 
+                # Удаляем сами истекшие промокоды
                 cursor.execute('''
                     DELETE FROM promo_codes 
                     WHERE expiry_date IS NOT NULL AND expiry_date <= ?
@@ -1992,17 +2764,28 @@ class PromoCodeManager:
                 deleted_count = cursor.rowcount
                 conn.commit()
                 
-                logger.info(f"✅ Удалено {deleted_count} истекших промокодов")
+                logger.info(f"✅ Удалено {deleted_count} истекших промокодов из базы данных!")
                 return deleted_count
         except Exception as e:
-            logger.error(f"❌ Ошибка удаления истекших промокодов: {e}")
+            logger.error(f"❌ Ошибка удаления истекших промокодов! Проверьте подключение к базе данных!")
             return 0
     
+    # ============================================================
+    # ДЕАКТИВАЦИЯ ПРОМОКОДА
+    # ============================================================
     
-
     @staticmethod
     def deactivate_promo_code(promo_code: str, admin_id: str = None) -> Tuple[bool, str]:
-        """Деактивирует промокод"""
+        """
+        Деактивирует промокод (делает неактивным).
+        
+        Аргументы:
+            promo_code: Код промокода
+            admin_id: ID администратора (для логирования)
+        
+        Возвращает:
+            tuple: (успех, сообщение)
+        """
         try:
             with db.get_connection() as conn:
                 cursor = conn.cursor()
@@ -2021,15 +2804,27 @@ class PromoCodeManager:
                 cursor.execute('UPDATE promo_codes SET is_active = 0 WHERE code = ?', (promo_code,))
                 conn.commit()
                 
-                logger.info(f"✅ Промокод {promo_code} (ID: {promo_id}) деактивирован админом {admin_id}")
+                logger.info(f"✅ Промокод {promo_code} (ID: {promo_id}) успешно деактивирован администратором {admin_id}!")
                 return True, f"✅ Промокод {promo_code} успешно деактивирован!"
         except Exception as e:
-            logger.error(f"❌ Ошибка деактивации промокода: {e}")
+            logger.error(f"❌ Ошибка деактивации промокода {promo_code}! Проверьте подключение к базе данных!")
             return False, f"❌ Ошибка: {str(e)}"
+    
+    # ============================================================
+    # ФОРМАТИРОВАНИЕ ИНФОРМАЦИИ О ПРОМОКОДЕ
+    # ============================================================
     
     @staticmethod
     def format_promo_info(promo: dict) -> str:
-        """Форматирует информацию о промокоде для отображения"""
+        """
+        Форматирует информацию о промокоде для отображения.
+        
+        Аргументы:
+            promo: Данные промокода
+        
+        Возвращает:
+            str: Отформатированное описание бонуса
+        """
         discount_type = promo.get('discount_type')
         discount_value = promo.get('discount_value')
         target_service = promo.get('target_service')
@@ -2055,7 +2850,15 @@ class PromoCodeManager:
 
     @staticmethod
     def format_expiry_date(expiry_date_str: Optional[str]) -> str:
-        """Форматирует дату окончания промокода для отображения"""
+        """
+        Форматирует дату окончания промокода для отображения.
+        
+        Аргументы:
+            expiry_date_str: Дата окончания в формате строки
+        
+        Возвращает:
+            str: Отформатированная дата или пустая строка
+        """
         if not expiry_date_str:
             return ""
         
@@ -2070,20 +2873,63 @@ class PromoCodeManager:
         except:
             return ""
 
+
+# ============================================================
+# ФОНОВАЯ ЗАДАЧА ДЛЯ ОЧИСТКИ ПРОМОКОДОВ
+# ============================================================
+
 async def cleanup_expired_promocodes(context: ContextTypes.DEFAULT_TYPE):
-    """Фоновая задача для удаления истекших промокодов"""
+    """
+    Фоновая задача для удаления истекших промокодов.
+    
+    Вызывается автоматически через JobQueue каждый час.
+    
+    Аргументы:
+        context: Контекст бота
+    """
     try:
-        logger.info("🔍 Запуск очистки истекших промокодов...")
+        logger.info("🔍 Запускаю очистку истекших промокодов!")
         deleted_count = PromoCodeManager.delete_expired_promocodes()
         if deleted_count > 0:
-            logger.info(f"🗑️ Удалено {deleted_count} истекших промокодов")
+            logger.info(f"🗑️ Удалено {deleted_count} истекших промокодов из базы данных!")
         else:
-            logger.info("ℹ️ Истекших промокодов не найдено")
+            logger.info("ℹ️ Истекших промокодов не найдено!")
     except Exception as e:
-        logger.error(f"❌ Ошибка в cleanup_expired_promocodes: {e}")
+        logger.error(f"❌ Критическая ошибка в cleanup_expired_promocodes! Проверьте подключение к базе данных!")
 
 class Database:
+    """
+    Основной класс для работы с базой данных SQLite.
+    
+    Отвечает за:
+    - Создание и инициализацию базы данных
+    - Создание всех необходимых таблиц
+    - Включение WAL режима для производительности
+    - Предоставление соединений с БД через контекстный менеджер
+    - Миграцию базы данных при обновлении структуры
+    
+    Таблицы:
+    - bookings: Записи в студии
+    - users: Пользователи бота
+    - user_achievements: Достижения пользователей
+    - user_coupons: Купоны на скидки
+    - promo_codes: Промокоды
+    - user_promo_usage: Использование промокодов
+    - notifications: Уведомления
+    - cache_slots: Кэш слотов
+    - monitoring: Мониторинг состояния
+    - booking_referral_bonuses: Бонусы за рефералов
+    """
+    
     def __init__(self):
+        """
+        Инициализация базы данных.
+        
+        Определяет путь к БД на основе персистентной БД:
+        1. Если персистентная БД существует - создаём основную рядом
+        2. Иначе - создаём в текущей директории
+        """
+        # Определяем путь к основной БД
         if persistent_db.db_path != ':memory:' and os.path.exists(persistent_db.db_path):
             folder = os.path.dirname(persistent_db.db_path)
             if folder:
@@ -2093,13 +2939,28 @@ class Database:
         else:
             self.db_path = 'micasabot_main.db'
         
-        logger.info(f"📊 Основная база данных: {self.db_path}")
+        logger.info(f"📊 Основная база данных успешно подключена: {self.db_path}!")
+        
+        # Инициализация
         self._init_database()
         self._ensure_tables_exist()
         self._enable_wal_mode()
     
     def _enable_wal_mode(self):
-        """Принудительное включение WAL режима"""
+        """
+        Принудительное включение WAL (Write-Ahead Logging) режима.
+        
+        Преимущества WAL:
+        - Улучшенная производительность при конкурентном доступе
+        - Меньше блокировок
+        - Более быстрые операции записи
+        
+        Настройки:
+        - journal_mode=WAL: Включение WAL
+        - synchronous=NORMAL: Баланс скорости и надёжности
+        - busy_timeout=60000: Таймаут ожидания (60 секунд)
+        - cache_size=-20000: Увеличение кэша (20MB)
+        """
         try:
             conn = sqlite3.connect(self.db_path, timeout=60.0)
             conn.execute('PRAGMA journal_mode=WAL')
@@ -2108,16 +2969,33 @@ class Database:
             conn.execute('PRAGMA cache_size=-20000')
             result = conn.execute('PRAGMA journal_mode').fetchone()
             conn.close()
-            logger.info(f"✅ WAL режим включен для {self.db_path}: {result[0]}")
+            logger.info(f"✅ WAL режим успешно включён для {self.db_path}: {result[0]}!")
         except Exception as e:
-            logger.error(f"❌ Ошибка включения WAL для {self.db_path}: {e}")
+            logger.error(f"❌ Ошибка включения WAL режима для {self.db_path}! Проверьте права доступа к файлу!")
     
     def _ensure_tables_exist(self):
+        """
+        Создаёт все необходимые таблицы, если они не существуют.
+        
+        Структура таблиц:
+        1. bookings - основные записи
+        2. users - пользователи
+        3. user_achievements - достижения
+        4. user_coupons - купоны
+        5. promo_codes - промокоды
+        6. user_promo_usage - использование промокодов
+        7. notifications - уведомления
+        8. cache_slots - кэш слотов
+        9. booking_referral_bonuses - бонусы за рефералов
+        10. monitoring - мониторинг
+        """
         try:
             with self.get_connection() as conn:
                 cursor = conn.cursor()
                 
-                # ===== ТАБЛИЦА BOOKINGS =====
+                # ============================================================
+                # ТАБЛИЦА BOOKINGS (ЗАПИСИ)
+                # ============================================================
                 cursor.execute('''
                     CREATE TABLE IF NOT EXISTS bookings (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -2149,7 +3027,9 @@ class Database:
                     )
                 ''')
                 
-                # ===== ТАБЛИЦА USERS =====
+                # ============================================================
+                # ТАБЛИЦА USERS (ПОЛЬЗОВАТЕЛИ)
+                # ============================================================
                 cursor.execute('''
                     CREATE TABLE IF NOT EXISTS users (
                         telegram_id TEXT PRIMARY KEY,
@@ -2182,7 +3062,9 @@ class Database:
                     )
                 ''')
                 
-                # ===== ТАБЛИЦА USER_ACHIEVEMENTS =====
+                # ============================================================
+                # ТАБЛИЦА USER_ACHIEVEMENTS (ДОСТИЖЕНИЯ)
+                # ============================================================
                 cursor.execute('''
                     CREATE TABLE IF NOT EXISTS user_achievements (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -2196,7 +3078,9 @@ class Database:
                     )
                 ''')
                 
-                # ===== ТАБЛИЦА USER_COUPONS =====
+                # ============================================================
+                # ТАБЛИЦА USER_COUPONS (КУПОНЫ)
+                # ============================================================
                 cursor.execute('''
                     CREATE TABLE IF NOT EXISTS user_coupons (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -2211,7 +3095,9 @@ class Database:
                     )
                 ''')
                 
-                # ===== ТАБЛИЦА PROMO_CODES =====
+                # ============================================================
+                # ТАБЛИЦА PROMO_CODES (ПРОМОКОДЫ)
+                # ============================================================
                 cursor.execute('''
                     CREATE TABLE IF NOT EXISTS promo_codes (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -2228,7 +3114,9 @@ class Database:
                     )
                 ''')
                 
-                # ===== ТАБЛИЦА USER_PROMO_USAGE =====
+                # ============================================================
+                # ТАБЛИЦА USER_PROMO_USAGE (ИСПОЛЬЗОВАНИЕ ПРОМОКОДОВ)
+                # ============================================================
                 cursor.execute('''
                     CREATE TABLE IF NOT EXISTS user_promo_usage (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -2245,7 +3133,9 @@ class Database:
                     )
                 ''')
                 
-                # ===== ТАБЛИЦА NOTIFICATIONS =====
+                # ============================================================
+                # ТАБЛИЦА NOTIFICATIONS (УВЕДОМЛЕНИЯ)
+                # ============================================================
                 cursor.execute('''
                     CREATE TABLE IF NOT EXISTS notifications (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -2261,7 +3151,9 @@ class Database:
                     )
                 ''')
                 
-                # ===== ТАБЛИЦА CACHE_SLOTS =====
+                # ============================================================
+                # ТАБЛИЦА CACHE_SLOTS (КЭШ СЛОТОВ)
+                # ============================================================
                 cursor.execute('''
                     CREATE TABLE IF NOT EXISTS cache_slots (
                         date_str TEXT NOT NULL,
@@ -2273,7 +3165,9 @@ class Database:
                     )
                 ''')
                 
-                # ===== ИНДЕКСЫ =====
+                # ============================================================
+                # ИНДЕКСЫ ДЛЯ УСКОРЕНИЯ ЗАПРОСОВ
+                # ============================================================
                 cursor.execute('CREATE INDEX IF NOT EXISTS idx_bookings_telegram ON bookings (telegram_id)')
                 cursor.execute('CREATE INDEX IF NOT EXISTS idx_bookings_status ON bookings (status)')
                 cursor.execute('CREATE INDEX IF NOT EXISTS idx_user_coupons_user ON user_coupons(user_id)')
@@ -2281,49 +3175,94 @@ class Database:
                 cursor.execute('CREATE INDEX IF NOT EXISTS idx_user_promo_usage_user ON user_promo_usage(user_id)')
                 
                 conn.commit()
-                logger.info("✅ Все таблицы созданы")
+                logger.info("✅ Все таблицы успешно созданы в базе данных!")
                 
         except Exception as e:
-            logger.error(f"❌ Ошибка создания таблиц: {e}")
+            logger.error(f"❌ Критическая ошибка создания таблиц в базе данных! Проверьте структуру SQL запросов!")
             import traceback
             traceback.print_exc()
     
     def _init_database(self):
+        """Инициализация базы данных (создание соединения)"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
-            pass
+            pass  # База уже создана в _ensure_tables_exist
     
     @contextmanager
     def get_connection(self, timeout=60.0):
-        """Получение соединения с БД с таймаутом"""
+        """
+        Контекстный менеджер для получения соединения с БД.
+        
+        Особенности:
+        - Автоматически включает WAL режим
+        - Автоматически коммитит транзакции
+        - Автоматически откатывает при ошибке
+        - Закрывает соединение после использования
+        
+        Аргументы:
+            timeout: Таймаут ожидания в секундах
+        
+        Использование:
+            with db.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('SELECT * FROM users')
+                rows = cursor.fetchall()
+        """
         conn = None
         try:
+            # Создаём соединение с таймаутом
             conn = sqlite3.connect(
                 self.db_path, 
-                check_same_thread=False,
+                check_same_thread=False,  # Разрешаем использование из разных потоков
                 timeout=timeout
             )
-            conn.row_factory = sqlite3.Row
+            conn.row_factory = sqlite3.Row  # Доступ к полям по имени
+            
+            # Настраиваем WAL режим
             conn.execute('PRAGMA journal_mode=WAL')
             conn.execute('PRAGMA synchronous=NORMAL')
             conn.execute('PRAGMA busy_timeout=60000')
             conn.execute('PRAGMA cache_size=-20000')
             
             yield conn
-            conn.commit()
+            conn.commit()  # Коммитим при успешном завершении
         except Exception as e:
             if conn:
-                conn.rollback()
-            logger.error(f"Ошибка БД: {e}")
+                conn.rollback()  # Откатываем при ошибке
+            logger.error(f"❌ Ошибка базы данных! Проверьте подключение и структуру таблиц!")
             raise e
         finally:
             if conn:
-                conn.close()
+                conn.close()  # Всегда закрываем соединение
+
+
+# ============================================================
+# СОЗДАНИЕ ЭКЗЕМПЛЯРА БАЗЫ ДАННЫХ
+# ============================================================
 
 db = Database()
 
+
+# ============================================================
+# ОБРАБОТКА ПРОМОКОДА ПРИ ОТМЕНЕ ЗАПИСИ
+# ============================================================
+
 def handle_promo_code_on_cancellation(booking_id: int, telegram_id: str, hours_until: float, context=None):
-    """Обрабатывает промокод при отмене записи"""
+    """
+    Обрабатывает промокод при отмене записи.
+    
+    Логика:
+    1. Для сведения/мастеринга - всегда возвращаем промокод
+    2. Для остальных услуг:
+       - Если до начала >= 12 часов - возвращаем промокод
+       - Если до начала < 12 часов - промокод сгорает
+    
+    Аргументы:
+        booking_id: ID записи
+        telegram_id: ID пользователя
+        hours_until: Часов до начала записи
+        context: Контекст бота (не используется)
+    """
     try:
         with db.get_connection() as conn:
             cursor = conn.cursor()
@@ -2356,7 +3295,7 @@ def handle_promo_code_on_cancellation(booking_id: int, telegram_id: str, hours_u
             
             # Если промокод уже использован - ничего не делаем
             if current_status == 'used':
-                logger.info(f"ℹ️ Промокод {promo_code_used} уже использован, пропускаем")
+                logger.info(f"ℹ️ Промокод {promo_code_used} уже использован! Пропускаю обработку!")
                 return
             
             # ===== ДЛЯ СВЕДЕНИЯ/МАСТЕРИНГА =====
@@ -2368,7 +3307,7 @@ def handle_promo_code_on_cancellation(booking_id: int, telegram_id: str, hours_u
                     WHERE id = ?
                 ''', (usage_id,))
                 conn.commit()
-                logger.info(f"🔄 Промокод {promo_code_used} для сведения/мастеринга ВОЗВРАЩЁН при отмене")
+                logger.info(f"🔄 Промокод {promo_code_used} для сведения/мастеринга успешно возвращён при отмене записи!")
                 return
             
             # ===== ДЛЯ ОСТАЛЬНЫХ УСЛУГ =====
@@ -2381,7 +3320,7 @@ def handle_promo_code_on_cancellation(booking_id: int, telegram_id: str, hours_u
                     WHERE id = ?
                 ''', (usage_id,))
                 conn.commit()
-                logger.info(f"🔄 Промокод {promo_code_used} ВОЗВРАЩЁН (до начала {hours_until:.1f} часов)")
+                logger.info(f"🔄 Промокод {promo_code_used} успешно возвращён! До начала записи {hours_until:.1f} часов!")
             else:
                 # Промокод сгорает (статус used)
                 cursor.execute('''
@@ -2390,33 +3329,47 @@ def handle_promo_code_on_cancellation(booking_id: int, telegram_id: str, hours_u
                     WHERE id = ?
                 ''', (usage_id,))
                 conn.commit()
-                logger.info(f"💀 Промокод {promo_code_used} СГОРЕЛ при отмене (до начала {hours_until:.1f} часов)")
+                logger.info(f"💀 Промокод {promo_code_used} сгорел при отмене! До начала записи {hours_until:.1f} часов!")
             
     except Exception as e:
-        logger.error(f"❌ Ошибка в handle_promo_code_on_cancellation: {e}")
+        logger.error(f"❌ Ошибка в handle_promo_code_on_cancellation! Проверьте структуру базы данных!")
 
-# ===== ФУНКЦИЯ ДЛЯ ПРОВЕРКИ ДИРЕКТОРИИ ДАННЫХ =====
+
+# ============================================================
+# ПРОВЕРКА ДИРЕКТОРИИ ДАННЫХ
+# ============================================================
+
 def verify_data_directory():
-    """Проверяет доступность директории данных при запуске"""
+    """
+    Проверяет доступность директории данных при запуске.
+    
+    Проверяет:
+    1. Существование директории
+    2. Права на запись
+    3. Наличие файлов БД
+    
+    Возвращает:
+        bool: True если директория доступна, False если нет
+    """
     global DATA_DIR
     
     print("=" * 60)
-    print("🔍 ПРОВЕРКА ДИРЕКТОРИИ ДАННЫХ")
+    print("🔍 Проверяю директорию данных!")
     print(f"📁 DATA_DIR = {DATA_DIR}")
     
     try:
         # Проверяем существование
         if not os.path.exists(DATA_DIR):
-            print(f"📁 Директория {DATA_DIR} не существует, создаем...")
+            print(f"📁 Директория {DATA_DIR} не существует, создаю...")
             os.makedirs(DATA_DIR, exist_ok=True)
-            print(f"✅ Директория создана")
+            print(f"✅ Директория успешно создана!")
         
         # Проверяем права на запись
         test_file = os.path.join(DATA_DIR, '.startup_test')
         with open(test_file, 'w') as f:
             f.write('test')
         os.remove(test_file)
-        print(f"✅ Директория доступна для записи")
+        print(f"✅ Директория доступна для записи!")
         
         # Показываем содержимое
         files = os.listdir(DATA_DIR)
@@ -2426,203 +3379,223 @@ def verify_data_directory():
         else:
             print("📊 Файлы БД не найдены (будут созданы при первом запуске)")
         
-        print("✅ Проверка директории данных завершена успешно")
+        print("✅ Проверка директории данных успешно завершена!")
         print("=" * 60)
         return True
         
     except Exception as e:
-        print(f"❌ ОШИБКА: Не удается получить доступ к {DATA_DIR}")
+        print(f"❌ Ошибка: Не удаётся получить доступ к {DATA_DIR}!")
         print(f"❌ Причина: {e}")
-        print("⚠️ Бот будет использовать текущую директорию для хранения данных")
+        print("⚠️ Бот будет использовать текущую директорию для хранения данных!")
         print("=" * 60)
         return False
 
+
+# ============================================================
+# МИГРАЦИЯ БАЗЫ ДАННЫХ
+# ============================================================
+
 def migrate_database():
+    """
+    Выполняет миграцию базы данных при обновлении структуры.
+    
+    Добавляет новые столбцы и таблицы, если они отсутствуют.
+    Выполняется автоматически при запуске бота.
+    
+    Возвращает:
+        bool: True если миграция успешна, False если нет
+    """
     try:
-        logger.info("🔧 Запуск миграции базы данных...")
+        logger.info("🔧 Начинаю миграцию базы данных!")
         
         with db.get_connection() as conn:
             cursor = conn.cursor()
             
-            # ===== ПРОВЕРКА И ДОБАВЛЕНИЕ ПОЛЕЙ В ТАБЛИЦУ bookings =====
+            # ============================================================
+            # ПРОВЕРКА И ДОБАВЛЕНИЕ ПОЛЕЙ В ТАБЛИЦУ bookings
+            # ============================================================
             cursor.execute("PRAGMA table_info(bookings)")
             columns = [column[1] for column in cursor.fetchall()]
             
             # Существующие поля
             if 'is_contractual' not in columns:
-                logger.info("📋 Добавляем столбец is_contractual в bookings...")
+                logger.info("📋 Добавляю столбец is_contractual в bookings!")
                 cursor.execute("ALTER TABLE bookings ADD COLUMN is_contractual BOOLEAN DEFAULT 0")
-                logger.info("✅ Столбец is_contractual успешно добавлен")
+                logger.info("✅ Столбец is_contractual успешно добавлен!")
             
             if 'start_hour' not in columns:
-                logger.info("📋 Добавляем столбец start_hour в bookings...")
+                logger.info("📋 Добавляю столбец start_hour в bookings!")
                 cursor.execute("ALTER TABLE bookings ADD COLUMN start_hour INTEGER")
-                logger.info("✅ Столбец start_hour успешно добавлен")
+                logger.info("✅ Столбец start_hour успешно добавлен!")
             
             if 'end_hour' not in columns:
-                logger.info("📋 Добавляем столбец end_hour в bookings...")
+                logger.info("📋 Добавляю столбец end_hour в bookings!")
                 cursor.execute("ALTER TABLE bookings ADD COLUMN end_hour INTEGER")
-                logger.info("✅ Столбец end_hour успешно добавлен")
+                logger.info("✅ Столбец end_hour успешно добавлен!")
             
             if 'timestamp' not in columns:
-                logger.info("📋 Добавляем столбец timestamp в bookings...")
+                logger.info("📋 Добавляю столбец timestamp в bookings!")
                 cursor.execute("ALTER TABLE bookings ADD COLUMN timestamp DATETIME DEFAULT CURRENT_TIMESTAMP")
-                logger.info("✅ Столбец timestamp успешно добавлен")
+                logger.info("✅ Столбец timestamp успешно добавлен!")
             
             # Поля для хранения информации о скидках
             if 'base_price' not in columns:
-                logger.info("📋 Добавляем столбец base_price в bookings...")
+                logger.info("📋 Добавляю столбец base_price в bookings!")
                 cursor.execute("ALTER TABLE bookings ADD COLUMN base_price INTEGER DEFAULT 0")
-                logger.info("✅ Столбец base_price успешно добавлен")
+                logger.info("✅ Столбец base_price успешно добавлен!")
 
             if 'level_discount_percent' not in columns:
-                logger.info("📋 Добавляем столбец level_discount_percent в bookings...")
+                logger.info("📋 Добавляю столбец level_discount_percent в bookings!")
                 cursor.execute("ALTER TABLE bookings ADD COLUMN level_discount_percent INTEGER DEFAULT 0")
-                logger.info("✅ Столбец level_discount_percent успешно добавлен")
+                logger.info("✅ Столбец level_discount_percent успешно добавлен!")
 
             if 'level_coupon_id' not in columns:
-                logger.info("📋 Добавляем столбец level_coupon_id в bookings...")
+                logger.info("📋 Добавляю столбец level_coupon_id в bookings!")
                 cursor.execute("ALTER TABLE bookings ADD COLUMN level_coupon_id INTEGER")
-                logger.info("✅ Столбец level_coupon_id успешно добавлен")
+                logger.info("✅ Столбец level_coupon_id успешно добавлен!")
 
             if 'promo_discount_percent' not in columns:
-                logger.info("📋 Добавляем столбец promo_discount_percent в bookings...")
+                logger.info("📋 Добавляю столбец promo_discount_percent в bookings!")
                 cursor.execute("ALTER TABLE bookings ADD COLUMN promo_discount_percent INTEGER DEFAULT 0")
-                logger.info("✅ Столбец promo_discount_percent успешно добавлен")
+                logger.info("✅ Столбец promo_discount_percent успешно добавлен!")
 
             if 'promo_code_used' not in columns:
-                logger.info("📋 Добавляем столбец promo_code_used в bookings...")
+                logger.info("📋 Добавляю столбец promo_code_used в bookings!")
                 cursor.execute("ALTER TABLE bookings ADD COLUMN promo_code_used TEXT")
-                logger.info("✅ Столбец promo_code_used успешно добавлен")
+                logger.info("✅ Столбец promo_code_used успешно добавлен!")
             
             # Новые колонки
             if 'is_admin_booking' not in columns:
-                logger.info("📋 Добавляем столбец is_admin_booking в bookings...")
+                logger.info("📋 Добавляю столбец is_admin_booking в bookings!")
                 cursor.execute("ALTER TABLE bookings ADD COLUMN is_admin_booking INTEGER DEFAULT 0")
-                logger.info("✅ Столбец is_admin_booking успешно добавлен")
+                logger.info("✅ Столбец is_admin_booking успешно добавлен!")
             
             if 'vinyls_awarded' not in columns:
-                logger.info("📋 Добавляем столбец vinyls_awarded в bookings...")
+                logger.info("📋 Добавляю столбец vinyls_awarded в bookings!")
                 cursor.execute("ALTER TABLE bookings ADD COLUMN vinyls_awarded INTEGER DEFAULT 0")
-                logger.info("✅ Столбец vinyls_awarded успешно добавлен")
+                logger.info("✅ Столбец vinyls_awarded успешно добавлен!")
             
-            # ===== ДОБАВЛЯЕМ ПОЛЕ free_service_applied =====
+            # Добавляем поле free_service_applied
             if 'free_service_applied' not in columns:
-                logger.info("📋 Добавляем столбец free_service_applied в bookings...")
+                logger.info("📋 Добавляю столбец free_service_applied в bookings!")
                 cursor.execute("ALTER TABLE bookings ADD COLUMN free_service_applied INTEGER DEFAULT 0")
-                logger.info("✅ Столбец free_service_applied успешно добавлен")
+                logger.info("✅ Столбец free_service_applied успешно добавлен!")
             
-            # ===== ПРОВЕРКА И ДОБАВЛЕНИЕ ПОЛЕЙ В ТАБЛИЦУ users =====
+            # ============================================================
+            # ПРОВЕРКА И ДОБАВЛЕНИЕ ПОЛЕЙ В ТАБЛИЦУ users
+            # ============================================================
             cursor.execute("PRAGMA table_info(users)")
             user_columns = [column[1] for column in cursor.fetchall()]
             
             if 'is_blocked' not in user_columns:
-                logger.info("📋 Добавляем столбец is_blocked в users...")
+                logger.info("📋 Добавляю столбец is_blocked в users!")
                 cursor.execute("ALTER TABLE users ADD COLUMN is_blocked BOOLEAN DEFAULT 0")
-                logger.info("✅ Столбец is_blocked успешно добавлен")
+                logger.info("✅ Столбец is_blocked успешно добавлен!")
             
             if 'blocked_until' not in user_columns:
-                logger.info("📋 Добавляем столбец blocked_until в users...")
+                logger.info("📋 Добавляю столбец blocked_until в users!")
                 cursor.execute("ALTER TABLE users ADD COLUMN blocked_until DATETIME")
-                logger.info("✅ Столбец blocked_until успешно добавлен")
+                logger.info("✅ Столбец blocked_until успешно добавлен!")
             
             if 'vinyls' not in user_columns:
-                logger.info("📋 Добавляем столбец vinyls в users...")
+                logger.info("📋 Добавляю столбец vinyls в users!")
                 cursor.execute("ALTER TABLE users ADD COLUMN vinyls INTEGER DEFAULT 0")
-                logger.info("✅ Столбец vinyls успешно добавлен")
+                logger.info("✅ Столбец vinyls успешно добавлен!")
             
             if 'level' not in user_columns:
-                logger.info("📋 Добавляем столбец level в users...")
+                logger.info("📋 Добавляю столбец level в users!")
                 cursor.execute("ALTER TABLE users ADD COLUMN level INTEGER DEFAULT 1")
-                logger.info("✅ Столбец level успешно добавлен")
+                logger.info("✅ Столбец level успешно добавлен!")
             
             if 'permanent_discount' not in user_columns:
-                logger.info("📋 Добавляем столбец permanent_discount в users...")
+                logger.info("📋 Добавляю столбец permanent_discount в users!")
                 cursor.execute("ALTER TABLE users ADD COLUMN permanent_discount INTEGER DEFAULT 0")
-                logger.info("✅ Столбец permanent_discount успешно добавлен")
+                logger.info("✅ Столбец permanent_discount успешно добавлен!")
             
             if 'temporary_discount' not in user_columns:
-                logger.info("📋 Добавляем столбец temporary_discount в users...")
+                logger.info("📋 Добавляю столбец temporary_discount в users!")
                 cursor.execute("ALTER TABLE users ADD COLUMN temporary_discount INTEGER DEFAULT 0")
-                logger.info("✅ Столбец temporary_discount успешно добавлен")
+                logger.info("✅ Столбец temporary_discount успешно добавлен!")
             
             if 'discount_expiry' not in user_columns:
-                logger.info("📋 Добавляем столбец discount_expiry в users...")
+                logger.info("📋 Добавляю столбец discount_expiry в users!")
                 cursor.execute("ALTER TABLE users ADD COLUMN discount_expiry DATETIME")
-                logger.info("✅ Столбец discount_expiry успешно добавлен")
+                logger.info("✅ Столбец discount_expiry успешно добавлен!")
             
             if 'referral_code' not in user_columns:
-                logger.info("📋 Добавляем столбец referral_code в users...")
+                logger.info("📋 Добавляю столбец referral_code в users!")
                 cursor.execute("ALTER TABLE users ADD COLUMN referral_code TEXT")
-                logger.info("✅ Столбец referral_code успешно добавлен")
+                logger.info("✅ Столбец referral_code успешно добавлен!")
             
             try:
                 cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_referral_code ON users (referral_code) WHERE referral_code IS NOT NULL")
-                logger.info("✅ Уникальный индекс для referral_code создан")
+                logger.info("✅ Уникальный индекс для referral_code создан!")
             except Exception as e:
-                logger.warning(f"⚠️ Не удалось создать уникальный индекс: {e}")
+                logger.warning(f"⚠️ Не удалось создать уникальный индекс для referral_code: {e}")
             
             if 'referred_by' not in user_columns:
-                logger.info("📋 Добавляем столбец referred_by в users...")
+                logger.info("📋 Добавляю столбец referred_by в users!")
                 cursor.execute("ALTER TABLE users ADD COLUMN referred_by TEXT")
-                logger.info("✅ Столбец referred_by успешно добавлен")
+                logger.info("✅ Столбец referred_by успешно добавлен!")
             
             if 'used_promos' not in user_columns:
-                logger.info("📋 Добавляем столбец used_promos в users...")
+                logger.info("📋 Добавляю столбец used_promos в users!")
                 cursor.execute("ALTER TABLE users ADD COLUMN used_promos TEXT DEFAULT ''")
-                logger.info("✅ Столбец used_promos успешно добавлен")
+                logger.info("✅ Столбец used_promos успешно добавлен!")
             
             if 'morning_sessions' not in user_columns:
-                logger.info("📋 Добавляем столбец morning_sessions в users...")
+                logger.info("📋 Добавляю столбец morning_sessions в users!")
                 cursor.execute("ALTER TABLE users ADD COLUMN morning_sessions INTEGER DEFAULT 0")
-                logger.info("✅ Столбец morning_sessions успешно добавлен")
+                logger.info("✅ Столбец morning_sessions успешно добавлен!")
             
             if 'night_sessions' not in user_columns:
-                logger.info("📋 Добавляем столбец night_sessions в users...")
+                logger.info("📋 Добавляю столбец night_sessions в users!")
                 cursor.execute("ALTER TABLE users ADD COLUMN night_sessions INTEGER DEFAULT 0")
-                logger.info("✅ Столбец night_sessions успешно добавлен")
+                logger.info("✅ Столбец night_sessions успешно добавлен!")
             
             if 'vocal_sessions' not in user_columns:
-                logger.info("📋 Добавляем столбец vocal_sessions в users...")
+                logger.info("📋 Добавляю столбец vocal_sessions в users!")
                 cursor.execute("ALTER TABLE users ADD COLUMN vocal_sessions INTEGER DEFAULT 0")
-                logger.info("✅ Столбец vocal_sessions успешно добавлен")
+                logger.info("✅ Столбец vocal_sessions успешно добавлен!")
             
             if 'instrument_sessions' not in user_columns:
-                logger.info("📋 Добавляем столбец instrument_sessions в users...")
+                logger.info("📋 Добавляю столбец instrument_sessions в users!")
                 cursor.execute("ALTER TABLE users ADD COLUMN instrument_sessions INTEGER DEFAULT 0")
-                logger.info("✅ Столбец instrument_sessions успешно добавлен")
+                logger.info("✅ Столбец instrument_sessions успешно добавлен!")
             
             if 'mixing_sessions' not in user_columns:
-                logger.info("📋 Добавляем столбец mixing_sessions в users...")
+                logger.info("📋 Добавляю столбец mixing_sessions в users!")
                 cursor.execute("ALTER TABLE users ADD COLUMN mixing_sessions INTEGER DEFAULT 0")
-                logger.info("✅ Столбец mixing_sessions успешно добавлен")
+                logger.info("✅ Столбец mixing_sessions успешно добавлен!")
             
             if 'track_creation_sessions' not in user_columns:
-                logger.info("📋 Добавляем столбец track_creation_sessions в users...")
+                logger.info("📋 Добавляю столбец track_creation_sessions в users!")
                 cursor.execute("ALTER TABLE users ADD COLUMN track_creation_sessions INTEGER DEFAULT 0")
-                logger.info("✅ Столбец track_creation_sessions успешно добавлен")
+                logger.info("✅ Столбец track_creation_sessions успешно добавлен!")
             
             if 'rental_sessions' not in user_columns:
-                logger.info("📋 Добавляем столбец rental_sessions в users...")
+                logger.info("📋 Добавляю столбец rental_sessions в users!")
                 cursor.execute("ALTER TABLE users ADD COLUMN rental_sessions INTEGER DEFAULT 0")
-                logger.info("✅ Столбец rental_sessions успешно добавлен")
+                logger.info("✅ Столбец rental_sessions успешно добавлен!")
             
             if 'with_engineer_sessions' not in user_columns:
-                logger.info("📋 Добавляем столбец with_engineer_sessions в users...")
+                logger.info("📋 Добавляю столбец with_engineer_sessions в users!")
                 cursor.execute("ALTER TABLE users ADD COLUMN with_engineer_sessions INTEGER DEFAULT 0")
-                logger.info("✅ Столбец with_engineer_sessions успешно добавлен")
+                logger.info("✅ Столбец with_engineer_sessions успешно добавлен!")
             
             if 'without_engineer_sessions' not in user_columns:
-                logger.info("📋 Добавляем столбец without_engineer_sessions в users...")
+                logger.info("📋 Добавляю столбец without_engineer_sessions в users!")
                 cursor.execute("ALTER TABLE users ADD COLUMN without_engineer_sessions INTEGER DEFAULT 0")
-                logger.info("✅ Столбец without_engineer_sessions успешно добавлен")
+                logger.info("✅ Столбец without_engineer_sessions успешно добавлен!")
             
             if 'achievements' not in user_columns:
-                logger.info("📋 Добавляем столбец achievements в users...")
+                logger.info("📋 Добавляю столбец achievements в users!")
                 cursor.execute("ALTER TABLE users ADD COLUMN achievements TEXT DEFAULT '{}'")
-                logger.info("✅ Столбец achievements успешно добавлен")
+                logger.info("✅ Столбец achievements успешно добавлен!")
             
-            # ===== ТАБЛИЦА user_coupons =====
+            # ============================================================
+            # ТАБЛИЦА user_coupons
+            # ============================================================
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS user_coupons (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -2639,18 +3612,20 @@ def migrate_database():
             
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_user_coupons_user ON user_coupons(user_id)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_user_coupons_level ON user_coupons(level)')
-            logger.info("✅ Таблица user_coupons создана")
+            logger.info("✅ Таблица user_coupons создана!")
             
-            # ===== ТАБЛИЦА user_promo_usage =====
+            # ============================================================
+            # ТАБЛИЦА user_promo_usage
+            # ============================================================
             cursor.execute("PRAGMA table_info(user_promo_usage)")
             promo_columns = [column[1] for column in cursor.fetchall()]
             
             if 'status' not in promo_columns:
-                logger.info("📋 Добавляем столбец status в user_promo_usage...")
+                logger.info("📋 Добавляю столбец status в user_promo_usage!")
                 cursor.execute("ALTER TABLE user_promo_usage ADD COLUMN status TEXT DEFAULT 'active'")
-                logger.info("✅ Столбец status успешно добавлен в user_promo_usage")
+                logger.info("✅ Столбец status успешно добавлен в user_promo_usage!")
             else:
-                logger.info("ℹ️ Столбец status уже существует в user_promo_usage")
+                logger.info("ℹ️ Столбец status уже существует в user_promo_usage!")
             
             # Обновляем существующие записи
             cursor.execute('''
@@ -2659,14 +3634,16 @@ def migrate_database():
                 WHERE status IS NULL
             ''')
             if cursor.rowcount > 0:
-                logger.info(f"✅ Обновлено {cursor.rowcount} записей в user_promo_usage (status -> 'active')")
+                logger.info(f"✅ Обновлено {cursor.rowcount} записей в user_promo_usage (status -> 'active')!")
             
             # Добавляем индексы для user_promo_usage
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_user_promo_status ON user_promo_usage (status)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_user_promo_booking ON user_promo_usage (booking_id)')
-            logger.info("✅ Индексы для user_promo_usage созданы")
+            logger.info("✅ Индексы для user_promo_usage созданы!")
             
-            # ===== ТАБЛИЦА booking_referral_bonuses =====
+            # ============================================================
+            # ТАБЛИЦА booking_referral_bonuses
+            # ============================================================
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS booking_referral_bonuses (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -2676,9 +3653,11 @@ def migrate_database():
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
-            logger.info("✅ Таблица booking_referral_bonuses создана")
+            logger.info("✅ Таблица booking_referral_bonuses создана!")
             
-            # ===== ТАБЛИЦА cache_slots =====
+            # ============================================================
+            # ТАБЛИЦА cache_slots
+            # ============================================================
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS cache_slots (
                     date_str TEXT NOT NULL,
@@ -2689,9 +3668,11 @@ def migrate_database():
                     PRIMARY KEY (date_str, time_slot, service_type)
                 )
             ''')
-            logger.info("✅ Таблица cache_slots создана")
+            logger.info("✅ Таблица cache_slots создана!")
             
-            # ===== ТАБЛИЦА monitoring =====
+            # ============================================================
+            # ТАБЛИЦА monitoring
+            # ============================================================
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS monitoring (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -2702,9 +3683,11 @@ def migrate_database():
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
-            logger.info("✅ Таблица monitoring создана")
+            logger.info("✅ Таблица monitoring создана!")
             
-            # ===== ОБНОВЛЕНИЕ ДОГОВОРНЫХ ЗАПИСЕЙ =====
+            # ============================================================
+            # ОБНОВЛЕНИЕ ДОГОВОРНЫХ ЗАПИСЕЙ
+            # ============================================================
             cursor.execute('''
                 UPDATE bookings 
                 SET is_contractual = 1 
@@ -2717,9 +3700,11 @@ def migrate_database():
             ''')
             updated_count = cursor.rowcount
             if updated_count > 0:
-                logger.info(f"✅ Обновлено {updated_count} записей как договорные")
+                logger.info(f"✅ Обновлено {updated_count} записей как договорные!")
             
-            # ===== ГЕНЕРАЦИЯ РЕФЕРАЛЬНЫХ КОДОВ (только для пользователей без кода) =====
+            # ============================================================
+            # ГЕНЕРАЦИЯ РЕФЕРАЛЬНЫХ КОДОВ
+            # ============================================================
             cursor.execute('''
                 SELECT telegram_id FROM users WHERE referral_code IS NULL
             ''')
@@ -2733,38 +3718,68 @@ def migrate_database():
                 ''', (code, telegram_id))
             
             if users_without_code:
-                logger.info(f"✅ Сгенерировано реферальных кодов для {len(users_without_code)} пользователей")
+                logger.info(f"✅ Сгенерировано реферальных кодов для {len(users_without_code)} пользователей!")
             
-            # ===== ОБНОВЛЕНИЕ СТАТУСА ДЛЯ ЗАПИСЕЙ С "ожидает" =====
+            # ============================================================
+            # ОБНОВЛЕНИЕ СТАТУСА ДЛЯ ЗАПИСЕЙ С "ожидает"
+            # ============================================================
             cursor.execute('''
                 UPDATE bookings 
                 SET status = 'pending' 
                 WHERE status = 'ожидает'
             ''')
             if cursor.rowcount > 0:
-                logger.info(f"✅ Исправлено записей с 'ожидает' на 'pending': {cursor.rowcount}")
+                logger.info(f"✅ Исправлено записей с 'ожидает' на 'pending': {cursor.rowcount}!")
             
-            # ===== НИКОГДА НЕ ВЫДАЁМ КУПОНЫ ПРИ МИГРАЦИИ! =====
+            # ============================================================
+            # НИКОГДА НЕ ВЫДАЁМ КУПОНЫ ПРИ МИГРАЦИИ!
+            # ============================================================
             # Купоны выдаются ТОЛЬКО при регистрации нового пользователя в функции start()
             
             conn.commit()
             
-        logger.info("🎉 Миграция базы данных завершена успешно!")
+        logger.info("🎉 Миграция базы данных успешно завершена!")
         return True
         
     except Exception as e:
-        logger.error(f"❌ Ошибка миграции базы данных: {e}")
+        logger.error(f"❌ Критическая ошибка миграции базы данных! Проверьте структуру таблиц и данные!")
         import traceback
         traceback.print_exc()
         return False
 
 class CouponManager:
-    """Менеджер для управления купонами уровней"""
+    """
+    Менеджер для управления купонами уровней.
+    
+    Купоны выдаются автоматически при повышении уровня пользователя.
+    Каждый уровень даёт определённый процент скидки:
+    - Уровень 1 (Любитель): 50% скидка (1 раз)
+    - Уровень 2 (Мастер): 5% скидка (вечная)
+    - Уровень 3 (Легенда): 10% скидка (вечная)
+    - Уровень 4 (Бог музыки): 20% скидка (вечная)
+    
+    Особенности:
+    - Купоны действуют только до текущего уровня пользователя
+    - При повышении уровня добавляются новые купоны
+    - При понижении уровня купоны более высоких уровней удаляются
+    - Нельзя использовать купон выше текущего уровня
+    """
     
     @staticmethod
     def add_level_coupons(user_id: str, level: int, db_conn=None):
-        """Добавляет купоны за достижение уровня (только если нет такого же)"""
+        """
+        Добавляет купоны за достижение уровня (только если нет такого же).
+        
+        Аргументы:
+            user_id: ID пользователя
+            level: Уровень, за который выдаются купоны
+            db_conn: Существующее соединение с БД (опционально)
+        
+        Возвращает:
+            bool: True если купоны добавлены, False если уже есть или ошибка
+        """
         try:
+            # Находим информацию об уровне
             level_info = None
             for lvl in AchievementSystem.LEVELS:
                 if lvl['level'] == level:
@@ -2772,13 +3787,14 @@ class CouponManager:
                     break
             
             if not level_info:
-                logger.error(f"❌ Информация об уровне {level} не найдена")
+                logger.error(f"❌ Информация об уровне {level} не найдена!")
                 return False
             
             discount = level_info['discount']
             uses = level_info.get('uses')
             is_permanent = level_info.get('discount_type') == 'permanent'
             
+            # Создаём соединение с БД
             if db_conn:
                 conn = db_conn
                 cursor = conn.cursor()
@@ -2790,7 +3806,7 @@ class CouponManager:
                 cursor = conn.cursor()
                 should_close = True
             
-            # ===== ПРОВЕРЯЕМ, ЕСТЬ ЛИ УЖЕ ТАКОЙ КУПОН =====
+            # Проверяем, есть ли уже такой купон
             cursor.execute('''
                 SELECT id FROM user_coupons 
                 WHERE user_id = ? AND level = ? AND discount_percent = ?
@@ -2799,7 +3815,7 @@ class CouponManager:
             existing = cursor.fetchone()
             
             if existing:
-                logger.info(f"ℹ️ Купон уровня {level} уже есть у пользователя {user_id}, пропускаем")
+                logger.info(f"ℹ️ Купон уровня {level} уже есть у пользователя {user_id}! Пропускаю дублирование!")
                 if should_close:
                     conn.close()
                 return False
@@ -2811,7 +3827,7 @@ class CouponManager:
                 VALUES (?, ?, ?, ?, ?)
             ''', (user_id, level, discount, uses, 1 if is_permanent else 0))
             
-            logger.info(f"✅ Добавлены купоны уровня {level} ({discount}%, {uses if uses else 'бессрочно'}) для {user_id}")
+            logger.info(f"✅ Добавлены купоны уровня {level} ({discount}%, {uses if uses else 'бессрочно'}) для пользователя {user_id}!")
             
             if should_close:
                 conn.commit()
@@ -2820,7 +3836,7 @@ class CouponManager:
             return True
             
         except Exception as e:
-            logger.error(f"❌ Ошибка добавления купонов уровня {level}: {e}")
+            logger.error(f"❌ Ошибка добавления купонов уровня {level} для пользователя {user_id}! Проверьте структуру базы данных!")
             if 'should_close' in locals() and should_close and 'conn' in locals():
                 try:
                     conn.close()
@@ -2830,7 +3846,15 @@ class CouponManager:
     
     @staticmethod
     def get_user_coupons(user_id: str):
-        """Возвращает все активные купоны пользователя (с учётом текущего уровня)"""
+        """
+        Возвращает все активные купоны пользователя с учётом текущего уровня.
+        
+        Аргументы:
+            user_id: ID пользователя
+        
+        Возвращает:
+            list: Список купонов с полями id, level, discount, remaining, is_permanent
+        """
         try:
             with db.get_connection() as conn:
                 cursor = conn.cursor()
@@ -2840,15 +3864,14 @@ class CouponManager:
                 result = cursor.fetchone()
                 current_level = result[0] if result else 1
                 
-                # ===== ВАЖНО! ЕСЛИ LEVEL = 0 ИЛИ NULL, УСТАНАВЛИВАЕМ 1 =====
+                # Если уровень не установлен - устанавливаем 1
                 if current_level is None or current_level == 0:
                     current_level = 1
-                    # Обновляем в базе
                     cursor.execute('UPDATE users SET level = 1 WHERE telegram_id = ?', (user_id,))
                     conn.commit()
-                    logger.info(f"🔧 Установлен level = 1 для пользователя {user_id}")
+                    logger.info(f"🔧 Установлен level = 1 для пользователя {user_id}!")
                 
-                # Получаем купоны
+                # Получаем купоны только для уровней не выше текущего
                 cursor.execute('''
                     SELECT id, level, discount_percent, remaining_uses, is_permanent
                     FROM user_coupons 
@@ -2870,12 +3893,20 @@ class CouponManager:
                     })
                 return coupons
         except Exception as e:
-            logger.error(f"❌ Ошибка получения купонов: {e}")
+            logger.error(f"❌ Ошибка получения купонов для пользователя {user_id}! Проверьте подключение к базе данных!")
             return []
     
     @staticmethod
     def get_total_discount(user_id: str):
-        """Возвращает общую доступную скидку и список купонов"""
+        """
+        Возвращает общую доступную скидку и список купонов.
+        
+        Аргументы:
+            user_id: ID пользователя
+        
+        Возвращает:
+            tuple: (эффективная скидка, список купонов, сырая сумма скидок)
+        """
         coupons = CouponManager.get_user_coupons(user_id)
         
         total = 0
@@ -2902,13 +3933,25 @@ class CouponManager:
                     'is_permanent': False
                 })
         
+        # Скидка не может превышать 100%
         effective_total = min(total, 100)
         return effective_total, coupon_list, total
     
     @staticmethod
     def use_coupon(user_id: str, coupon_id: int, db_conn=None):
-        """Использует 1 использование купона"""
+        """
+        Использует одно использование купона.
+        
+        Аргументы:
+            user_id: ID пользователя
+            coupon_id: ID купона
+            db_conn: Существующее соединение с БД (опционально)
+        
+        Возвращает:
+            tuple: (успех, сообщение, применённая скидка)
+        """
         try:
+            # Создаём соединение с БД
             if db_conn:
                 conn = db_conn
                 cursor = conn.cursor()
@@ -2920,6 +3963,7 @@ class CouponManager:
                 cursor = conn.cursor()
                 should_close = True
             
+            # Получаем купон
             cursor.execute('''
                 SELECT id, level, discount_percent, remaining_uses, is_permanent
                 FROM user_coupons 
@@ -2931,32 +3975,36 @@ class CouponManager:
             if not coupon:
                 if should_close:
                     conn.close()
-                return False, "Купон не найден", 0
+                return False, "Купон не найден!", 0
             
             coupon_id_db, level, discount, remaining, is_permanent = coupon
             
+            # Вечный купон - не расходуется
             if is_permanent:
                 if should_close:
                     conn.close()
                 return True, f"Применена вечная скидка {discount}%", discount
             
+            # Проверяем остаток использований
             if remaining <= 0:
                 if should_close:
                     conn.close()
-                return False, "Купон уже использован", 0
+                return False, "Купон уже использован!", 0
             
             new_remaining = remaining - 1
             
+            # Если купон использован полностью - удаляем
             if new_remaining == 0:
                 cursor.execute('DELETE FROM user_coupons WHERE id = ?', (coupon_id_db,))
-                logger.info(f"✅ Купон уровня {level} ({discount}%) полностью использован пользователем {user_id}")
+                logger.info(f"✅ Купон уровня {level} ({discount}%) полностью использован пользователем {user_id}!")
             else:
+                # Обновляем остаток
                 cursor.execute('''
                     UPDATE user_coupons 
                     SET remaining_uses = ?, updated_at = CURRENT_TIMESTAMP
                     WHERE id = ?
                 ''', (new_remaining, coupon_id_db))
-                logger.info(f"✅ Использован 1 купон уровня {level} ({discount}%), осталось {new_remaining} у {user_id}")
+                logger.info(f"✅ Использован 1 купон уровня {level} ({discount}%), осталось {new_remaining} у пользователя {user_id}!")
             
             if should_close:
                 conn.commit()
@@ -2965,15 +4013,22 @@ class CouponManager:
             return True, f"Применена скидка {discount}%", discount
             
         except Exception as e:
-            logger.error(f"❌ Ошибка использования купона: {e}")
+            logger.error(f"❌ Ошибка использования купона {coupon_id} для пользователя {user_id}! Проверьте структуру базы данных!")
             if should_close and 'conn' in locals():
                 conn.close()
             return False, str(e), 0
     
     @staticmethod
     def get_best_coupon(user_id: str):
-        """Возвращает самый выгодный купон (с наибольшим процентом) с учётом текущего уровня"""
+        """
+        Возвращает самый выгодный купон (с наибольшим процентом) с учётом текущего уровня.
         
+        Аргументы:
+            user_id: ID пользователя
+        
+        Возвращает:
+            dict: Данные лучшего купона или None
+        """
         # Получаем текущий уровень пользователя
         with db.get_connection() as conn:
             cursor = conn.cursor()
@@ -2981,12 +4036,12 @@ class CouponManager:
             result = cursor.fetchone()
             current_level = result[0] if result else 1
             
-            # ===== ВАЖНО! ЕСЛИ LEVEL = 0 ИЛИ NULL, УСТАНАВЛИВАЕМ 1 =====
+            # Если уровень не установлен - устанавливаем 1
             if current_level is None or current_level == 0:
                 current_level = 1
                 cursor.execute('UPDATE users SET level = 1 WHERE telegram_id = ?', (user_id,))
                 conn.commit()
-                logger.info(f"🔧 Установлен level = 1 для пользователя {user_id} (в get_best_coupon)")
+                logger.info(f"🔧 Установлен level = 1 для пользователя {user_id} (в get_best_coupon)!")
         
         # Получаем все купоны пользователя
         coupons = CouponManager.get_user_coupons(user_id)
@@ -2994,7 +4049,7 @@ class CouponManager:
         if not coupons:
             return None
         
-        # Фильтруем купоны - оставляем только купоны уровней НЕ ВЫШЕ текущего
+        # Фильтруем купоны - оставляем только купоны уровней не выше текущего
         available_coupons = []
         for coupon in coupons:
             if coupon['level'] <= current_level:
@@ -3015,8 +4070,15 @@ class CouponManager:
 
     @staticmethod
     def format_coupons_for_display(user_id: str) -> str:
-        """Форматирует список купонов для отображения в 'Мой уровень' (только активные по уровню)"""
+        """
+        Форматирует список купонов для отображения в разделе 'Мой уровень'.
         
+        Аргументы:
+            user_id: ID пользователя
+        
+        Возвращает:
+            str: Отформатированный текст с купонами
+        """
         # Получаем текущий уровень пользователя
         with db.get_connection() as conn:
             cursor = conn.cursor()
@@ -3028,7 +4090,7 @@ class CouponManager:
         coupons = CouponManager.get_user_coupons(user_id)
         
         if not coupons:
-            return "🎟️ Активных купонов нет\n"
+            return "🎟️ Активных купонов нет!\n"
         
         total = 0
         coupon_list = []
@@ -3055,10 +4117,11 @@ class CouponManager:
                 })
         
         if not coupon_list:
-            return "🎟️ Активных купонов нет\n"
+            return "🎟️ Активных купонов нет!\n"
         
         text = "🎟️ **Доступные купоны уровней:**\n\n"
         
+        # Группируем купоны по уровням
         levels_dict = {}
         for coupon in coupon_list:
             level = coupon['level']
@@ -3066,10 +4129,12 @@ class CouponManager:
                 levels_dict[level] = []
             levels_dict[level].append(coupon)
         
+        # Получаем названия уровней
         level_names = {}
         for lvl in AchievementSystem.LEVELS:
             level_names[lvl['level']] = lvl['name']
         
+        # Выводим купоны по уровням
         for level in sorted(levels_dict.keys()):
             # Показываем только уровни не выше текущего
             if level > current_level:
@@ -3084,6 +4149,7 @@ class CouponManager:
                 else:
                     text += f"  🎫 {level_name}: {coupon['discount']}% × {coupon['remaining']} = {coupon['total_value']}%\n"
         
+        # Итоговая скидка
         effective_total = min(total, 100)
         
         text += f"\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
@@ -3095,15 +4161,42 @@ class CouponManager:
         return text
 
 class UserLimits:
+    """
+    Класс для проверки лимитов пользователя на количество записей.
+    
+    Лимиты:
+    - Записи с датой: максимум 2 активные записи
+    - Договорные записи: максимум 3 активные записи
+    - Администраторы: безлимит
+    
+    Проверяет:
+    1. Блокировку пользователя
+    2. Количество активных записей нужного типа
+    3. Возвращает результат с пояснением
+    """
+    
     @staticmethod
     def check_user_limits(user_id: str, is_date_required: bool) -> Tuple[bool, str, int]:
+        """
+        Проверяет лимиты пользователя на количество записей.
+        
+        Аргументы:
+            user_id: ID пользователя
+            is_date_required: True - проверка записей с датой (лимит 2),
+                             False - проверка договорных записей (лимит 3)
+        
+        Возвращает:
+            tuple: (разрешено, сообщение, текущее количество)
+        """
         try:
             with db.get_connection() as conn:
                 cursor = conn.cursor()
                 
+                # Администраторы - безлимит
                 if int(user_id) in ADMIN_IDS:
-                    return True, "✅ Администратор", 0
+                    return True, "✅ Администратор! Лимиты не применяются!", 0
                 
+                # Проверяем блокировку
                 cursor.execute('SELECT is_blocked, blocked_until FROM users WHERE telegram_id = ?', (user_id,))
                 block_data = cursor.fetchone()
                 if block_data:
@@ -3113,12 +4206,13 @@ class UserLimits:
                             try:
                                 blocked_time = datetime.strptime(blocked_until, '%Y-%m-%d %H:%M:%S')
                                 if blocked_time > datetime.now():
-                                    return False, "🔒 Вы заблокированы! Обратитесь к администратору.", 0
+                                    return False, "🔒 Вы заблокированы! Обратитесь к администратору!", 0
                             except:
-                                return False, "🔒 Вы заблокированы! Обратитесь к администратору.", 0
+                                return False, "🔒 Вы заблокированы! Обратитесь к администратору!", 0
                         else:
-                            return False, "🔒 Вы заблокированы! Обратитесь к администратору.", 0
+                            return False, "🔒 Вы заблокированы! Обратитесь к администратору!", 0
                 
+                # Исключаем админские записи из подсчёта
                 admin_exclude = """
                     AND service NOT LIKE '%Админская%' 
                     AND service NOT LIKE '%админская%'
@@ -3127,6 +4221,7 @@ class UserLimits:
                     AND date_str NOT LIKE '%админская запись%'
                 """
                 
+                # Подсчёт записей с датой (лимит 2)
                 if is_date_required:
                     cursor.execute(f'''
                         SELECT COUNT(*) FROM bookings 
@@ -3140,6 +4235,7 @@ class UserLimits:
                     ''', (user_id,))
                     limit = 2
                 else:
+                    # Подсчёт договорных записей (лимит 3)
                     cursor.execute(f'''
                         SELECT COUNT(*) FROM bookings 
                         WHERE telegram_id = ? 
@@ -3167,6 +4263,7 @@ class UserLimits:
                 
                 current_count = cursor.fetchone()[0]
                 
+                # Подсчёт админских записей (для статистики)
                 cursor.execute('''
                     SELECT COUNT(*) FROM bookings 
                     WHERE telegram_id = ? 
@@ -3181,11 +4278,11 @@ class UserLimits:
                 ''', (user_id,))
                 
                 admin_count = cursor.fetchone()[0]
-                logger.info(f"🔍 Проверка лимитов для {user_id}: обычных={current_count}, админских={admin_count}")
+                logger.info(f"🔍 Проверяю лимиты для пользователя {user_id}: обычных {current_count}, админских {admin_count}!")
                 
+                # Проверяем превышение лимита
                 if current_count >= limit:
                     if is_date_required:
-                        # ===== ЖИРНЫЙ ТОЛЬКО ЗАГОЛОВОК, СТАТИСТИКА И "ЧТО МОЖНО СДЕЛАТЬ" =====
                         message = (
                             f"*❌ Превышен лимит записей в студию!*\n\n"
                             f"*📊 У вас уже есть {current_count} записи в студию*\n"
@@ -3195,7 +4292,6 @@ class UserLimits:
                             f"• Или обратитесь к администратору @mothman32"
                         )
                     else:
-                        # ===== ЖИРНЫЙ ТОЛЬКО ЗАГОЛОВОК, СТАТИСТИКА И "ЧТО МОЖНО СДЕЛАТЬ" =====
                         message = (
                             f"*❌ Превышен лимит договорных записей!*\n\n"
                             f"*📊 У вас уже есть {current_count} договорных записи*\n"
@@ -3206,25 +4302,60 @@ class UserLimits:
                         )
                     return False, message, current_count
                 
-                return True, f"✅ Можно создать запись (у вас {current_count} из {limit})", current_count
+                return True, f"✅ Можно создать запись! У вас {current_count} из {limit}", current_count
                 
         except Exception as e:
-            logger.error(f"Ошибка проверки лимитов пользователя: {e}")
-            return True, "⚠️ Ошибка проверки лимитов", 0
+            logger.error(f"❌ Ошибка проверки лимитов для пользователя {user_id}! Проверьте структуру базы данных!")
+            return True, "⚠️ Ошибка проверки лимитов!", 0
+
 
 class MemoryCache:
+    """
+    Кэш для хранения данных в памяти для быстрого доступа.
+    
+    Хранит:
+    - Занятые слоты по датам (date_slots_cache)
+    - Будущие даты для отображения (future_dates_cache)
+    - Загрузку дат (date_load_cache)
+    - Цвета дат (date_colors_cache)
+    
+    Особенности:
+    - Потокобезопасность через threading.RLock
+    - Автоматическое удаление устаревших данных (TTL)
+    - Инвалидация при изменении данных
+    """
+    
+    # Кэш занятых слотов по датам
     date_slots_cache = {}
     cache_timestamps = {}
+    
+    # Кэш будущих дат
     future_dates_cache = None
     future_dates_time = 0
+    
+    # Кэш загрузки дат
     date_load_cache = {}
     date_load_time = 0
+    
+    # Кэш цветов дат
     date_colors_cache = {}
     date_colors_time = 0
+    
+    # Блокировка для потокобезопасности
     lock = threading.RLock()
     
     @staticmethod
     def get_date_slots(date_str, ttl=60):
+        """
+        Получает занятые слоты для даты из кэша.
+        
+        Аргументы:
+            date_str: Дата в формате ДД.ММ.ГГГГ
+            ttl: Время жизни кэша в секундах
+        
+        Возвращает:
+            list: Список занятых слотов или None
+        """
         with MemoryCache.lock:
             if date_str in MemoryCache.date_slots_cache:
                 if time.time() - MemoryCache.cache_timestamps.get(date_str, 0) < ttl:
@@ -3233,14 +4364,27 @@ class MemoryCache:
     
     @staticmethod
     def set_date_slots(date_str, slots):
+        """
+        Сохраняет занятые слоты для даты в кэш.
+        
+        Аргументы:
+            date_str: Дата в формате ДД.ММ.ГГГГ
+            slots: Список занятых слотов
+        """
         with MemoryCache.lock:
             MemoryCache.date_slots_cache[date_str] = slots
             MemoryCache.cache_timestamps[date_str] = time.time()
     
     @staticmethod
     def invalidate_date(date_str):
+        """
+        Очищает кэш для конкретной даты.
+        
+        Аргументы:
+            date_str: Дата в формате ДД.ММ.ГГГГ
+        """
         with MemoryCache.lock:
-            logger.info(f"🗑️ Очистка кэша для даты: '{date_str}'")
+            logger.info(f"🗑️ Очищаю кэш для даты: '{date_str}'!")
             
             # Очищаем слоты
             MemoryCache.date_slots_cache.pop(date_str, None)
@@ -3254,16 +4398,25 @@ class MemoryCache:
                     keys_to_remove.append(key)
             for key in keys_to_remove:
                 MemoryCache.date_colors_cache.pop(key, None)
-                logger.info(f"🗑️ Удалён цвет для ключа: '{key}'")
+                logger.info(f"🗑️ Удалён цвет для ключа: '{key}'!")
             
             # Очищаем future_dates
             MemoryCache.future_dates_cache = None
             MemoryCache.future_dates_time = 0
             
-            logger.info(f"🗑️ Кэш полностью очищен для даты: '{date_str}'")
+            logger.info(f"🗑️ Кэш полностью очищен для даты: '{date_str}'!")
     
     @staticmethod
     def get_future_dates(ttl=300):
+        """
+        Получает список будущих дат из кэша.
+        
+        Аргументы:
+            ttl: Время жизни кэша в секундах
+        
+        Возвращает:
+            list: Список дат или None
+        """
         with MemoryCache.lock:
             if MemoryCache.future_dates_cache and time.time() - MemoryCache.future_dates_time < ttl:
                 return MemoryCache.future_dates_cache
@@ -3271,12 +4424,28 @@ class MemoryCache:
     
     @staticmethod
     def set_future_dates(dates):
+        """
+        Сохраняет список будущих дат в кэш.
+        
+        Аргументы:
+            dates: Список будущих дат
+        """
         with MemoryCache.lock:
             MemoryCache.future_dates_cache = dates
             MemoryCache.future_dates_time = time.time()
     
     @staticmethod
     def get_date_load(date_str, ttl=300):
+        """
+        Получает загрузку даты из кэша.
+        
+        Аргументы:
+            date_str: Дата в формате ДД.ММ.ГГГГ
+            ttl: Время жизни кэша в секундах
+        
+        Возвращает:
+            dict: Данные загрузки или None
+        """
         with MemoryCache.lock:
             if date_str in MemoryCache.date_load_cache:
                 cached_time, load = MemoryCache.date_load_cache[date_str]
@@ -3286,11 +4455,28 @@ class MemoryCache:
     
     @staticmethod
     def set_date_load(date_str, load):
+        """
+        Сохраняет загрузку даты в кэш.
+        
+        Аргументы:
+            date_str: Дата в формате ДД.ММ.ГГГГ
+            load: Данные загрузки
+        """
         with MemoryCache.lock:
             MemoryCache.date_load_cache[date_str] = (time.time(), load)
     
     @staticmethod
     def get_date_color(date_key, ttl=300):
+        """
+        Получает цвет даты из кэша.
+        
+        Аргументы:
+            date_key: Ключ даты (дата + тип услуги)
+            ttl: Время жизни кэша в секундах
+        
+        Возвращает:
+            str: Цвет (🟢🟡🟠🔴⚪️) или None
+        """
         with MemoryCache.lock:
             if date_key in MemoryCache.date_colors_cache:
                 cached_time, color = MemoryCache.date_colors_cache[date_key]
@@ -3300,23 +4486,59 @@ class MemoryCache:
     
     @staticmethod
     def set_date_color(date_key, color):
+        """
+        Сохраняет цвет даты в кэш.
+        
+        Аргументы:
+            date_key: Ключ даты (дата + тип услуги)
+            color: Цвет (🟢🟡🟠🔴⚪️)
+        """
         with MemoryCache.lock:
             MemoryCache.date_colors_cache[date_key] = (time.time(), color)
 
+
 class RateLimiter:
+    """
+    Ограничитель частоты запросов для защиты от спама.
+    
+    Лимиты:
+    - Максимум 60 запросов в минуту
+    - Блокировка на 5 минут при превышении
+    - Администраторы не ограничиваются
+    
+    Хранит в БД:
+    - Количество запросов
+    - Время первого запроса
+    - Статус блокировки
+    - Время окончания блокировки
+    """
+    
     @staticmethod
     def check_rate_limit(user_id: str, limit: int = 60, period: int = 60) -> Tuple[bool, str, Optional[float]]:
+        """
+        Проверяет, не превысил ли пользователь лимит запросов.
+        
+        Аргументы:
+            user_id: ID пользователя
+            limit: Максимальное количество запросов
+            period: Период в секундах
+        
+        Возвращает:
+            tuple: (разрешено, сообщение, секунды ожидания)
+        """
         try:
             now = time.time()
             with db.get_connection() as conn:
                 cursor = conn.cursor()
                 
+                # Получаем данные пользователя
                 cursor.execute(
                     'SELECT request_count, first_request_time, is_blocked, blocked_until FROM rate_limits WHERE user_id = ?',
                     (str(user_id),)
                 )
                 result = cursor.fetchone()
                 
+                # Если пользователя нет - создаём
                 if not result:
                     cursor.execute('''
                         INSERT INTO rate_limits (user_id, request_count, first_request_time, last_request_time)
@@ -3326,12 +4548,14 @@ class RateLimiter:
                 
                 request_count, first_request_time_str, is_blocked, blocked_until_str = result
                 
+                # Проверяем блокировку
                 if is_blocked and blocked_until_str:
                     blocked_until = datetime.strptime(blocked_until_str, '%Y-%m-%d %H:%M:%S').timestamp()
                     if now < blocked_until:
                         seconds_to_wait = blocked_until - now
-                        return False, f"Вы временно заблокированы за слишком частые запросы. Подождите {int(seconds_to_wait)} секунд.", seconds_to_wait
+                        return False, f"Вы временно заблокированы за слишком частые запросы! Подождите {int(seconds_to_wait)} секунд!", seconds_to_wait
                     else:
+                        # Снимаем блокировку
                         cursor.execute('''
                             UPDATE rate_limits 
                             SET is_blocked = 0, blocked_until = NULL, request_count = 0,
@@ -3339,11 +4563,13 @@ class RateLimiter:
                             WHERE user_id = ?
                         ''', (now, str(user_id)))
                 
+                # Проверяем время первого запроса
                 if first_request_time_str:
                     first_request_time = datetime.strptime(first_request_time_str, '%Y-%m-%d %H:%M:%S').timestamp()
                 else:
                     first_request_time = now
                 
+                # Если прошло больше периода - сбрасываем счётчик
                 if now - first_request_time > period:
                     cursor.execute('''
                         UPDATE rate_limits 
@@ -3353,8 +4579,9 @@ class RateLimiter:
                     ''', (now, now, str(user_id)))
                     return True, "", None
                 
+                # Проверяем превышение лимита
                 if request_count >= limit:
-                    blocked_until = now + 300
+                    blocked_until = now + 300  # Блокировка на 5 минут
                     blocked_until_str = datetime.fromtimestamp(blocked_until).strftime('%Y-%m-%d %H:%M:%S')
                     
                     cursor.execute('''
@@ -3363,8 +4590,9 @@ class RateLimiter:
                         WHERE user_id = ?
                     ''', (blocked_until_str, str(user_id)))
                     
-                    return False, "Слишком много запросов! Вы заблокированы на 5 минут.", 300.0
+                    return False, "Слишком много запросов! Вы заблокированы на 5 минут!", 300.0
                 
+                # Увеличиваем счётчик
                 cursor.execute('''
                     UPDATE rate_limits 
                     SET request_count = request_count + 1, last_request_time = datetime(?, 'unixepoch')
@@ -3374,13 +4602,32 @@ class RateLimiter:
                 return True, "", None
                 
         except Exception as e:
-            logger.error(f"Ошибка rate limiting: {e}")
+            logger.error(f"❌ Ошибка rate limiting для пользователя {user_id}! Проверьте структуру базы данных!")
             return True, "", None
 
+
 class Monitor:
+    """
+    Класс для мониторинга состояния базы данных и бота.
+    
+    Проверяет:
+    1. Размер базы данных
+    2. Количество записей
+    3. Статус уведомлений
+    
+    Сохраняет результаты в таблицу monitoring
+    """
+    
     @staticmethod
     def check_database_size():
+        """
+        Проверяет размер базы данных.
+        
+        Возвращает:
+            tuple: (статус, сообщение)
+        """
         try:
+            # Создаём таблицу мониторинга если её нет
             with db.get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='monitoring'")
@@ -3397,6 +4644,7 @@ class Monitor:
                     ''')
                     conn.commit()
             
+            # Проверяем размер БД
             db_size = os.path.getsize(db.db_path) if os.path.exists(db.db_path) else 0
             mb_size = db_size / (1024 * 1024)
             
@@ -3405,11 +4653,12 @@ class Monitor:
             
             if mb_size > 100:
                 status = "WARNING"
-                message = f"Размер БД превышает 100 MB: {mb_size:.2f} MB"
+                message = f"Размер БД превышает 100 MB! Текущий размер: {mb_size:.2f} MB"
             elif mb_size > 500:
                 status = "CRITICAL"
-                message = f"Размер БД критически большой: {mb_size:.2f} MB"
+                message = f"Размер БД критически большой! Текущий размер: {mb_size:.2f} MB"
             
+            # Сохраняем результат
             with db.get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute('''
@@ -3424,12 +4673,18 @@ class Monitor:
     
     @staticmethod
     def check_bookings_count():
+        """
+        Проверяет количество записей в базе данных.
+        
+        Возвращает:
+            tuple: (статус, сообщение)
+        """
         try:
             with db.get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='bookings'")
                 if not cursor.fetchone():
-                    return "ERROR", "Таблица bookings не существует"
+                    return "ERROR", "Таблица bookings не существует!"
                 
                 cursor.execute('SELECT COUNT(*) FROM bookings')
                 count = cursor.fetchone()[0]
@@ -3439,10 +4694,10 @@ class Monitor:
             
             if count > 10000:
                 status = "WARNING"
-                message = f"Большое количество записей: {count}"
+                message = f"Большое количество записей в БД: {count}"
             elif count > 50000:
                 status = "CRITICAL"
-                message = f"Критическое количество записей: {count}"
+                message = f"Критическое количество записей в БД: {count}"
             
             with db.get_connection() as conn:
                 cursor = conn.cursor()
@@ -3458,16 +4713,24 @@ class Monitor:
     
     @staticmethod
     def check_notifications():
+        """
+        Проверяет статус уведомлений.
+        
+        Возвращает:
+            tuple: (статус, сообщение)
+        """
         try:
             with db.get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='notifications'")
                 if not cursor.fetchone():
-                    return "ERROR", "Таблица notifications не существует"
+                    return "ERROR", "Таблица notifications не существует!"
                 
+                # Считаем ожидающие уведомления
                 cursor.execute('SELECT COUNT(*) FROM notifications WHERE status = "pending"')
                 pending = cursor.fetchone()[0]
                 
+                # Считаем уведомления с ошибками
                 cursor.execute('SELECT COUNT(*) FROM notifications WHERE status = "error"')
                 errors = cursor.fetchone()[0]
             
@@ -3495,7 +4758,13 @@ class Monitor:
     
     @staticmethod
     def run_all_checks():
-        logger.info("🔍 Запуск проверок мониторинга...")
+        """
+        Запускает все проверки мониторинга.
+        
+        Возвращает:
+            list: Результаты всех проверок
+        """
+        logger.info("🔍 Запускаю проверки мониторинга!")
         
         results = []
         results.append(Monitor.check_database_size())
@@ -3504,14 +4773,24 @@ class Monitor:
         
         for check_type, (status, message) in zip(['db_size', 'bookings', 'notifications'], results):
             if status in ["WARNING", "CRITICAL", "ERROR"]:
-                logger.warning(f"⚠️ Мониторинг {check_type}: {message}")
+                logger.warning(f"⚠️ Мониторинг {check_type}: {message}! Требуется внимание администратора!")
         
         return results
 
 async def update_completed_bookings(context: ContextTypes.DEFAULT_TYPE):
-    """Проверяет прошедшие записи и начисляет пластинки за завершённые подтверждённые записи"""
+    """
+    Проверяет прошедшие записи и начисляет пластинки за завершённые подтверждённые записи.
+    
+    Логика:
+    1. Находит подтверждённые записи без начисленных пластинок
+    2. Проверяет, завершились ли они по времени
+    3. Начисляет пластинки за завершённые записи
+    4. Отклоняет просроченные pending записи
+    
+    Выполняется автоматически каждую минуту через JobQueue.
+    """
     try:
-        logger.info("🔄 Запуск проверки прошедших записей...")
+        logger.info("🔄 Начинаю проверку завершённых записей!")
         
         now = DateTimeUtils.now()
         awarded_count = 0
@@ -3520,16 +4799,16 @@ async def update_completed_bookings(context: ContextTypes.DEFAULT_TYPE):
         with db.get_connection(timeout=60.0) as conn:
             cursor = conn.cursor()
             
-            # ===== ПРОВЕРЯЕМ СУЩЕСТВОВАНИЕ КОЛОНКИ (ТОЛЬКО ОДИН РАЗ) =====
+            # Проверяем существование колонки vinyls_awarded
             cursor.execute("PRAGMA table_info(bookings)")
             columns = [col[1] for col in cursor.fetchall()]
             if 'vinyls_awarded' not in columns:
                 try:
                     cursor.execute('ALTER TABLE bookings ADD COLUMN vinyls_awarded INTEGER DEFAULT 0')
                     conn.commit()
-                    logger.info("✅ Добавлена колонка vinyls_awarded")
+                    logger.info("✅ Добавлена колонка vinyls_awarded в таблицу bookings!")
                 except Exception as e:
-                    logger.error(f"❌ Ошибка добавления колонки: {e}")
+                    logger.error(f"❌ Ошибка добавления колонки vinyls_awarded! Проверьте права доступа к базе данных!")
             
             # ============================================================
             # ЧАСТЬ 1: НАЧИСЛЕНИЕ ПЛАСТИНОК
@@ -3546,7 +4825,7 @@ async def update_completed_bookings(context: ContextTypes.DEFAULT_TYPE):
             ''')
             
             bookings = cursor.fetchall()
-            logger.info(f"🔍 Найдено подтвержденных записей для проверки: {len(bookings)}")
+            logger.info(f"🔍 Найдено {len(bookings)} подтверждённых записей для проверки!")
             
             for booking in bookings:
                 (booking_id, date_str, time_slot, telegram_id, service, name, contact, price,
@@ -3556,20 +4835,20 @@ async def update_completed_bookings(context: ContextTypes.DEFAULT_TYPE):
                 
                 should_complete = False
                 
-                # 1. Сведение/мастеринг
+                # 1. Сведение/мастеринг - начисляем сразу после подтверждения
                 if is_mixing == 1:
                     should_complete = True
-                    logger.info(f"✅ Запись #{booking_id} - сведение/мастеринг")
+                    logger.info(f"✅ Запись #{booking_id} - сведение/мастеринг! Начисляю пластинки!")
                 
-                # 2. Админская/договорная
+                # 2. Админская или договорная запись
                 elif is_admin_booking == 1 or is_contractual == 1:
                     should_complete = True
-                    logger.info(f"✅ Запись #{booking_id} - админская/договорная")
+                    logger.info(f"✅ Запись #{booking_id} - админская или договорная! Начисляю пластинки!")
                 
                 # 3. Создание альбома
                 elif is_track_creation == 1 and track_type and 'Альбом' in track_type:
                     should_complete = True
-                    logger.info(f"✅ Запись #{booking_id} - создание альбома")
+                    logger.info(f"✅ Запись #{booking_id} - создание альбома! Начисляю пластинки!")
                 
                 # 4. Проверка по дате и времени
                 elif date_str and 'Не указана' not in date_str and 'договорная' not in date_str.lower():
@@ -3588,25 +4867,18 @@ async def update_completed_bookings(context: ContextTypes.DEFAULT_TYPE):
                             start_hour_calc = int(start_str)
                             end_hour_calc = int(end_str)
                             
-                            # ===== ДЕТАЛЬНОЕ ЛОГИРОВАНИЕ =====
-                            logger.info(f"🔍 ОТЛАДКА: booking_id={booking_id}")
-                            logger.info(f"🔍 ОТЛАДКА: start_hour_calc={start_hour_calc}, end_hour_calc={end_hour_calc}")
-                            logger.info(f"🔍 ОТЛАДКА: year={year}, month={month}, day={day}")
-                            
-                            # ===== НОРМАЛИЗУЕМ ЧАСЫ =====
+                            # Нормализуем часы
                             start_hour_calc = start_hour_calc if start_hour_calc != 24 else 0
                             end_hour_calc = end_hour_calc if end_hour_calc != 24 else 0
                             
-                            logger.info(f"🔍 ОТЛАДКА: ПОСЛЕ НОРМАЛИЗАЦИИ: start={start_hour_calc}, end={end_hour_calc}")
-                            
-                            # ===== ОПРЕДЕЛЯЕМ, ПЕРЕСЕКАЕТ ЛИ СЛОТ ПОЛНОЧЬ =====
+                            # Определяем, пересекает ли слот полночь
                             is_crossing = end_hour_calc <= start_hour_calc
                             
-                            logger.info(f"🔍 Слот {start_hour_calc}-{end_hour_calc}, пересекает полночь: {is_crossing}")
+                            logger.info(f"🔍 Слот {start_hour_calc}-{end_hour_calc}, пересекает полночь: {is_crossing}!")
                         else:
                             continue
                         
-                        # ===== РАСЧЕТ ВРЕМЕНИ ОКОНЧАНИЯ =====
+                        # Расчёт времени окончания
                         if is_12_hours == 1:
                             if twelve_hours_type and ('Ночь' in twelve_hours_type or 'ночь' in twelve_hours_type.lower()):
                                 end_datetime = datetime(year, month, day, 9, 0, 0)
@@ -3618,11 +4890,10 @@ async def update_completed_bookings(context: ContextTypes.DEFAULT_TYPE):
                         else:
                             if is_crossing:
                                 # Слот пересекает полночь - окончание на следующий день
-                                logger.info(f"🔍 ОТЛАДКА: создаём end_datetime с hour={end_hour_calc}, day={day}+1")
                                 end_datetime = datetime(year, month, day, end_hour_calc, 0, 0)
                                 end_datetime = Config.TIMEZONE.localize(end_datetime)
                                 end_datetime = end_datetime + timedelta(days=1)
-                                logger.info(f"🔍 Кросс-ночной слот: окончание {end_datetime}")
+                                logger.info(f"🔍 Кросс-ночной слот! Окончание {end_datetime}")
                             else:
                                 # Обычный дневной слот
                                 if end_hour_calc == 24 or end_hour_calc == 0:
@@ -3630,20 +4901,19 @@ async def update_completed_bookings(context: ContextTypes.DEFAULT_TYPE):
                                     end_datetime = Config.TIMEZONE.localize(end_datetime)
                                     end_datetime = end_datetime + timedelta(seconds=1)
                                 else:
-                                    logger.info(f"🔍 ОТЛАДКА: создаём end_datetime с hour={end_hour_calc}")
                                     end_datetime = datetime(year, month, day, end_hour_calc, 0, 0)
                                     end_datetime = Config.TIMEZONE.localize(end_datetime)
-                                logger.info(f"🔍 Обычный слот: окончание {end_datetime}")
+                                logger.info(f"🔍 Обычный слот! Окончание {end_datetime}")
                         
                         now_utc = now.astimezone(pytz.UTC)
                         end_utc = end_datetime.astimezone(pytz.UTC)
                         
                         if now_utc >= end_utc - timedelta(minutes=1):
                             should_complete = True
-                            logger.info(f"✅ Запись #{booking_id} завершилась в {end_datetime}")
+                            logger.info(f"✅ Запись #{booking_id} завершилась в {end_datetime}!")
                             
                     except Exception as e:
-                        logger.error(f"Ошибка парсинга даты для записи #{booking_id}: {e}")
+                        logger.error(f"❌ Ошибка парсинга даты для записи #{booking_id}! Проверьте формат даты!")
                         import traceback
                         traceback.print_exc()
                         continue
@@ -3655,7 +4925,7 @@ async def update_completed_bookings(context: ContextTypes.DEFAULT_TYPE):
                         already_awarded = result[0] == 1 if result else False
                         
                         if already_awarded:
-                            logger.info(f"ℹ️ Пластинки уже начислены для записи #{booking_id}")
+                            logger.info(f"ℹ️ Пластинки уже начислены для записи #{booking_id}! Пропускаю дублирование!")
                             continue
                         
                         booking_data = {
@@ -3682,7 +4952,7 @@ async def update_completed_bookings(context: ContextTypes.DEFAULT_TYPE):
                         )
                         
                         if vinyls_added:
-                            logger.info(f"✅ Пользователю {telegram_id} начислено +25 пластинок за запись #{booking_id}")
+                            logger.info(f"✅ Пользователю {telegram_id} начислено +25 пластинок за запись #{booking_id}!")
                             awarded_count += 1
                             
                             cursor.execute('UPDATE bookings SET status = "completed" WHERE id = ?', (booking_id,))
@@ -3694,12 +4964,12 @@ async def update_completed_bookings(context: ContextTypes.DEFAULT_TYPE):
                                     clean_date = clean_date[2:].strip()
                                 MemoryCache.invalidate_date(clean_date)
                             
-                            logger.info(f"✅ Запись #{booking_id} завершена")
+                            logger.info(f"✅ Запись #{booking_id} успешно завершена!")
                         else:
-                            logger.warning(f"⚠️ Не удалось начислить пластинки для записи #{booking_id}")
+                            logger.warning(f"⚠️ Не удалось начислить пластинки для записи #{booking_id}! Проверьте статус записи!")
                             
                     except Exception as e:
-                        logger.error(f"❌ Ошибка обработки записи #{booking_id}: {e}")
+                        logger.error(f"❌ Ошибка обработки записи #{booking_id}! Проверьте структуру данных!")
                         import traceback
                         traceback.print_exc()
                         continue
@@ -3722,7 +4992,7 @@ async def update_completed_bookings(context: ContextTypes.DEFAULT_TYPE):
             ''')
             
             expired_pending = cursor.fetchall()
-            logger.info(f"🔍 Найдено pending записей для проверки: {len(expired_pending)}")
+            logger.info(f"🔍 Найдено {len(expired_pending)} pending записей для проверки!")
             
             for booking in expired_pending:
                 (booking_id, date_str, time_slot, telegram_id, service, name, contact, price, 
@@ -3746,31 +5016,29 @@ async def update_completed_bookings(context: ContextTypes.DEFAULT_TYPE):
                             norm_time = DateTimeUtils.normalize_time_input(time_slot)
                             start_str = norm_time.split('-')[0].strip()
                             start_hour_calc = int(start_str)
-                            # Нормализуем для datetime
                             if start_hour_calc == 24:
                                 start_hour_calc = 0
                         else:
                             start_hour_calc = 0
                         
-                        # ===== ИСПРАВЛЕНО: ПРАВИЛЬНЫЙ РАСЧЕТ ДЛЯ НОЧНЫХ СЛОТОВ =====
+                        # Правильный расчёт для ночных слотов
                         booking_start_datetime = datetime(year, month, day, start_hour_calc, 0, 0)
                         booking_start_datetime = Config.TIMEZONE.localize(booking_start_datetime)
                         
                         # Если время начала после 20:00 и end_hour < start_hour - это ночной слот
-                        # Например: 22-2, 21-9, 23-0
                         if end_hour and end_hour < start_hour_calc:
                             booking_start_datetime = booking_start_datetime + timedelta(days=1)
-                            logger.info(f"🔍 Ночной слот для pending: начало {booking_start_datetime}")
+                            logger.info(f"🔍 Ночной слот для pending! Начало {booking_start_datetime}")
                         
                         now_utc = now.astimezone(pytz.UTC)
                         start_utc = booking_start_datetime.astimezone(pytz.UTC)
                         
                         if now_utc > start_utc:
                             is_expired = True
-                            logger.info(f"⏰ Запись #{booking_id} просрочена")
+                            logger.info(f"⏰ Запись #{booking_id} просрочена!")
                             
                     except Exception as e:
-                        logger.error(f"Ошибка проверки pending записи #{booking_id}: {e}")
+                        logger.error(f"❌ Ошибка проверки pending записи #{booking_id}! Проверьте формат даты!")
                         continue
                 
                 if is_expired:
@@ -3790,7 +5058,7 @@ async def update_completed_bookings(context: ContextTypes.DEFAULT_TYPE):
                             MemoryCache.invalidate_date(clean_date)
                         
                         rejected_count += 1
-                        logger.info(f"✅ Запись #{booking_id} автоматически отклонена")
+                        logger.info(f"✅ Запись #{booking_id} автоматически отклонена из-за просрочки!")
                         
                         try:
                             display_time = time_slot
@@ -3813,27 +5081,40 @@ async def update_completed_bookings(context: ContextTypes.DEFAULT_TYPE):
                                 text=message_text,
                                 parse_mode="Markdown"
                             )
-                            logger.info(f"✅ Уведомление об отклонении отправлено {telegram_id}")
+                            logger.info(f"✅ Уведомление об отклонении успешно отправлено пользователю {telegram_id}!")
                         except Exception as e:
-                            logger.error(f"❌ Не удалось отправить уведомление: {e}")
+                            logger.error(f"❌ Ошибка отправки уведомления об отклонении пользователю {telegram_id}! Проверьте права бота!")
                             
                     except Exception as e:
-                        logger.error(f"❌ Ошибка отклонения записи #{booking_id}: {e}")
+                        logger.error(f"❌ Ошибка отклонения записи #{booking_id}! Проверьте структуру базы данных!")
                         continue
             
             conn.commit()
             
-        logger.info(f"✅ Проверка завершена! Начислено: {awarded_count}, отклонено: {rejected_count}")
+        logger.info(f"✅ Проверка завершена! Начислено {awarded_count} записей, отклонено {rejected_count} записей!")
         
     except Exception as e:
-        logger.error(f"❌ Ошибка в update_completed_bookings: {e}")
+        logger.error(f"❌ Критическая ошибка в update_completed_bookings! Проверьте подключение к базе данных!")
         import traceback
         traceback.print_exc()
 
+
 async def cleanup_old_bookings(context: ContextTypes.DEFAULT_TYPE):
-    """Очистка старых записей - НЕ УДАЛЯЕМ completed"""
+    """
+    Очистка старых записей из базы данных.
+    
+    Удаляет записи старше 90 дней со статусами:
+    - rejected (отклонённые)
+    - отклонен (отклонённые)
+    - cancelled_by_user (отменённые пользователем)
+    - cancelled (отменённые)
+    - отменен (отменённые)
+    
+    НЕ удаляет completed (завершённые) записи!
+    Выполняется автоматически каждый день в 3:00 через JobQueue.
+    """
     try:
-        logger.info("🧹 Запуск очистки старых записей...")
+        logger.info("🧹 Начинаю очистку старых записей!")
         with db.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute('''
@@ -3843,86 +5124,160 @@ async def cleanup_old_bookings(context: ContextTypes.DEFAULT_TYPE):
             ''')
             deleted = cursor.rowcount
             if deleted > 0:
-                logger.info(f"✅ Удалено {deleted} старых записей")
+                logger.info(f"✅ Удалено {deleted} старых записей из базы данных!")
     except Exception as e:
-        logger.error(f"❌ Ошибка очистки старых записей: {e}")
+        logger.error(f"❌ Ошибка очистки старых записей! Проверьте подключение к базе данных!")
+
 
 class Config:
+    """
+    Класс с конфигурацией бота.
+    
+    Содержит все настройки:
+    - Токен и ID администраторов
+    - Часовой пояс (Москва)
+    - Лимиты бронирования
+    - Цены на услуги
+    - Интервалы уведомлений
+    - Валидация данных
+    """
+    
+    # ============================================================
+    # ОСНОВНЫЕ НАСТРОЙКИ
+    # ============================================================
+    
     TOKEN = BOT_TOKEN
     ADMIN_IDS = ADMIN_IDS
     TIMEZONE = pytz.timezone('Europe/Moscow')
-    MAX_BOOKING_DAYS = 27
-    MAX_BOOKING_HOURS = 6
-    NIGHT_HOURS = (0, 6)
-    NIGHT_SURCHARGE_AMOUNT = 200
+    
+    # ============================================================
+    # ЛИМИТЫ БРОНИРОВАНИЯ
+    # ============================================================
+    
+    MAX_BOOKING_DAYS = 27          # Максимальное количество дней вперёд для бронирования
+    MAX_BOOKING_HOURS = 6          # Максимальная длительность записи (часов)
+    NIGHT_HOURS = (0, 6)           # Ночные часы (для надбавки)
+    NIGHT_SURCHARGE_AMOUNT = 200   # Надбавка за ночные часы (₽/час)
+    
     USER_LIMITS = {
-        'with_date': 2,
-        'without_date': 3
+        'with_date': 2,            # Максимум записей с датой
+        'without_date': 3          # Максимум договорных записей
     }
+    
+    # ============================================================
+    # ВРЕМЕННЫЕ ПЕРИОДЫ
+    # ============================================================
+    
     TIME_PERIODS = [
         {"name": "Ночь", "start": 0, "end": 6, "rules": "night", "surcharge": True},
         {"name": "Утро", "start": 6, "end": 12, "rules": "day", "surcharge": False},
         {"name": "День", "start": 12, "end": 18, "rules": "day", "surcharge": False},
         {"name": "Вевер", "start": 18, "end": 24, "rules": "day", "surcharge": False}
     ]
+    
+    # ============================================================
+    # МИНИМАЛЬНОЕ ВРЕМЯ ДЛЯ БРОНИРОВАНИЯ (ЧАСОВ)
+    # ============================================================
+    
     MIN_BOOKING_ADVANCE = {
-        'rental': 72,
-        'track_creation': 72,
-        'with_engineer': 48,
-        'without_engineer': 24,  # ← БЫЛО 24
+        'rental': 72,              # 12-часовая аренда
+        'track_creation': 72,      # Создание трека
+        'with_engineer': 48,       # С инженером
+        'without_engineer': 24,    # Без инженера
         'default': 24
     }
-
-
-    DAY_START = 9
-    DAY_END = 21
+    
+    # ============================================================
+    # РАБОЧЕЕ ВРЕМЯ СТУДИИ
+    # ============================================================
+    
+    DAY_START = 9                  # Начало рабочего дня
+    DAY_END = 21                   # Конец рабочего дня
+    
+    # ============================================================
+    # ЦЕНЫ НА УСЛУГИ
+    # ============================================================
+    
     PRICES = {
-        'vocal_engineer_under3': 1500,
-        'vocal_engineer_over3': 1300,
-        'vocal_engineer_over6': 1100,
-        'vocal_engineer_night_under3': 1700,
-        'vocal_engineer_night_over3': 1500,
-        'vocal_engineer_night_over6': 1400,
-        'vocal_no_engineer_under3': 1400,
-        'vocal_no_engineer_over3': 1200,
-        'vocal_no_engineer_over6': 1000,
-        'mixing_track': 2500,
-        '12_hours_rent_day': 7000,
-        '12_hours_rent_night': 6500,
-        'default': 1500,
-        'track_creation_single': 9000
+        'vocal_engineer_under3': 1500,           # Вокал с инженером до 3ч
+        'vocal_engineer_over3': 1300,            # Вокал с инженером от 3ч
+        'vocal_engineer_over6': 1100,            # Вокал с инженером от 6ч
+        'vocal_engineer_night_under3': 1700,     # Вокал с инженером ночью до 3ч
+        'vocal_engineer_night_over3': 1500,      # Вокал с инженером ночью от 3ч
+        'vocal_engineer_night_over6': 1400,      # Вокал с инженером ночью от 6ч
+        'vocal_no_engineer_under3': 1400,        # Вокал без инженера до 3ч
+        'vocal_no_engineer_over3': 1200,         # Вокал без инженера от 3ч
+        'vocal_no_engineer_over6': 1000,         # Вокал без инженера от 6ч
+        'mixing_track': 2500,                    # Сведение трека
+        '12_hours_rent_day': 7000,               # 12-часовая аренда днём
+        '12_hours_rent_night': 6500,             # 12-часовая аренда ночью
+        'default': 1500,                         # Цена по умолчанию
+        'track_creation_single': 9000            # Создание трека
     }
     
-    # В классе Config добавь или обнови:
+    # ============================================================
+    # ИНТЕРВАЛЫ УВЕДОМЛЕНИЙ (ЧАСОВ ДО НАЧАЛА)
+    # ============================================================
+    
     NOTIFICATION_INTERVALS = {
-        'vocal_with_engineer': [48, 24, 12, 6],  # 48ч, 24ч, 12ч, 6ч
-        'vocal_without_engineer': [24, 12, 6, 3],  # 24ч, 12ч, 6ч, 3ч
+        'vocal_with_engineer': [48, 24, 12, 6],
+        'vocal_without_engineer': [24, 12, 6, 3],
         'instruments_with_engineer': [48, 24, 12, 6],
         'instruments_without_engineer': [24, 12, 6, 3],
-        'rental': [48, 24, 12],  # для аренды
-        'track_creation': [48, 24, 12],  # для создания трека
-        'mixing': [],  # для сведения - нет уведомлений
+        'rental': [48, 24, 12],
+        'track_creation': [48, 24, 12],
+        'mixing': [],  # Для сведения уведомлений нет
         'default': [24, 12, 3]
     }
     
+    # ============================================================
+    # НАСТРОЙКИ СОЗДАНИЯ ТРЕКА
+    # ============================================================
+    
     TRACK_CREATION = {
-        'min_advance_hours': 72,
-        'min_duration': 4,
-        'max_duration': 4,
+        'min_advance_hours': 72,   # Минимальное время до начала
+        'min_duration': 4,         # Минимальная длительность
+        'max_duration': 4,         # Максимальная длительность (ровно 4 часа)
     }
+    
+    # ============================================================
+    # ВАЛИДАЦИЯ ДАННЫХ
+    # ============================================================
+    
     MAX_NAME_LENGTH = 50
     MAX_CONTACT_LENGTH = 50
     MAX_TIME_STR_LENGTH = 20
-    RATE_LIMIT = 60
-    RATE_BLOCK_TIME = 300
     
-    # ===== ФИНАНСОВЫЕ КОНСТАНТЫ =====
-    RENT_COST = 45000  # Аренда в месяц
-    ENGINEER_BASE_RATE = 500  # Базовая ставка звукорежиссера в час
+    # ============================================================
+    # ОГРАНИЧЕНИЕ ЗАПРОСОВ
+    # ============================================================
+    
+    RATE_LIMIT = 60               # Максимум запросов в минуту
+    RATE_BLOCK_TIME = 300         # Блокировка на 5 минут при превышении
+    
+    # ============================================================
+    # ФИНАНСОВЫЕ КОНСТАНТЫ
+    # ============================================================
+    
+    RENT_COST = 45000             # Аренда в месяц
+    ENGINEER_BASE_RATE = 500      # Базовая ставка звукорежиссера в час
     ENGINEER_NIGHT_SURCHARGE = 200  # Ночная надбавка звукорежиссеру в час
+    
+    # ============================================================
+    # МЕТОДЫ
+    # ============================================================
     
     @staticmethod
     def get_period_by_hour(hour: int):
+        """
+        Возвращает период по часу.
+        
+        Аргументы:
+            hour: Час (0-23)
+        
+        Возвращает:
+            dict: Данные периода (name, start, end, rules, surcharge)
+        """
         for period in Config.TIME_PERIODS:
             if period["start"] <= hour < period["end"]:
                 return period
@@ -3930,34 +5285,63 @@ class Config:
     
     @staticmethod
     def validate_string_length(text: str, max_length: int, field_name: str = "поле"):
+        """
+        Проверяет длину строки.
+        
+        Аргументы:
+            text: Проверяемый текст
+            max_length: Максимальная длина
+            field_name: Название поля для сообщения об ошибке
+        
+        Возвращает:
+            tuple: (валидность, сообщение об ошибке)
+        """
         if not text or len(text.strip()) == 0:
             return False, f"*❌ {field_name} не может быть пустым!*"
         
         if len(text) > max_length:
-            # Определяем правильное окончание для поля
             if field_name == "имя":
-                return False, f"*❌ Максимально {max_length} символов, слишком длинное имя!*"
+                return False, f"*❌ Максимально {max_length} символов! Слишком длинное имя!*"
             elif field_name == "контакт":
-                return False, f"*❌ Максимально {max_length} символов, слишком длинный контакт!*"
+                return False, f"*❌ Максимально {max_length} символов! Слишком длинный контакт!*"
             else:
-                return False, f"*❌ Максимально {max_length} символов, слишком длинное {field_name}!*"
+                return False, f"*❌ Максимально {max_length} символов! Слишком длинное {field_name}!*"
         
         if len(text.strip()) < 2 and field_name == "имя":
-            return False, f"*❌ Минимально 2 символа, слишком короткое имя!*"
+            return False, f"*❌ Минимально 2 символа! Слишком короткое имя!*"
         
         if len(text.strip()) < 2 and field_name == "контакт":
-            return False, f"*❌ Минимально 2 символа, слишком короткий контакт!*"
+            return False, f"*❌ Минимально 2 символа! Слишком короткий контакт!*"
         
         return True, ""
 
+
 class SecurityUtils:
+    """
+    Утилиты для безопасности и экранирования текста.
+    
+    Методы:
+    - safe_markdown_text: Экранирует специальные символы Markdown
+    - validate_time_format: Проверяет формат времени
+    """
+    
     @staticmethod
     def safe_markdown_text(text: str) -> str:
+        """
+        Экранирует специальные символы Markdown для безопасного отображения.
+        
+        Экранирует: _, *, [, ], `
+        
+        Аргументы:
+            text: Исходный текст
+        
+        Возвращает:
+            str: Текст с экранированными символами
+        """
         if not text:
             return ""
         
         text = str(text)
-        
         text = text.replace('\\', '\\\\')
         
         critical_chars = ['_', '*', '[', ']', '`']
@@ -3969,6 +5353,16 @@ class SecurityUtils:
     
     @staticmethod
     def validate_time_format(time_str, is_track_creation=False) -> Tuple[bool, str]:
+        """
+        Проверяет формат времени.
+        
+        Аргументы:
+            time_str: Время в формате "час-час"
+            is_track_creation: True для проверки создания трека (ровно 4 часа)
+        
+        Возвращает:
+            tuple: (валидность, сообщение об ошибке)
+        """
         try:
             if len(time_str) > Config.MAX_TIME_STR_LENGTH:
                 return False, f"❌ *Слишком длинный формат времени! Максимально {Config.MAX_TIME_STR_LENGTH} символов.*"
@@ -4011,15 +5405,24 @@ class SecurityUtils:
             return True, ""
             
         except Exception as e:
-            logger.error(f"Ошибка валидации времени: {e}")
+            logger.error(f"❌ Ошибка валидации времени: {e}")
             return False, "❌ *Произошла ошибка при обработке времени*"
+
 
 def get_user_display_name(user_data):
     """
-    Возвращает имя пользователя для отображения в приоритете:
+    Возвращает имя пользователя для отображения.
+    
+    Приоритет:
     1. username (если есть)
     2. unique_id (если нет username)
     3. telegram_id (последние 4 цифры, если ничего нет)
+    
+    Аргументы:
+        user_data: dict с данными пользователя
+    
+    Возвращает:
+        str: Имя для отображения
     """
     username = user_data.get('username')
     unique_id = user_data.get('unique_id')
@@ -4034,17 +5437,48 @@ def get_user_display_name(user_data):
     else:
         return "Пользователь"
 
+
 class DateTimeUtils:
+    """
+    Утилиты для работы с датой и временем.
+    
+    Методы:
+    - now: Текущее время в московском часовом поясе
+    - normalize_time_input: Нормализация формата времени
+    - format_time_for_display: Форматирование времени для отображения
+    - get_future_dates: Получение списка будущих дат
+    - parse_date_input: Парсинг даты из строки
+    - get_booking_datetime: Получение datetime бронирования
+    - calculate_duration: Расчёт длительности
+    - can_book_in_advance: Проверка возможности бронирования
+    - и другие вспомогательные методы
+    """
+    
     @staticmethod
     def now():
+        """Возвращает текущее время в московском часовом поясе."""
         return datetime.now(Config.TIMEZONE)
     
     @staticmethod
     def normalize_time_input(time_str):
+        """
+        Нормализует формат времени.
+        
+        Примеры:
+        - "14-18" → "14-18"
+        - "14 - 18" → "14-18"
+        - "24-2" → "0-2"
+        
+        Аргументы:
+            time_str: Время в формате "час-час"
+        
+        Возвращает:
+            str: Нормализованное время
+        """
         if not time_str or time_str == 'Не указано' or '-' not in time_str:
             return time_str
         
-        logger.info(f"Нормализация времени: Входная строка: '{time_str}'")
+        logger.info(f"🔍 Нормализация времени! Входная строка: '{time_str}'")
         
         time_str = time_str.replace(' ', '')
         
@@ -4058,22 +5492,36 @@ class DateTimeUtils:
             start_hour = int(start_str)
             end_hour = int(end_str)
             
-            # ===== НОРМАЛИЗУЕМ 24 -> 0 ДЛЯ ОБОИХ ЧАСОВ =====
+            # Нормализуем 24 -> 0 для обоих часов
             if start_hour == 24:
                 start_hour = 0
             if end_hour == 24:
                 end_hour = 0
             
             result = f"{start_hour}-{end_hour}"
-            logger.info(f"Нормализация времени: Результат: '{result}'")
+            logger.info(f"🔍 Нормализация времени! Результат: '{result}'")
             return result
             
         except ValueError:
-            logger.error(f"Ошибка преобразования времени: {time_str}")
+            logger.error(f"❌ Ошибка преобразования времени: {time_str}")
             return time_str
 
     @staticmethod
     def format_time_for_display(time_str):
+        """
+        Форматирует время для отображения с ведущими нулями.
+        
+        Примеры:
+        - "14-18" → "14-18"
+        - "2-6" → "02-06"
+        - "24-2" → "00-02"
+        
+        Аргументы:
+            time_str: Время в формате "час-час"
+        
+        Возвращает:
+            str: Отформатированное время
+        """
         if not time_str or '-' not in time_str:
             return time_str
         
@@ -4093,7 +5541,7 @@ class DateTimeUtils:
             if end_hour == 24:
                 end_hour = 0
             
-            # Форматируем с ведущим нулём (01, 02, 03...)
+            # Форматируем с ведущим нулём
             display_start = f"{start_hour:02d}"
             display_end = f"{end_hour:02d}"
             
@@ -4104,6 +5552,15 @@ class DateTimeUtils:
     
     @staticmethod
     def get_future_dates(count=27):
+        """
+        Возвращает список будущих дат для отображения.
+        
+        Аргументы:
+            count: Количество дней вперёд
+        
+        Возвращает:
+            list: Список дат в формате "ДД.ММ.ГГГГ (День)"
+        """
         try:
             cached = MemoryCache.get_future_dates(ttl=300)
             if cached:
@@ -4127,6 +5584,15 @@ class DateTimeUtils:
 
     @staticmethod
     def parse_date_input(user_input):
+        """
+        Парсит дату из строки.
+        
+        Аргументы:
+            user_input: Строка с датой (ДД.ММ.ГГГГ)
+        
+        Возвращает:
+            tuple: (datetime, сообщение об ошибке)
+        """
         try:
             if len(user_input) > 50:
                 return None, "❌ Слишком длинная дата!"
@@ -4148,7 +5614,7 @@ class DateTimeUtils:
             try:
                 day, month, year = map(int, parts)
             except ValueError:
-                return None, "❌ Неверный формат дата! Используйте числа"
+                return None, "❌ Неверный формат даты! Используйте числа"
             
             if not (1 <= day <= 31):
                 return None, "❌ Неверный день! Должен быть от 1 до 31"
@@ -4163,11 +5629,21 @@ class DateTimeUtils:
             return user_datetime, ""
             
         except Exception as e:
-            logger.error(f"Ошибка парсинга даты: {e}")
+            logger.error(f"❌ Ошибка парсинга даты: {e}")
             return None, "❌ Ошибка обработки даты"
 
     @staticmethod
     def get_booking_datetime(date_str, time_str):
+        """
+        Получает datetime начала бронирования.
+        
+        Аргументы:
+            date_str: Дата в формате ДД.ММ.ГГГГ
+            time_str: Время в формате "час-час"
+        
+        Возвращает:
+            datetime: Начало бронирования или None
+        """
         try:
             normalized_time = DateTimeUtils.normalize_time_input(time_str)
             
@@ -4191,6 +5667,16 @@ class DateTimeUtils:
 
     @staticmethod
     def calculate_duration(start_hour, end_hour):
+        """
+        Рассчитывает длительность в часах.
+        
+        Аргументы:
+            start_hour: Начальный час
+            end_hour: Конечный час
+        
+        Возвращает:
+            int: Длительность в часах
+        """
         try:
             start_hour = int(start_hour)
             end_hour = int(end_hour)
@@ -4202,7 +5688,7 @@ class DateTimeUtils:
                     return 0
                 
                 duration = 24 - start_hour
-                logger.info(f"🔍 Продолжительность (ночная): {duration} часов")
+                logger.info(f"🔍 Продолжительность (ночная): {duration} часов!")
                 return duration
             
             if end_hour > start_hour:
@@ -4210,19 +5696,34 @@ class DateTimeUtils:
             else:
                 duration = (24 - start_hour) + end_hour
             
-            logger.info(f"🔍 Продолжительность: {duration} часов")
+            logger.info(f"🔍 Продолжительность: {duration} часов!")
             return duration
         except Exception as e:
-            logger.error(f"Ошибка расчета длительности: {e}")
+            logger.error(f"❌ Ошибка расчёта длительности: {e}")
             return 0
 
     @staticmethod
     def is_day_time(start_hour):
+        """Проверяет, является ли время дневным."""
         period = Config.get_period_by_hour(int(start_hour))
         return period["rules"] == "day"
 
     @staticmethod
     def can_book_in_advance(start_datetime, start_hour, with_engineer, is_12_hours=False, is_track_creation=False, booking_start_time=None):
+        """
+        Проверяет, можно ли забронировать с учётом минимального времени.
+        
+        Аргументы:
+            start_datetime: Время начала бронирования
+            start_hour: Начальный час
+            with_engineer: С инженером или без
+            is_12_hours: 12-часовая аренда
+            is_track_creation: Создание трека
+            booking_start_time: Тип начала (для аренды)
+        
+        Возвращает:
+            tuple: (можно, минимальное количество часов)
+        """
         reference_time = DateTimeUtils.now()
         
         if not start_datetime:
@@ -4239,13 +5740,11 @@ class DateTimeUtils:
         elif is_track_creation:
             min_hours = Config.MIN_BOOKING_ADVANCE['track_creation']
         elif with_engineer:
-            min_hours = Config.MIN_BOOKING_ADVANCE['with_engineer']  # 48
+            min_hours = Config.MIN_BOOKING_ADVANCE['with_engineer']
         else:
-            min_hours = Config.MIN_BOOKING_ADVANCE['without_engineer']  # 24
+            min_hours = Config.MIN_BOOKING_ADVANCE['without_engineer']
         
-        logger.info(f"🔍 can_book_in_advance:")
-        logger.info(f"   До начала: {hours_until_booking:.1f} часов")
-        logger.info(f"   Требуется мин.: {min_hours} часов")
+        logger.info(f"🔍 can_book_in_advance: До начала {hours_until_booking:.1f} часов, требуется {min_hours} часов!")
         
         if hours_until_booking >= min_hours:
             return True, min_hours
@@ -4253,162 +5752,17 @@ class DateTimeUtils:
             return False, min_hours
 
     @staticmethod
-    def format_time_until(delta_timedelta):
-        total_seconds = delta_timedelta.total_seconds()
-        
-        if total_seconds <= 0:
-            return "время уже прошло"
-        
-        days = int(total_seconds // 86400)
-        hours = int((total_seconds % 86400) // 3600)
-        minutes = int((total_seconds % 3600) // 60)
-        seconds = int(total_seconds % 60)
-        
-        parts = []
-        
-        if days > 0:
-            if days == 1:
-                parts.append(f"{days} день")
-            elif 2 <= days <= 4:
-                parts.append(f"{days} дня")
-            else:
-                parts.append(f"{days} дней")
-        
-        if hours > 0:
-            if hours == 1:
-                parts.append(f"{hours} час")
-            elif 2 <= hours <= 4:
-                parts.append(f"{hours} часа")
-            else:
-                parts.append(f"{hours} часов")
-        
-        if minutes > 0:
-            if minutes == 1:
-                parts.append(f"{minutes} минута")
-            elif 2 <= minutes <= 4:
-                parts.append(f"{minutes} минуты")
-            else:
-                parts.append(f"{minutes} минут")
-        
-        if not parts and seconds > 0:
-            if seconds == 1:
-                return f"{seconds} секунда"
-            elif 2 <= seconds <= 4:
-                return f"{seconds} секунды"
-            else:
-                return f"{seconds} секунд"
-        
-        if not parts:
-            return "меньше минуты"
-        
-        return " ".join(parts)
-
-    @staticmethod
-    def is_valid_booking_time(time_str, with_engineer, is_12_hours=False, is_track_creation=False):
-        try:
-            if time_str.endswith('-24'):
-                time_str = time_str.replace('-24', '-0')
-            
-            is_valid, error_msg = SecurityUtils.validate_time_format(time_str, is_track_creation)
-            if not is_valid:
-                return False, error_msg
-            
-            if "-" not in time_str:
-                return False, "❌ *Неверный формат времени! Используйте 'час-час' (например: 14-18 или 22-2)*"
-            
-            start_hour_str, end_hour_str = time_str.split("-")
-            
-            if start_hour_str == '24':
-                start_hour_str = '0'
-            if end_hour_str == '24':
-                end_hour_str = '0'
-            
-            start_hour = int(start_hour_str.strip())
-            end_hour = int(end_hour_str.strip())
-            
-            if end_hour > start_hour:
-                duration = end_hour - start_hour
-            elif end_hour < start_hour:
-                duration = (24 - start_hour) + end_hour
-            else:
-                duration = 0
-            
-            if is_track_creation:
-                if duration == 0:
-                    return False, f"❌ *Для создания трека требуется ровно 4 часа! У вас: 0 часов*"
-                if duration != 4:
-                    return False, f"❌ *Для создания трека требуется ровно 4 часа! У вас: {duration} часов*"
-            else:
-                if duration == 0:
-                    return False, f"❌ *Минимальное время записи — 1 час! У вас: 0 часов*"
-                if duration > 6:
-                    return False, f"❌ *Максимальное время записи — 6 часов! У вас: {duration} часов*"
-                if duration < 1:
-                    return False, f"❌ *Минимально 1 час! У вас: {duration} часов*"
-            
-            if is_12_hours:
-                if duration != 12:
-                    return False, "❌ *12-часовая аренда должна быть ровно 12 часов*"
-                
-                if (start_hour == 9 and (end_hour == 21 or end_hour == 0)):
-                    return True, 12
-                elif (start_hour == 21 and (end_hour == 9 or end_hour == 0)):
-                    return True, 12
-                else:
-                    return False, "❌ *Для 12-часовой аренды используйте: 9-21 (день) или 21-9 (ночь)*"
-            else:
-                return True, duration
-                    
-        except ValueError:
-            return False, "❌ *Неверный формат времени! Используйте 'час-час' (например: 14-18 или 22-2)*"
-        except Exception as e:
-            logger.error(f"Ошибка валидации времени бронирования: {e}")
-            return False, "❌ *Произошла ошибка обработки времени*"
-
-    @staticmethod
-    def get_booking_period_info(start_hour):
-        period = Config.get_period_by_hour(int(start_hour))
-        return {
-            "name": period["name"],
-            "range": f"{period['start']:02d}:00-{period['end']:02d}:00",
-            "rules_type": period["rules"],
-            "surcharge": period["surcharge"],
-            "rules_text": "правилам для дня" if period["rules"] == "day" else "правилам для ночи"
-        }
-
-    @staticmethod
-    def is_cross_day_booking(time_str):
-        try:
-            if not time_str or '-' not in time_str:
-                return False
-            
-            start_str, end_str = time_str.split('-')
-            start_hour = int(start_str.strip())
-            end_hour = int(end_str.strip())
-            
-            return end_hour <= start_hour
-        except:
-            return False
-
-    @staticmethod
-    def get_affected_dates(date_str, time_str):
-        try:
-            if not DateTimeUtils.is_cross_day_booking(time_str):
-                return [date_str]
-            
-            clean_date = date_str.split('(')[0].strip() if '(' in date_str else date_str
-            day, month, year = map(int, clean_date.split('.'))
-            
-            next_day = datetime(year, month, day) + timedelta(days=1)
-            next_day_str = next_day.strftime("%d.%m.%Y")
-            
-            return [date_str, next_day_str]
-        except:
-            return [date_str]
-   
-    @staticmethod
     def get_hours_until_booking(date_str: str, time_slot: str) -> float:
-        """Возвращает количество часов до начала записи, или -1 если ошибка"""
+        """
+        Возвращает количество часов до начала записи.
+        
+        Аргументы:
+            date_str: Дата записи
+            time_slot: Время записи
+        
+        Возвращает:
+            float: Часов до начала или -1 при ошибке
+        """
         try:
             if not date_str or not time_slot:
                 return -1
@@ -4439,7 +5793,7 @@ class DateTimeUtils:
             # Парсим дату
             day, month, year = map(int, clean_date.split('.'))
             
-            # Создаем datetime начала записи
+            # Создаём datetime начала записи
             start_datetime = datetime(year, month, day, start_hour, 0, 0)
             start_datetime = Config.TIMEZONE.localize(start_datetime)
             
@@ -4454,12 +5808,12 @@ class DateTimeUtils:
             return hours_until
             
         except Exception as e:
-            logger.error(f"Ошибка в get_hours_until_booking: {e}")
+            logger.error(f"❌ Ошибка в get_hours_until_booking: {e}")
             return -1
-
 
     @staticmethod
     def get_min_advance_hours_for_service(with_engineer=False, is_12_hours=False, is_track_creation=False):
+        """Возвращает минимальное количество часов для бронирования."""
         if is_12_hours:
             return Config.MIN_BOOKING_ADVANCE['rental']
         elif is_track_creation:
@@ -4469,14 +5823,29 @@ class DateTimeUtils:
         else:
             return Config.MIN_BOOKING_ADVANCE['without_engineer']
     
-    @staticmethod
+        @staticmethod
     def check_date_availability(date_str, start_hour, with_engineer=False, 
                                 is_12_hours=False, is_track_creation=False, booking_start_time=None):
+        """
+        Проверяет доступность даты для бронирования.
+        
+        Аргументы:
+            date_str: Дата в формате ДД.ММ.ГГГГ
+            start_hour: Начальный час
+            with_engineer: С инженером или без
+            is_12_hours: 12-часовая аренда
+            is_track_creation: Создание трека
+            booking_start_time: Тип начала (для аренды)
+        
+        Возвращает:
+            tuple: (доступно, минимальное время, часы_до, минуты_до)
+        """
         try:
             clean_date = date_str.split('(')[0].strip() if '(' in date_str else date_str
             
             day, month, year = map(int, clean_date.split('.'))
             
+            # Для 12-часовой аренды фиксируем время начала
             if is_12_hours:
                 if "Ночь" in str(booking_start_time) or "night" in str(booking_start_time).lower():
                     start_hour = 21
@@ -4503,13 +5872,9 @@ class DateTimeUtils:
             hours_until_int = int(total_seconds // 3600)
             minutes_until_int = int((total_seconds % 3600) // 60)
             
-            logger.info(f"🔍 Проверка доступности даты:")
-            logger.info(f"   Дата: {clean_date}, час: {start_hour}")
-            logger.info(f"   Время бронирования: {booking_datetime}")
-            logger.info(f"   Сейчас: {now}")
-            logger.info(f"   До начала: {hours_until:.1f} часов ({hours_until_int}ч {minutes_until_int}мин)")
-            logger.info(f"   Требуется мин.: {min_hours} часов")
-            logger.info(f"   is_12_hours: {is_12_hours}, booking_start_time: {booking_start_time}")
+            logger.info(f"🔍 Проверяю доступность даты: {clean_date}, час {start_hour}!")
+            logger.info(f"🔍 До начала: {hours_until:.1f} часов ({hours_until_int}ч {minutes_until_int}мин)!")
+            logger.info(f"🔍 Требуется минимум: {min_hours} часов!")
             
             if hours_until < min_hours:
                 return False, min_hours, hours_until_int, minutes_until_int
@@ -4517,13 +5882,23 @@ class DateTimeUtils:
             return True, min_hours, 0, 0
             
         except Exception as e:
-            logger.error(f"Ошибка проверки доступности даты: {e}")
+            logger.error(f"❌ Ошибка проверки доступности даты: {e}")
             import traceback
             traceback.print_exc()
             return True, 0, 0, 0
         
     @staticmethod
     def can_book_12_hours_rental(start_datetime, start_hour):
+        """
+        Проверяет возможность бронирования 12-часовой аренды.
+        
+        Аргументы:
+            start_datetime: Время начала
+            start_hour: Начальный час
+        
+        Возвращает:
+            tuple: (можно, часы до начала)
+        """
         if not start_datetime:
             return False, 0
         
@@ -4537,16 +5912,22 @@ class DateTimeUtils:
         
         min_hours = 72
         
-        logger.info(f"🔍 can_book_12_hours_rental:")
-        logger.info(f"   Время бронирования: {start_datetime}")
-        logger.info(f"   Сейчас: {reference_time}")
-        logger.info(f"   До начала: {hours_until_booking:.1f} часов")
-        logger.info(f"   Требуется мин.: {min_hours} часов")
+        logger.info(f"🔍 can_book_12_hours_rental: до начала {hours_until_booking:.1f} часов, требуется {min_hours} часов!")
         
         return hours_until_booking >= min_hours, hours_until_booking
     
     @staticmethod
     def format_time_left(hours, minutes):
+        """
+        Форматирует оставшееся время для отображения.
+        
+        Аргументы:
+            hours: Часы
+            minutes: Минуты
+        
+        Возвращает:
+            str: Отформатированное время
+        """
         if hours > 0 and minutes > 0:
             return f"{hours} часов {minutes} минут"
         elif hours > 0:
@@ -4556,11 +5937,24 @@ class DateTimeUtils:
         else:
             return "менее минуты"
 
+
 def get_notification_service_type(service: str, with_engineer: bool = False, 
                                  is_12_hours: bool = False, 
                                  is_track_creation: bool = False,
                                  is_mixing: bool = False) -> str:
+    """
+    Определяет тип услуги для настройки уведомлений.
     
+    Аргументы:
+        service: Название услуги
+        with_engineer: С инженером или без
+        is_12_hours: 12-часовая аренда
+        is_track_creation: Создание трека
+        is_mixing: Сведение/мастеринг
+    
+    Возвращает:
+        str: Тип услуги для уведомлений
+    """
     if is_mixing:
         return 'mixing'
     
@@ -4589,10 +5983,39 @@ def get_notification_service_type(service: str, with_engineer: bool = False,
     
     return 'default'
 
+
 class PriceCalculator:
+    """
+    Класс для расчёта цен на услуги студии.
+    
+    Учитывает:
+    - Базовую цену в зависимости от услуги и длительности
+    - Ночные надбавки (с 00:00 до 06:00)
+    - Скидки по уровню пользователя (купоны)
+    - Промокоды (процентные и бесплатные часы/услуги)
+    - Договорные цены (альбомы)
+    
+    Порядок расчёта:
+    1. Базовая цена
+    2. Ночная надбавка
+    3. Бесплатные часы/услуга
+    4. Процентная скидка по уровню
+    5. Процентная скидка по промокоду
+    """
+    
     @staticmethod
     def get_night_hours_count(start_hour, end_hour, duration):
-        """Подсчитывает количество ночных часов (00:00-06:00)"""
+        """
+        Подсчитывает количество ночных часов (00:00-06:00).
+        
+        Аргументы:
+            start_hour: Начальный час
+            end_hour: Конечный час
+            duration: Длительность (не используется)
+        
+        Возвращает:
+            int: Количество ночных часов
+        """
         if start_hour is None or end_hour is None:
             return 0
             
@@ -4620,7 +6043,16 @@ class PriceCalculator:
 
     @staticmethod
     def calculate_base_price(duration, with_engineer):
-        """Рассчитывает базовую цену без ночных надбавок"""
+        """
+        Рассчитывает базовую цену без ночных надбавок.
+        
+        Аргументы:
+            duration: Длительность в часах
+            with_engineer: С инженером или без
+        
+        Возвращает:
+            int: Базовая цена
+        """
         if with_engineer:
             if duration >= 6:
                 return duration * Config.PRICES['vocal_engineer_over6']
@@ -4638,7 +6070,16 @@ class PriceCalculator:
 
     @staticmethod
     def get_price_per_hour(with_engineer: bool, duration: int = None) -> int:
-        """Возвращает ставку за час в зависимости от длительности"""
+        """
+        Возвращает ставку за час в зависимости от длительности.
+        
+        Аргументы:
+            with_engineer: С инженером или без
+            duration: Длительность в часах
+        
+        Возвращает:
+            int: Цена за час
+        """
         if with_engineer:
             if duration is not None and duration >= 6:
                 return Config.PRICES['vocal_engineer_over6']
@@ -4660,15 +6101,29 @@ class PriceCalculator:
                 twelve_hours_type=None, start_hour=None, end_hour=None, 
                 with_engineer=False, user_id=None, consume_coupon=False):
         """
-        Рассчитывает цену в ПРАВИЛЬНОМ порядке:
-        1. Базовая цена (часы × ставка)
-        2. Ночная надбавка (для работы с инженером ИЛИ для создания трека!)
-        3. Бесплатные часы/услуга (вычитаются из ОБЩЕЙ суммы)
-        4. Процентная скидка по уровню
-        5. Процентная скидка по промокоду
+        Рассчитывает итоговую цену с учётом всех скидок и надбавок.
+        
+        Аргументы:
+            service: Название услуги
+            duration: Длительность в часах
+            is_mixing: Сведение/мастеринг
+            mixing_type: Тип сведения (Трек/Альбом)
+            is_12_hours: 12-часовая аренда
+            is_track_creation: Создание трека
+            track_type: Тип трека (Трек/Альбом)
+            twelve_hours_type: Тип аренды (День/Ночь)
+            start_hour: Начальный час
+            end_hour: Конечный час
+            with_engineer: С инженером или без
+            user_id: ID пользователя (для скидок)
+            consume_coupon: Использовать купон или нет
+        
+        Возвращает:
+            dict: Результат расчёта с полной детализацией
         """
         
-        logger.info(f"💰 РАСЧЕТ ЦЕНЫ: service={service}, duration={duration}, with_engineer={with_engineer}, user_id={user_id}, is_track_creation={is_track_creation}, start_hour={start_hour}, end_hour={end_hour}")
+        logger.info(f"💰 Начинаю расчёт цены для услуги {service}, длительность {duration} часов!")
+        logger.info(f"💰 Параметры: with_engineer={with_engineer}, is_track_creation={is_track_creation}!")
         
         # ===== 1. БАЗОВАЯ ЦЕНА =====
         if duration == 0 and not is_mixing and not is_track_creation:
@@ -4679,7 +6134,7 @@ class PriceCalculator:
                 base_price = Config.PRICES['12_hours_rent_night']
             else:
                 base_price = Config.PRICES['12_hours_rent_day']
-            logger.info(f"💰 АРЕНДА: base_price={base_price}")
+            logger.info(f"💰 Аренда! Базовая цена: {base_price}₽")
             
             level_discount_percent = 0
             level_coupon_id = None
@@ -4688,26 +6143,26 @@ class PriceCalculator:
             free_service_applied = False
             
             if user_id:
-                # 1. ПРОВЕРЯЕМ КУПОН УРОВНЯ
+                # Проверяем купон уровня
                 try:
                     best_coupon = CouponManager.get_best_coupon(str(user_id))
                     if best_coupon:
                         level_discount_percent = best_coupon['discount']
                         level_coupon_id = best_coupon['id']
-                        logger.info(f"💰 Найден купон для аренды: скидка {level_discount_percent}%")
+                        logger.info(f"💰 Найден купон для аренды! Скидка {level_discount_percent}%!")
                         
                         if consume_coupon and not best_coupon.get('is_permanent', False):
                             success, msg, discount_used = CouponManager.use_coupon(str(user_id), level_coupon_id)
                             if success:
-                                logger.info(f"✅ Купон использован для аренды")
+                                logger.info(f"✅ Купон успешно использован для аренды!")
                             else:
-                                logger.warning(f"⚠️ Не удалось использовать купон для аренды: {msg}")
+                                logger.warning(f"⚠️ Не удалось использовать купон для аренды: {msg}!")
                                 level_discount_percent = 0
                                 level_coupon_id = None
                 except Exception as e:
-                    logger.error(f"Ошибка при работе с купоном для аренды: {e}")
+                    logger.error(f"❌ Ошибка при работе с купоном для аренды: {e}")
                 
-                # 2. ПРОВЕРЯЕМ ПРОМОКОД
+                # Проверяем промокод
                 try:
                     promo = PromoCodeManager.get_user_active_promo(str(user_id))
                     if promo:
@@ -4726,22 +6181,22 @@ class PriceCalculator:
                                 promo_applies = True
                                 free_service_applied = True
                                 promo_code_used = promo['code']
-                                logger.info(f"💰 Бесплатная аренда, цена = 0")
+                                logger.info(f"💰 Бесплатная аренда! Цена = 0!")
                         
                         if promo_applies:
                             if promo['discount_type'] == PromoCodeManager.TYPE_FREE_SERVICE:
                                 current_price = 0
                                 free_service_applied = True
                                 promo_code_used = promo['code']
-                                logger.info(f"💰 Бесплатная аренда, цена = 0")
+                                logger.info(f"💰 Бесплатная аренда! Цена = 0!")
                             elif promo['discount_type'] in [PromoCodeManager.TYPE_PERCENT_ALL, PromoCodeManager.TYPE_PERCENT_SERVICE]:
                                 promo_discount_percent = promo['discount_value']
                                 promo_code_used = promo['code']
-                                logger.info(f"💰 Промокод для аренды: +{promo_discount_percent}%")
+                                logger.info(f"💰 Промокод для аренды: +{promo_discount_percent}%!")
                 except Exception as e:
-                    logger.error(f"Ошибка при работе с промокодом для аренды: {e}")
+                    logger.error(f"❌ Ошибка при работе с промокодом для аренды: {e}")
             
-            # 3. ПРИМЕНЯЕМ СКИДКИ
+            # Применяем скидки
             if free_service_applied:
                 current_price = 0
                 final_price = 0
@@ -4751,7 +6206,7 @@ class PriceCalculator:
                 
                 if total_percent_discount > 0:
                     current_price = current_price * (100 - min(total_percent_discount, 100)) / 100
-                    logger.info(f"💰 Аренда со скидкой: {current_price} (скидка {total_percent_discount}%)")
+                    logger.info(f"💰 Аренда со скидкой: {current_price}₽ (скидка {total_percent_discount}%)!")
                 
                 final_price = int(current_price) if current_price > 0 else 0
             
@@ -4770,6 +6225,7 @@ class PriceCalculator:
 
         elif is_mixing:
             if mixing_type and "Альбом" in mixing_type:
+                logger.info(f"💰 Сведение альбома! Договорная цена!")
                 return {
                     'base_price': 0,
                     'final_price': "Договорная",
@@ -4784,10 +6240,11 @@ class PriceCalculator:
             base_price = Config.PRICES['mixing_track']
             if duration == 0:
                 duration = 1
-            logger.info(f"💰 СВЕДЕНИЕ: base_price={base_price}")
+            logger.info(f"💰 Сведение трека! Базовая цена: {base_price}₽")
 
         elif is_track_creation:
             if track_type and "Альбом" in track_type:
+                logger.info(f"💰 Создание альбома! Договорная цена!")
                 return {
                     'base_price': 0,
                     'final_price': "Договорная",
@@ -4800,7 +6257,7 @@ class PriceCalculator:
                     'free_service_applied': False
                 }
             base_price = Config.PRICES['track_creation_single']
-            logger.info(f"💰 СОЗДАНИЕ ТРЕКА: base_price={base_price}")
+            logger.info(f"💰 Создание трека! Базовая цена: {base_price}₽")
 
         elif with_engineer:
             base_price = PriceCalculator.calculate_base_price(duration, with_engineer)
@@ -4830,16 +6287,16 @@ class PriceCalculator:
         if is_track_creation and start_hour is not None and end_hour is not None:
             night_hours = PriceCalculator.get_night_hours_count(start_hour, end_hour, duration)
             night_surcharge = night_hours * Config.NIGHT_SURCHARGE_AMOUNT
-            logger.info(f"💰 СОЗДАНИЕ ТРЕКА: ночных часов: {night_hours}, надбавка: +{night_surcharge}₽")
+            logger.info(f"💰 Создание трека! Ночных часов: {night_hours}, надбавка: +{night_surcharge}₽")
         
         # Для обычной записи с инженером
         elif start_hour is not None and end_hour is not None and not is_12_hours and not is_mixing and not is_track_creation:
             if with_engineer:
                 night_hours = PriceCalculator.get_night_hours_count(start_hour, end_hour, duration)
                 night_surcharge = night_hours * Config.NIGHT_SURCHARGE_AMOUNT
-                logger.info(f"💰 ОБЫЧНАЯ ЗАПИСЬ: ночных часов: {night_hours}, надбавка (с инженером): +{night_surcharge}₽")
+                logger.info(f"💰 Обычная запись! Ночных часов: {night_hours}, надбавка (с инженером): +{night_surcharge}₽")
             else:
-                logger.info(f"💰 Ночная надбавка не применяется (работа без инженера)")
+                logger.info(f"💰 Ночная надбавка не применяется (работа без инженера)!")
         
         total_before_discounts = base_price + night_surcharge
         logger.info(f"💰 Сумма до скидок: {total_before_discounts}₽")
@@ -4869,7 +6326,7 @@ class PriceCalculator:
                 
                 if promo['discount_type'] == PromoCodeManager.TYPE_PERCENT_ALL:
                     promo_applies = True
-                    logger.info(f"💰 ПРОМОКОД % НА ВСЕ ПРИМЕНЯЕТСЯ")
+                    logger.info(f"💰 Промокод на % для всех услуг применяется!")
                     
                 elif promo['discount_type'] == PromoCodeManager.TYPE_PERCENT_SERVICE:
                     if target_service == "вокал" and "вокал" in service_lower:
@@ -4882,12 +6339,12 @@ class PriceCalculator:
                         promo_applies = True
                     elif target_service == "трек" and "создание трека" in service_lower:
                         promo_applies = True
-                    logger.info(f"💰 ПРОМОКОД % НА УСЛУГУ ПРИМЕНЯЕТСЯ")
+                    logger.info(f"💰 Промокод на % для услуги применяется!")
                         
                 elif promo['discount_type'] == PromoCodeManager.TYPE_FREE_HOURS:
                     if "вокал" in service_lower or "инструмент" in service_lower or "создание трека" in service_lower:
                         promo_applies = True
-                        logger.info(f"💰 ПРОМОКОД БЕСПЛАТНЫЕ ЧАСЫ ПРИМЕНЯЕТСЯ")
+                        logger.info(f"💰 Промокод на бесплатные часы применяется!")
                         
                 elif promo['discount_type'] == PromoCodeManager.TYPE_FREE_SERVICE:
                     if target_service == "вокал" and "вокал" in service_lower:
@@ -4900,7 +6357,7 @@ class PriceCalculator:
                         promo_applies = True
                     elif target_service == "трек" and "создание трека" in service_lower:
                         promo_applies = True
-                    logger.info(f"💰 ПРОМОКОД БЕСПЛАТНАЯ УСЛУГА ПРИМЕНЯЕТСЯ")
+                    logger.info(f"💰 Промокод на бесплатную услугу применяется!")
                 
                 if promo_applies:
                     if promo['discount_type'] == PromoCodeManager.TYPE_FREE_HOURS:
@@ -4908,22 +6365,23 @@ class PriceCalculator:
                         free_hours_applied = free_hours
                         
                         if is_12_hours or is_mixing:
-                            logger.info(f"💰 Бесплатные часы не применяются для этого типа услуги")
+                            logger.info(f"💰 Бесплатные часы не применяются для этого типа услуги!")
                         else:
                             price_per_hour = PriceCalculator.get_price_per_hour(with_engineer, duration)
                             free_hours_cost = free_hours * price_per_hour
                             current_price = total_before_discounts - free_hours_cost
                             promo_code_used = promo['code']
-                            logger.info(f"💰 Бесплатных часов: {free_hours}, стоимость: -{free_hours_cost}₽, осталось: {current_price}₽")
+                            logger.info(f"💰 Бесплатных часов: {free_hours}! Стоимость: -{free_hours_cost}₽, осталось: {current_price}₽!")
                         
                     elif promo['discount_type'] == PromoCodeManager.TYPE_FREE_SERVICE:
                         current_price = 0
                         free_service_applied = True
                         promo_code_used = promo['code']
-                        logger.info(f"💰 Бесплатная услуга, цена = 0, промокод: {promo_code_used}")
+                        logger.info(f"💰 Бесплатная услуга! Цена = 0, промокод: {promo_code_used}!")
         
         # ===== 4. ЕСЛИ ЦЕНА УЖЕ 0 - ВОЗВРАЩАЕМ =====
         if current_price == 0 or free_service_applied:
+            logger.info(f"💰 Итоговая цена: 0₽ (бесплатная услуга или часы)!")
             return {
                 'base_price': int(base_price),
                 'final_price': 0,
@@ -4938,7 +6396,7 @@ class PriceCalculator:
             }
         
         # ===== 5. ПРИМЕНЯЕМ ПРОЦЕНТНУЮ СКИДКУ ПО УРОВНЮ (КУПОН) =====
-        # ===== НЕ ПРИМЕНЯЕМ ДЛЯ АЛЬБОМОВ =====
+        # Не применяем для альбомов
         is_album = False
         if is_mixing and mixing_type and "Альбом" in mixing_type:
             is_album = True
@@ -4954,18 +6412,18 @@ class PriceCalculator:
                 if best_coupon:
                     level_discount_percent = best_coupon['discount']
                     level_coupon_id = best_coupon['id']
-                    logger.info(f"💰 Найден купон: скидка {level_discount_percent}%")
+                    logger.info(f"💰 Найден купон! Скидка {level_discount_percent}%!")
                     
                     if consume_coupon and not best_coupon.get('is_permanent', False):
                         success, msg, discount_used = CouponManager.use_coupon(str(user_id), level_coupon_id)
                         if success:
-                            logger.info(f"✅ Купон использован")
+                            logger.info(f"✅ Купон успешно использован!")
                         else:
-                            logger.warning(f"⚠️ Не удалось использовать купон: {msg}")
+                            logger.warning(f"⚠️ Не удалось использовать купон: {msg}!")
                             level_discount_percent = 0
                             level_coupon_id = None
             except Exception as e:
-                logger.error(f"Ошибка при работе с купоном: {e}")
+                logger.error(f"❌ Ошибка при работе с купоном: {e}")
         
         # ===== 6. ПРИМЕНЯЕМ ПРОЦЕНТНУЮ СКИДКУ ПО ПРОМОКОДУ =====
         if user_id and not promo_code_used:
@@ -4995,9 +6453,9 @@ class PriceCalculator:
                     if promo_applies:
                         promo_discount_percent = promo['discount_value']
                         promo_code_used = promo['code']
-                        logger.info(f"💰 Промокод на %: +{promo_discount_percent}%")
+                        logger.info(f"💰 Промокод на %: +{promo_discount_percent}%!")
             except Exception as e:
-                logger.error(f"Ошибка при работе с промокодом: {e}")
+                logger.error(f"❌ Ошибка при работе с промокодом: {e}")
         
         # ===== 7. ПРИМЕНЯЕМ СУММАРНУЮ ПРОЦЕНТНУЮ СКИДКУ =====
         total_percent_discount = level_discount_percent + promo_discount_percent
@@ -5005,11 +6463,11 @@ class PriceCalculator:
         
         if total_percent_discount > 0:
             current_price = current_price * (100 - min(total_percent_discount, 100)) / 100
-            logger.info(f"💰 Суммарная скидка: {total_percent_discount}%, было {old_price:.0f}₽, стало {current_price:.0f}₽")
+            logger.info(f"💰 Суммарная скидка: {total_percent_discount}%! Было {old_price:.0f}₽, стало {current_price:.0f}₽!")
         
         final_price = int(current_price) if current_price > 0 else 0
         
-        logger.info(f"💰 ИТОГ: {final_price}₽ (база={base_price}, ночь=+{night_surcharge}, скидка={total_percent_discount}%)")
+        logger.info(f"💰 Итоговая цена: {final_price}₽ (база={base_price}, ночь=+{night_surcharge}, скидка={total_percent_discount}%)!")
         
         return {
             'base_price': int(base_price),
@@ -5026,7 +6484,19 @@ class PriceCalculator:
 
     @staticmethod
     def format_price_breakdown(service, duration, start_hour, end_hour, with_engineer):
-        """Форматирует breakdown цены для отображения"""
+        """
+        Форматирует разбивку цены для отображения.
+        
+        Аргументы:
+            service: Название услуги
+            duration: Длительность
+            start_hour: Начальный час
+            end_hour: Конечный час
+            with_engineer: С инженером или без
+        
+        Возвращает:
+            str: Отформатированная разбивка цены
+        """
         if 'трек' in str(service).lower() and 'создание' in str(service).lower():
             base_price = Config.PRICES['track_creation_single']
             if with_engineer and start_hour is not None and end_hour is not None:
@@ -5053,7 +6523,15 @@ class PriceCalculator:
 
     @staticmethod
     def format_hours_ru(hours):
-        """Форматирует часы с правильным склонением"""
+        """
+        Форматирует часы с правильным склонением.
+        
+        Аргументы:
+            hours: Количество часов
+        
+        Возвращает:
+            str: Отформатированные часы
+        """
         try:
             hours_int = int(hours)
             if hours_int == 1:
@@ -5065,32 +6543,67 @@ class PriceCalculator:
         except:
             return f"{hours} часов"
 
+
 class DateColorAnalyzer:
+    """
+    Анализирует загруженность дат и возвращает цвет для отображения.
+    
+    Цвета:
+    - 🟢 Свободно >75% времени (более 18 часов)
+    - 🟡 Свободно 50-75% времени (12-18 часов)
+    - 🟠 Свободно 25-50% времени (6-12 часов)
+    - 🔴 Свободно <25% времени (менее 6 часов)
+    - ⚪️ Неизвестно (техническая проверка)
+    
+    Для аренды:
+    - 🟢 Слот доступен
+    - 🔴 Слот занят
+    
+    Для создания трека:
+    - 🟢 Есть 4-часовой слот до полуночи
+    - 🟠 Есть 4-часовой слот только через полночь
+    - 🔴 Нет 4-часового слота
+    """
+    
     @staticmethod
     def get_color_for_date(date_str: str, service_type: str, with_engineer: bool = False) -> str:
+        """
+        Возвращает цвет для даты в зависимости от загруженности.
+        
+        Аргументы:
+            date_str: Дата в формате ДД.ММ.ГГГГ
+            service_type: Тип услуги
+            with_engineer: С инженером или без
+        
+        Возвращает:
+            str: Цвет (🟢🟡🟠🔴⚪️)
+        """
         try:
-            logger.info(f"🔍 DateColorAnalyzer.get_color_for_date: {date_str}, тип: {service_type}, инженер: {with_engineer}")
+            logger.info(f"🔍 Анализирую цвет для даты {date_str}, тип {service_type}!")
             
             clean_date = date_str.split('(')[0].strip() if '(' in date_str else date_str
             
             cache_key = f"{clean_date}_{service_type}_{with_engineer}"
             cached_color = MemoryCache.get_date_color(cache_key, ttl=300)
             if cached_color:
-                logger.info(f"🔍 Из кэша: {cached_color} для ключа: {cache_key}")
+                logger.info(f"🔍 Из кэша: {cached_color} для ключа {cache_key}!")
                 return cached_color
             
-            logger.info(f"🔍 Кэш не найден для {cache_key}, пересчитываем...")
+            logger.info(f"🔍 Кэш не найден для {cache_key}, пересчитываю!")
             
+            # Проверяем, не прошла ли дата
             parsed_date, _ = DateTimeUtils.parse_date_input(clean_date)
             if parsed_date and parsed_date.date() < DateTimeUtils.now().date():
                 MemoryCache.set_date_color(cache_key, "🔴")
                 return "🔴"
             
+            # Для аренды
             if service_type in ["12_hours_day", "12_hours_night"]:
                 color = DateColorAnalyzer._get_color_for_rental(clean_date, service_type)
                 MemoryCache.set_date_color(cache_key, color)
                 return color
             
+            # Для создания трека
             is_track_creation = (service_type == "track_creation")
             free_intervals = FreeIntervalCalculator.get_all_free_intervals(
                 clean_date, is_track_creation, with_engineer
@@ -5109,11 +6622,21 @@ class DateColorAnalyzer:
             return color
                 
         except Exception as e:
-            logger.error(f"Ошибка анализа цвета даты: {e}")
+            logger.error(f"❌ Ошибка анализа цвета даты: {e}")
             return "⚪️"
     
     @staticmethod
     def _get_color_for_rental(date_str: str, service_type: str) -> str:
+        """
+        Возвращает цвет для аренды.
+        
+        Аргументы:
+            date_str: Дата
+            service_type: Тип аренды (12_hours_day или 12_hours_night)
+        
+        Возвращает:
+            str: 🟢 или 🔴
+        """
         try:
             if "day" in service_type:
                 time_slot = "9-21"
@@ -5124,17 +6647,16 @@ class DateColorAnalyzer:
             
             clean_date = date_str.split('(')[0].strip() if '(' in date_str else date_str
             
-            logger.info(f"🔍 Проверка аренды: {clean_date}, тип: {service_type}, время: {time_slot}")
+            logger.info(f"🔍 Проверяю аренду: {clean_date}, тип {service_type}, время {time_slot}!")
             
-            # 1. Проверяем доступность слота (занят/свободен)
+            # Проверяем доступность слота
             is_available = BookingManager.check_12_hours_slot_available(clean_date, service_type)
             
             if not is_available:
-                logger.info(f"🔍 🔴 Слот занят")
+                logger.info(f"🔍 Слот занят! 🚫")
                 return "🔴"
             
-            # ===== НОВАЯ ПРОВЕРКА ДЛЯ НОЧНОЙ АРЕНДЫ =====
-            # Проверяем, что на следующий день нет броней с 0:00 до 9:00
+            # Дополнительная проверка для ночной аренды
             if "night" in service_type:
                 try:
                     day, month, year = map(int, clean_date.split('.'))
@@ -5142,49 +6664,56 @@ class DateColorAnalyzer:
                     next_date = current_date + timedelta(days=1)
                     next_date_str = next_date.strftime("%d.%m.%Y")
                     
-                    logger.info(f"🔍 Проверяем следующий день для ночной аренды: {next_date_str}")
+                    logger.info(f"🔍 Проверяю следующий день для ночной аренды: {next_date_str}!")
                     
-                    # Получаем все занятые слоты на следующий день
                     booked_slots_next = BookingManager.get_all_time_slots_for_date(next_date_str)
                     
-                    # Проверяем часы 0-9 на следующий день
                     for hour in range(0, 9):
                         hour_slot = f"{hour}-{hour+1}"
                         if hour_slot in booked_slots_next:
-                            logger.info(f"🔍 🔴 Ночная аренда на {clean_date} занята: следующий день {next_date_str}, час {hour_slot} занят")
+                            logger.info(f"🔍 Ночная аренда занята! Следующий день {next_date_str}, час {hour_slot} занят! 🚫")
                             return "🔴"
                             
                 except Exception as e:
-                    logger.error(f"Ошибка проверки следующего дня для ночной аренды: {e}")
+                    logger.error(f"❌ Ошибка проверки следующего дня для ночной аренды: {e}")
                     return "🔴"
             
-            # 2. Проверяем правило 72 часов
+            # Проверяем правило 72 часов
             booking_datetime = DateTimeUtils.get_booking_datetime(clean_date, time_slot)
             if not booking_datetime:
-                logger.info(f"🔍 ⚪️ Не удалось создать datetime")
+                logger.info(f"🔍 Не удалось создать datetime! ⚪️")
                 return "⚪️"
             
             now = DateTimeUtils.now()
             time_until_booking = booking_datetime - now
             hours_until_booking = time_until_booking.total_seconds() / 3600
             
-            logger.info(f"🔍 До начала аренды: {hours_until_booking:.1f} часов")
+            logger.info(f"🔍 До начала аренды: {hours_until_booking:.1f} часов!")
             
             if hours_until_booking < 72:
-                logger.info(f"🔍 🔴 Нельзя забронировать: требуется 72 часа, осталось {hours_until_booking:.1f} часов")
+                logger.info(f"🔍 Нельзя забронировать! Требуется 72 часа, осталось {hours_until_booking:.1f} часов! 🚫")
                 return "🔴"
             
-            logger.info(f"🔍 🟢 Слот доступен для бронирования")
+            logger.info(f"🔍 Слот доступен для бронирования! ✅")
             return "🟢"
                 
         except Exception as e:
-            logger.error(f"Ошибка проверки аренды: {e}")
+            logger.error(f"❌ Ошибка проверки аренды: {e}")
             import traceback
             traceback.print_exc()
             return "⚪️"
         
     @staticmethod
     def _get_color_for_track_creation(free_intervals: List[Dict]) -> str:
+        """
+        Возвращает цвет для создания трека.
+        
+        Аргументы:
+            free_intervals: Список свободных интервалов
+        
+        Возвращает:
+            str: 🟢, 🟠 или 🔴
+        """
         try:
             has_4h_normal_slot = False
             has_4h_cross_night_slot = False
@@ -5192,19 +6721,19 @@ class DateColorAnalyzer:
             for interval in free_intervals:
                 if interval['duration'] >= 4:
                     has_4h_normal_slot = True
-                    logger.info(f"   ✅ Нормальный 4-часовой слот: {interval['start']}-{interval['end']}")
+                    logger.info(f"   ✅ Найден нормальный 4-часовой слот: {interval['start']}-{interval['end']}!")
                 
                 elif interval['end'] == 24 and interval['start'] >= 20:
                     hours_before_midnight = interval['duration']
                     hours_needed_after_midnight = 4 - hours_before_midnight
                     
-                    logger.info(f"   🔍 Интервал {interval['start']}-24 ({hours_before_midnight}ч)")
-                    logger.info(f"   Может быть частью кроссночного бронирования (+{hours_needed_after_midnight}ч после полуночи)")
+                    logger.info(f"   🔍 Интервал {interval['start']}-24 ({hours_before_midnight}ч)!")
+                    logger.info(f"   Может быть частью кроссночного бронирования (+{hours_needed_after_midnight}ч после полуночи)!")
                     
                     if hours_needed_after_midnight <= 6:
                         has_4h_cross_night_slot = True
             
-            logger.info(f"🔍 Итоги проверки: normal_slot={has_4h_normal_slot}, cross_slot={has_4h_cross_night_slot}")
+            logger.info(f"🔍 Итоги проверки: normal_slot={has_4h_normal_slot}, cross_slot={has_4h_cross_night_slot}!")
             
             if has_4h_normal_slot:
                 return "🟢"
@@ -5214,16 +6743,24 @@ class DateColorAnalyzer:
                 return "🔴"
                     
         except Exception as e:
-            logger.error(f"Ошибка анализа для трека: {e}")
+            logger.error(f"❌ Ошибка анализа для трека: {e}")
             return "🔴"
     
     @staticmethod
     def _get_color_for_vocal(free_intervals: List[Dict]) -> str:
+        """
+        Возвращает цвет для вокала/инструментов.
+        
+        Аргументы:
+            free_intervals: Список свободных интервалов
+        
+        Возвращает:
+            str: 🟢, 🟡, 🟠 или 🔴
+        """
         try:
             total_free_hours = sum(interval['duration'] for interval in free_intervals)
             free_percentage = (total_free_hours / 24) * 100
             
-            # ===== ИСПРАВЛЕНО: >= 75 ДЛЯ 🟢 =====
             if free_percentage >= 75:
                 return "🟢"
             elif free_percentage >= 50:
@@ -5234,48 +6771,97 @@ class DateColorAnalyzer:
                 return "🔴"
                 
         except Exception as e:
-            logger.error(f"Ошибка анализа для вокала: {e}")
+            logger.error(f"❌ Ошибка анализа для вокала: {e}")
             return "🔴"
     
     @staticmethod
     def get_color_legend(service_type: str, with_engineer: bool = False) -> str:
+        """
+        Возвращает легенду цветов для отображения пользователю.
+        
+        Аргументы:
+            service_type: Тип услуги
+            with_engineer: С инженером или без
+        
+        Возвращает:
+            str: Легенда цветов
+        """
         if service_type in ["12_hours_day", "12_hours_night"]:
             legend = (
-                "🟢 — Слот доступен для бронирования\n"
-                "🔴 — Слот занят или нельзя забронировать\n"
-                "⚪️ — Неизвестно (техническая проверка)"
+                "🟢 — Слот доступен для бронирования!\n"
+                "🔴 — Слот занят или нельзя забронировать!\n"
+                "⚪️ — Неизвестно (техническая проверка)!"
             )
         elif service_type == "track_creation":
             legend = (
-                "🟢 — Есть 4-часовой слот (можно забронировать ДО полуночи)\n"
-                "🟠 — Есть 4-часовой слот только через полночь\n"
-                "🔴 — Нет 4-часового слота\n"
-                "⚪️ — Неизвестно (техническая проверка)"
+                "🟢 — Есть 4-часовой слот (можно забронировать ДО полуночи)!\n"
+                "🟠 — Есть 4-часовой слот только через полночь!\n"
+                "🔴 — Нет 4-часового слота!\n"
+                "⚪️ — Неизвестно (техническая проверка)!"
             )
         else:
             legend = (
-                "🟢 — Свободно >75% времени (более 18 часов)\n"
-                "🟡 — Свободно 50-75% времени (12-18 часов)\n"
-                "🟠 — Свободно 25-50% времени (6-12 часов)\n"
-                "🔴 — Свободно <25% времени (менее 6 часов)\n"
-                "⚪️ — Неизвестно (техническая проверка)"
+                "🟢 — Свободно более 75% времени (более 18 часов)!\n"
+                "🟡 — Свободно 50-75% времени (12-18 часов)!\n"
+                "🟠 — Свободно 25-50% времени (6-12 часов)!\n"
+                "🔴 — Свободно менее 25% времени (менее 6 часов)!\n"
+                "⚪️ — Неизвестно (техническая проверка)!"
             )
         
         return legend
 
 class BookingManager:
+    """
+    Менеджер для работы с бронированиями.
+    
+    Отвечает за:
+    - Проверку доступности слотов (12-часовая аренда, обычные записи)
+    - Получение всех занятых слотов на дату
+    - Проверку конфликтов времени
+    - Сохранение бронирований в базу данных
+    - Кэширование слотов для ускорения работы
+    
+    Кэши:
+    - _slots_cache: Кэш занятых слотов по датам
+    - _cache_timeout: Время жизни кэша (60 секунд)
+    - _date_load_cache: Кэш загрузки дат
+    - _date_load_timeout: Время жизни кэша загрузки
+    """
+    
     _slots_cache = {}
     _cache_timeout = 60
     _date_load_cache = {}
     _date_load_timeout = 60
 
+    # ============================================================
+    # ПРОВЕРКА 12-ЧАСОВОЙ АРЕНДЫ
+    # ============================================================
+    
     @staticmethod
     def check_12_hours_slot_available(date_str: str, service_type: str) -> bool:
+        """
+        Проверяет доступность 12-часовой аренды на дату.
+        
+        Аргументы:
+            date_str: Дата в формате ДД.ММ.ГГГГ
+            service_type: Тип аренды (12_hours_day или 12_hours_night)
+        
+        Возвращает:
+            bool: True если слот доступен, False если занят
+        
+        Логика для дневной аренды (9-21):
+        1. Проверяет, нет ли уже дневной аренды на эту дату
+        2. Проверяет, не заняты ли часы 9-21 обычными записями
+        
+        Логика для ночной аренды (21-9):
+        1. Проверяет, нет ли уже ночной аренды на эту дату
+        2. Проверяет часы 21-24 на выбранную дату
+        3. Проверяет часы 0-9 на следующий день
+        """
         try:
             clean_date = date_str.split('(')[0].strip() if '(' in date_str else date_str
             
-            logger.info(f"🔍 === ПРОВЕРКА 12-ЧАСОВОЙ АРЕНДЫ НА {clean_date} ===")
-            logger.info(f"🔍 Тип аренды: {service_type}")
+            logger.info(f"🔍 Проверяю 12-часовую аренду на дату {clean_date}, тип {service_type}!")
             
             with db.get_connection() as conn:
                 cursor = conn.cursor()
@@ -5283,7 +6869,7 @@ class BookingManager:
                 if "day" in service_type:
                     target_type = "День"
                     target_time_slot = "9-21"
-                    logger.info(f"🔍 Ищем ДНЕВНУЮ аренду (9-21)")
+                    logger.info(f"🔍 Проверяю ДНЕВНУЮ аренду (9-21)!")
                     
                     # Проверяем, есть ли уже дневная аренда на эту дату
                     cursor.execute('''
@@ -5295,7 +6881,7 @@ class BookingManager:
                     ''', (clean_date, f'%{target_type}%'))
                     
                     if cursor.fetchone():
-                        logger.info(f"🔍 ❌ Дневная аренда на {clean_date} уже существует")
+                        logger.info(f"🔍 Дневная аренда на {clean_date} уже существует! 🚫")
                         return False
                     
                     # Проверяем, не заняты ли часы 9-21 обычными записями
@@ -5310,16 +6896,16 @@ class BookingManager:
                         ''', (clean_date, f'{hour}-%'))
                         
                         if cursor.fetchone():
-                            logger.info(f"🔍 ❌ Час {hour_slot} занят обычной записью")
+                            logger.info(f"🔍 Час {hour_slot} занят обычной записью! Выберите другую дату! 🚫")
                             return False
                     
-                    logger.info(f"🔍 ✅ Дневная аренда на {clean_date} доступна")
+                    logger.info(f"🔍 Дневная аренда на {clean_date} доступна! ✅")
                     return True
                     
                 else:  # night
                     target_type = "Ночь"
                     target_time_slot = "21-9"
-                    logger.info(f"🔍 Ищем НОЧНУЮ аренду (21-9)")
+                    logger.info(f"🔍 Проверяю НОЧНУЮ аренду (21-9)!")
                     
                     # Проверяем, есть ли уже ночная аренда на эту дату
                     cursor.execute('''
@@ -5331,7 +6917,7 @@ class BookingManager:
                     ''', (clean_date, f'%{target_type}%'))
                     
                     if cursor.fetchone():
-                        logger.info(f"🔍 ❌ Ночная аренда на {clean_date} уже существует")
+                        logger.info(f"🔍 Ночная аренда на {clean_date} уже существует! 🚫")
                         return False
                     
                     # Проверяем часы 21-24 на выбранную дату
@@ -5346,7 +6932,7 @@ class BookingManager:
                         ''', (clean_date, f'{hour}-%'))
                         
                         if cursor.fetchone():
-                            logger.info(f"🔍 ❌ Час {hour_slot} на {clean_date} занят")
+                            logger.info(f"🔍 Час {hour_slot} на {clean_date} занят! 🚫")
                             return False
                     
                     # Проверяем следующий день (часы 0-9)
@@ -5356,7 +6942,7 @@ class BookingManager:
                         next_date = current_date + timedelta(days=1)
                         next_date_str = next_date.strftime("%d.%m.%Y")
                         
-                        logger.info(f"🔍 Проверяем следующий день: {next_date_str}")
+                        logger.info(f"🔍 Проверяю следующий день: {next_date_str}!")
                         
                         for hour in range(0, 9):
                             hour_slot = f"{hour}-{hour+1}"
@@ -5369,26 +6955,39 @@ class BookingManager:
                             ''', (next_date_str, f'{hour}-%'))
                             
                             if cursor.fetchone():
-                                logger.info(f"🔍 ❌ Час {hour_slot} на {next_date_str} занят")
+                                logger.info(f"🔍 Час {hour_slot} на {next_date_str} занят! 🚫")
                                 return False
                                 
                     except Exception as e:
-                        logger.error(f"Ошибка проверки следующего дня: {e}")
+                        logger.error(f"❌ Ошибка проверки следующего дня для ночной аренды: {e}")
                         return False
                     
-                    logger.info(f"🔍 ✅ Ночная аренда на {clean_date} доступна")
+                    logger.info(f"🔍 Ночная аренда на {clean_date} доступна! ✅")
                     return True
                         
         except Exception as e:
-            logger.error(f"Ошибка проверки 12-часового слота: {e}")
+            logger.error(f"❌ Ошибка проверки 12-часового слота! Проверьте структуру базы данных!")
             import traceback
             traceback.print_exc()
             return False
     
+    # ============================================================
+    # ОТЛАДКА 12-ЧАСОВЫХ АРЕНД
+    # ============================================================
+    
     @staticmethod
     def debug_12_hour_booking(date_str):
+        """
+        Отладочная функция для проверки 12-часовых аренд на дату.
+        
+        Аргументы:
+            date_str: Дата в формате ДД.ММ.ГГГГ
+        
+        Возвращает:
+            list: Список занятых слотов
+        """
         logger.info("=" * 60)
-        logger.info(f"🔍 ДЕБАГ 12-ЧАСОВЫХ АРЕНД НА ДАТУ: {date_str}")
+        logger.info(f"🔍 Отладка 12-часовых аренд на дату: {date_str}!")
         logger.info("=" * 60)
         
         clean_date = date_str.split('(')[0].strip() if '(' in date_str else date_str
@@ -5407,11 +7006,11 @@ class BookingManager:
             ''', (clean_date,))
             
             bookings = cursor.fetchall()
-            logger.info(f"🔍 Найдено 12-часовых аренд на {clean_date}: {len(bookings)}")
+            logger.info(f"🔍 Найдено 12-часовых аренд на {clean_date}: {len(bookings)}!")
             
             for booking in bookings:
                 booking_id, time_slot, twelve_hours_type, booking_date = booking
-                logger.info(f"  • Запись #{booking_id}: {time_slot} ({twelve_hours_type}) на {booking_date}")
+                logger.info(f"  • Запись #{booking_id}: {time_slot} ({twelve_hours_type}) на {booking_date}!")
             
             try:
                 day, month, year = map(int, clean_date.split('.'))
@@ -5428,14 +7027,14 @@ class BookingManager:
                 ''', (prev_date_str,))
                 
                 prev_bookings = cursor.fetchall()
-                logger.info(f"🔍 Найдено 12-часовых аренд с предыдущего дня {prev_date_str}: {len(prev_bookings)}")
+                logger.info(f"🔍 Найдено 12-часовых аренд с предыдущего дня {prev_date_str}: {len(prev_bookings)}!")
                 
                 for booking in prev_bookings:
                     booking_id, time_slot, twelve_hours_type, booking_date = booking
-                    logger.info(f"  • Запись #{booking_id}: {time_slot} ({twelve_hours_type}) на {booking_date}")
+                    logger.info(f"  • Запись #{booking_id}: {time_slot} ({twelve_hours_type}) на {booking_date}!")
                     
             except Exception as e:
-                logger.error(f"Ошибка проверки предыдущего дня: {e}")
+                logger.error(f"❌ Ошибка проверки предыдущего дня: {e}")
         
         slots = BookingManager.get_all_time_slots_for_date(date_str)
         logger.info(f"🔍 Итоговые заблокированные слоты на {clean_date}:")
@@ -5446,26 +7045,45 @@ class BookingManager:
         
         return slots
 
+    # ============================================================
+    # ПОЛУЧЕНИЕ ВСЕХ СЛОТОВ НА ДАТУ
+    # ============================================================
+    
     @staticmethod
     def get_all_time_slots_for_date(date_str):
+        """
+        Получает все занятые слоты на дату.
+        
+        Аргументы:
+            date_str: Дата в формате ДД.ММ.ГГГГ
+        
+        Возвращает:
+            list: Список занятых слотов в формате "час-час+1"
+        
+        Учитывает:
+        1. Обычные записи на эту дату
+        2. 12-часовые аренды (дневные и ночные)
+        3. Ночные записи с предыдущего дня
+        """
         try:
             if not date_str or len(date_str) > 50:
                 return []
             
             clean_date = date_str.split('(')[0].strip() if '(' in date_str else date_str
             
+            # Проверяем кэш
             cached_slots = MemoryCache.get_date_slots(clean_date, ttl=5)
             if cached_slots is not None:
                 return cached_slots
             
-            logger.info(f"🔍 get_all_time_slots_for_date: {clean_date}")
+            logger.info(f"🔍 Получаю все занятые слоты для даты: {clean_date}!")
             
             booked_slots = []
             
             with db.get_connection() as conn:
                 cursor = conn.cursor()
                 
-                # 1. Записи на эту дату (ВКЛЮЧАЯ pending!)
+                # 1. Записи на эту дату (включая pending)
                 cursor.execute('''
                     SELECT time_slot, is_12_hours, twelve_hours_type FROM bookings 
                     WHERE date_str LIKE ? || '%' 
@@ -5473,7 +7091,7 @@ class BookingManager:
                 ''', (clean_date,))
                 
                 rows = cursor.fetchall()
-                logger.info(f"🔍 Найдено записей на {clean_date}: {len(rows)}")
+                logger.info(f"🔍 Найдено записей на {clean_date}: {len(rows)}!")
                 
                 for row in rows:
                     time_slot, is_12_hours, twelve_hours_type = row
@@ -5488,43 +7106,44 @@ class BookingManager:
                         start_hour = int(start_str)
                         end_hour = int(end_str)
                         
-                        logger.info(f"🔍 Бронь на {clean_date}: {normalized_slot} (12ч: {is_12_hours}, тип: {twelve_hours_type})")
+                        logger.info(f"🔍 Бронь на {clean_date}: {normalized_slot} (12ч: {is_12_hours}, тип: {twelve_hours_type})!")
                         
                         if is_12_hours and twelve_hours_type:
                             if 'Ночь' in twelve_hours_type or 'ночь' in twelve_hours_type.lower():
-                                logger.info(f"   → 12-часовая НОЧНАЯ аренда: блокирует 21-24 (этот день)")
+                                logger.info(f"   → 12-часовая НОЧНАЯ аренда! Блокирует 21-24 (этот день)!")
                                 for hour in range(21, 24):
                                     booked_slots.append(f"{hour}-{hour+1}")
                                 
                             elif 'День' in twelve_hours_type or 'день' in twelve_hours_type.lower():
-                                logger.info(f"   → 12-часовая ДНЕВНАЯ аренда: блокирует 9-21")
+                                logger.info(f"   → 12-часовая ДНЕВНАЯ аренда! Блокирует 9-21!")
                                 for hour in range(9, 21):
                                     booked_slots.append(f"{hour}-{hour+1}")
                         
                         else:
-                            # ===== ПРОСТАЯ ЛОГИКА =====
-                            # Ночной слот — только когда end_hour <= start_hour (пересекает полночь)
+                            # Обычный слот
                             if end_hour <= start_hour:
-                                logger.info(f"   → НОЧНОЙ слот: блокирует {start_hour}-24 (этот день)")
+                                # Ночной слот (пересекает полночь)
+                                logger.info(f"   → НОЧНОЙ слот! Блокирует {start_hour}-24 (этот день)!")
                                 for hour in range(start_hour, 24):
                                     booked_slots.append(f"{hour}-{hour+1}")
                             else:
-                                logger.info(f"   → ОБЫЧНЫЙ дневной слот: блокирует {start_hour}-{end_hour}")
+                                # Дневной слот
+                                logger.info(f"   → ОБЫЧНЫЙ дневной слот! Блокирует {start_hour}-{end_hour}!")
                                 for hour in range(start_hour, end_hour):
                                     booked_slots.append(f"{hour}-{hour+1}")
                                 
                     except Exception as e:
-                        logger.error(f"Ошибка обработки слота {normalized_slot}: {e}")
+                        logger.error(f"❌ Ошибка обработки слота {normalized_slot}: {e}")
                         continue
                 
-                # 2. КРИТИЧЕСКИ ВАЖНО: Проверяем ночные записи с ПРЕДЫДУЩЕГО ДНЯ
+                # 2. Проверяем ночные записи с ПРЕДЫДУЩЕГО ДНЯ
                 try:
                     day, month, year = map(int, clean_date.split('.'))
                     current_date = datetime(year, month, day)
                     prev_date = current_date - timedelta(days=1)
                     prev_date_str = prev_date.strftime("%d.%m.%Y")
                     
-                    logger.info(f"🔍 Проверяем ночные записи с предыдущего дня: {prev_date_str}")
+                    logger.info(f"🔍 Проверяю ночные записи с предыдущего дня: {prev_date_str}!")
                     
                     cursor.execute('''
                         SELECT time_slot, is_12_hours, twelve_hours_type FROM bookings 
@@ -5533,7 +7152,7 @@ class BookingManager:
                     ''', (prev_date_str,))
                     
                     prev_rows = cursor.fetchall()
-                    logger.info(f"🔍 Найдено записей на {prev_date_str}: {len(prev_rows)}")
+                    logger.info(f"🔍 Найдено записей на {prev_date_str}: {len(prev_rows)}!")
                     
                     for row in prev_rows:
                         time_slot, is_12_hours, twelve_hours_type = row
@@ -5550,51 +7169,67 @@ class BookingManager:
                             
                             # Проверяем 12-часовую ночную аренду с предыдущего дня
                             if is_12_hours and twelve_hours_type and ('Ночь' in twelve_hours_type or 'ночь' in twelve_hours_type.lower()):
-                                logger.info(f"🔍 Ночная 12-часовая аренда с {prev_date_str} блокирует 0-9 на {clean_date}")
+                                logger.info(f"🔍 Ночная 12-часовая аренда с {prev_date_str} блокирует 0-9 на {clean_date}!")
                                 for hour in range(0, 9):
                                     booked_slots.append(f"{hour}-{hour+1}")
                             
                             # Если это обычный ночной слот (пересекает полночь)
                             elif end_hour <= start_hour:
-                                logger.info(f"🔍 Ночная запись с {prev_date_str} {normalized_slot} блокирует 00-{end_hour} на {clean_date}")
+                                logger.info(f"🔍 Ночная запись с {prev_date_str} {normalized_slot} блокирует 00-{end_hour} на {clean_date}!")
                                 for hour in range(0, end_hour):
                                     booked_slots.append(f"{hour}-{hour+1}")
                                         
                         except Exception as e:
-                            logger.error(f"Ошибка обработки слота с предыдущего дня: {e}")
+                            logger.error(f"❌ Ошибка обработки слота с предыдущего дня: {e}")
                             continue
                             
                 except Exception as e:
-                    logger.error(f"Ошибка проверки предыдущего дня: {e}")
+                    logger.error(f"❌ Ошибка проверки предыдущего дня: {e}")
             
+            # Удаляем дубли и сортируем
             booked_slots = list(set(booked_slots))
             booked_slots.sort(key=lambda x: int(x.split('-')[0]))
             
-            logger.info(f"🔍 Итоговые занятые слоты на {clean_date}: {booked_slots}")
+            logger.info(f"🔍 Итоговые занятые слоты на {clean_date}: {booked_slots}!")
             
             MemoryCache.set_date_slots(clean_date, booked_slots)
             return booked_slots
             
         except Exception as e:
-            logger.error(f"Ошибка получения слотов для даты: {e}")
+            logger.error(f"❌ Ошибка получения слотов для даты {date_str}! Проверьте подключение к базе данных!")
             import traceback
             traceback.print_exc()
             return []
 
+    # ============================================================
+    # ПРОВЕРКА КОНФЛИКТА СЛОТОВ
+    # ============================================================
+    
     @staticmethod
     def is_time_slot_conflict(new_time_slot, booked_slots, date_str=None):
+        """
+        Проверяет, есть ли конфликт нового слота с уже существующими.
+        
+        Аргументы:
+            new_time_slot: Новый слот в формате "час-час"
+            booked_slots: Список занятых слотов
+            date_str: Дата (для отладки)
+        
+        Возвращает:
+            bool: True если есть конфликт, False если нет
+        """
         try:
             if not new_time_slot or '-' not in new_time_slot:
                 return False
             
-            logger.info(f"🔍 === ПРОВЕРКА КОНФЛИКТА ДЛЯ: {new_time_slot} ===")
+            logger.info(f"🔍 Проверяю конфликт для слота: {new_time_slot}!")
             logger.info(f"🔍 Занятые слоты: {booked_slots}")
             
             new_start_str, new_end_str = new_time_slot.split('-')
             new_start = int(new_start_str.strip())
             new_end = int(new_end_str.strip())
             
-            # Нормализуем конечный час (24 -> 0 для расчета)
+            # Нормализуем конечный час
             if new_end == 0 or new_end == 24:
                 new_end_norm = 24
             else:
@@ -5602,6 +7237,7 @@ class BookingManager:
             
             logger.info(f"🔍 Новый слот: {new_start}-{new_end} (нормализовано: {new_start}-{new_end_norm})")
             
+            # Формируем множество часов нового слота
             new_hours = set()
             
             if new_end_norm > new_start:
@@ -5615,6 +7251,7 @@ class BookingManager:
             
             logger.info(f"🔍 Часы нового слота: {sorted(new_hours)}")
             
+            # Проверяем конфликт с каждым занятым слотом
             for booked_slot in booked_slots:
                 if not booked_slot or '-' not in booked_slot:
                     continue
@@ -5628,8 +7265,9 @@ class BookingManager:
                 else:
                     booked_end_norm = booked_end
                 
-                logger.info(f"🔍 Проверяем с забронированным: {booked_start}-{booked_end} (норм: {booked_start}-{booked_end_norm})")
+                logger.info(f"🔍 Проверяю с забронированным: {booked_start}-{booked_end} (норм: {booked_start}-{booked_end_norm})")
                 
+                # Формируем множество часов занятого слота
                 booked_hours = set()
                 
                 if booked_end_norm > booked_start:
@@ -5643,24 +7281,40 @@ class BookingManager:
                 
                 logger.info(f"🔍 Часы забронированного слота: {sorted(booked_hours)}")
                 
+                # Проверяем пересечение
                 intersection = new_hours.intersection(booked_hours)
                 if intersection:
-                    logger.info(f"🔍 КОНФЛИКТ! Пересекающиеся часы: {sorted(intersection)}")
+                    logger.info(f"🔍 КОНФЛИКТ! Пересекающиеся часы: {sorted(intersection)}! 🚫")
                     return True
                 else:
-                    logger.info(f"🔍 Нет конфликта с {booked_slot}")
+                    logger.info(f"🔍 Нет конфликта с {booked_slot}!")
             
-            logger.info(f"🔍 ✅ Все проверки пройдены, конфликтов нет")
+            logger.info(f"🔍 Все проверки пройдены! Конфликтов нет! ✅")
             return False
                         
         except Exception as e:
-            logger.error(f"Ошибка проверки конфликта слота: {e}")
+            logger.error(f"❌ Ошибка проверки конфликта слота! Проверьте формат времени!")
             import traceback
             traceback.print_exc()
             return True
 
+    # ============================================================
+    # ПРОВЕРКА ДОСТУПНОСТИ СЛОТА
+    # ============================================================
+    
     @staticmethod
     def check_time_slot_available(date_str, time_slot, service_type="vocal"):
+        """
+        Проверяет доступность конкретного слота на дату.
+        
+        Аргументы:
+            date_str: Дата в формате ДД.ММ.ГГГГ
+            time_slot: Время в формате "час-час"
+            service_type: Тип услуги (для отладки)
+        
+        Возвращает:
+            bool: True если слот доступен, False если занят
+        """
         try:
             if not date_str or not time_slot or '-' not in time_slot:
                 return False
@@ -5668,14 +7322,14 @@ class BookingManager:
             clean_date = date_str.split('(')[0].strip() if '(' in date_str else date_str
             
             logger.info("=" * 60)
-            logger.info(f"🔍 check_time_slot_available (FINAL):")
+            logger.info(f"🔍 Проверяю доступность слота!")
             logger.info(f"   Дата: {clean_date}")
             logger.info(f"   Время: {time_slot}")
             
             normalized_time = DateTimeUtils.normalize_time_input(time_slot)
             
             if '-' not in normalized_time:
-                logger.error(f"Неверный формат времени: {normalized_time}")
+                logger.error(f"❌ Неверный формат времени: {normalized_time}")
                 return False
             
             start_str, end_str = normalized_time.split('-')
@@ -5683,12 +7337,12 @@ class BookingManager:
                 start_hour = int(start_str.strip())
                 end_hour = int(end_str.strip())
             except ValueError:
-                logger.error(f"Неверный формат часов: {start_str}-{end_str}")
+                logger.error(f"❌ Неверный формат часов: {start_str}-{end_str}")
                 return False
             
             logger.info(f"🔍 Время для проверки: {start_hour}-{end_hour}")
             
-            # Получаем все занятые слоты (включая pending!)
+            # Получаем все занятые слоты
             booked_slots = BookingManager.get_all_time_slots_for_date(clean_date)
             logger.info(f"🔍 Занятые слоты на {clean_date}: {booked_slots}")
             
@@ -5697,7 +7351,7 @@ class BookingManager:
                 for hour in range(start_hour, end_hour):
                     hour_slot = f"{hour}-{hour+1}"
                     if hour_slot in booked_slots:
-                        logger.info(f"🔍 КОНФЛИКТ: слот {hour_slot} занят!")
+                        logger.info(f"🔍 КОНФЛИКТ! Слот {hour_slot} занят! 🚫")
                         return False
             
             else:
@@ -5705,7 +7359,7 @@ class BookingManager:
                 for hour in range(start_hour, 24):
                     hour_slot = f"{hour}-{hour+1}"
                     if hour_slot in booked_slots:
-                        logger.info(f"🔍 КОНФЛИКТ (этот день): слот {hour_slot} занят!")
+                        logger.info(f"🔍 КОНФЛИКТ (этот день)! Слот {hour_slot} занят! 🚫")
                         return False
                 
                 try:
@@ -5720,28 +7374,43 @@ class BookingManager:
                     for hour in range(0, end_hour):
                         hour_slot = f"{hour}-{hour+1}"
                         if hour_slot in booked_slots_day2:
-                            logger.info(f"🔍 КОНФЛИКТ (след. день): слот {hour_slot} занят на {next_date_str}!")
+                            logger.info(f"🔍 КОНФЛИКТ (следующий день)! Слот {hour_slot} занят на {next_date_str}! 🚫")
                             return False
                             
                 except Exception as e:
-                    logger.error(f"Ошибка проверки следующего дня: {e}")
+                    logger.error(f"❌ Ошибка проверки следующего дня: {e}")
                     return False
             
-            logger.info(f"🔍 ✅ Слот {time_slot} на {clean_date} ДОСТУПЕН")
+            logger.info(f"🔍 Слот {time_slot} на {clean_date} ДОСТУПЕН! ✅")
             logger.info("=" * 60)
             return True
                     
         except Exception as e:
-            logger.error(f"Ошибка в check_time_slot_available: {e}")
+            logger.error(f"❌ Ошибка в check_time_slot_available! Проверьте структуру данных!")
             import traceback
             traceback.print_exc()
             return False
 
+    # ============================================================
+    # СОХРАНЕНИЕ БРОНИРОВАНИЯ
+    # ============================================================
+    
     @staticmethod
     def save_to_sheets(user_data, user_id=None, return_row_index=False):
+        """
+        Сохраняет бронирование в базу данных.
+        
+        Аргументы:
+            user_data: Данные пользователя и бронирования
+            user_id: ID пользователя (для обычных записей)
+            return_row_index: Возвращать ли ID записи
+        
+        Возвращает:
+            bool или tuple: (успех, booking_id) если return_row_index=True
+        """
         try:
             logger.info("=" * 80)
-            logger.info("🚀 СОХРАНЕНИЕ БРОНИРОВАНИЯ - СТАРТ")
+            logger.info("🚀 Начинаю сохранение бронирования!")
             
             with db.get_connection() as conn:
                 cursor = conn.cursor()
@@ -5749,8 +7418,8 @@ class BookingManager:
                 count_before = cursor.fetchone()[0]
                 is_first_booking = (count_before == 0)
             
-            logger.info(f"🔍 Записей в базе ДО сохранения: {count_before}")
-            logger.info(f"🔍 Это первая запись в базе? {is_first_booking}")
+            logger.info(f"🔍 Записей в базе до сохранения: {count_before}!")
+            logger.info(f"🔍 Это первая запись в базе? {is_first_booking}!")
             
             timestamp = DateTimeUtils.now().strftime('%Y-%m-%d %H:%M:%S')
             
@@ -5758,7 +7427,7 @@ class BookingManager:
             
             if is_admin_booking and 'target_telegram_id' in user_data:
                 telegram_id = str(user_data.get('target_telegram_id'))
-                logger.info(f"🔍 Админская запись для пользователя: {telegram_id}")
+                logger.info(f"🔍 Админская запись для пользователя: {telegram_id}!")
                 
                 name = f"Админская запись (администратор)"
                 contact = f"ID: {user_data.get('target_unique_id', 'Не указан')}"
@@ -5775,7 +7444,7 @@ class BookingManager:
                     
             else:
                 telegram_id = str(user_id) if user_id else "000"
-                logger.info(f"🔍 Обычная запись для пользователя: {telegram_id}")
+                logger.info(f"🔍 Обычная запись для пользователя: {telegram_id}!")
                 
                 name = user_data.get('name', 'Не указано')
                 contact = user_data.get('contact', 'Не указано')
@@ -5783,7 +7452,7 @@ class BookingManager:
                 date_str_for_db = user_data.get('date', 'Не указана')
                 time_slot_for_db = user_data.get('time', 'Не указано')
             
-            logger.info(f"🔍 Пользователь: {telegram_id}, Услуга: {service}")
+            logger.info(f"🔍 Пользователь: {telegram_id}, Услуга: {service}!")
             
             time_slot = time_slot_for_db
             original_time = time_slot
@@ -5800,7 +7469,7 @@ class BookingManager:
                             end_hour = int(parts[1].strip())
                             time_slot = f"{start_hour}-{end_hour}"
                         except ValueError as e:
-                            logger.error(f"Ошибка парсинга времени {time_slot}: {e}")
+                            logger.error(f"❌ Ошибка парсинга времени {time_slot}: {e}")
                             time_slot = 'Не указано'
             
             date_str = date_str_for_db
@@ -5820,33 +7489,34 @@ class BookingManager:
             start_hour = user_data.get('start_hour', None)
             end_hour = user_data.get('end_hour', None)
 
-            # ===== ЦЕНА БЕРЁТСЯ ИЗ user_data (УЖЕ РАССЧИТАНА В PriceCalculator) =====
+            # Цена берётся из user_data
             price = str(user_data.get('price', '0'))
             
-            # ===== ПРОВЕРЯЕМ, БЫЛ ЛИ ПРИМЕНЁН ПРОМОКОД НА БЕСПЛАТНУЮ УСЛУГУ =====
+            # Проверяем, был ли применён промокод на бесплатную услугу
             free_service_applied = user_data.get('free_service_applied', False)
             if free_service_applied:
                 price = '0'
-                logger.info(f"💰 Бесплатная услуга, цена = 0")
+                logger.info(f"💰 Бесплатная услуга! Цена = 0!")
             
-            # ===== ПОЛУЧАЕМ level_coupon_id ИЗ user_data (НЕ ИЗ price_result!) =====
+            # Получаем данные о скидках
             level_coupon_id = user_data.get('level_coupon_id')
             level_discount_percent = user_data.get('level_discount_percent', 0)
             promo_code_used = user_data.get('promo_code_used')
             promo_discount_percent = user_data.get('promo_discount_percent', 0)
 
-            logger.info(f"🔍 Цена из user_data: {price}")
-            logger.info(f"🔍 free_service_applied: {free_service_applied}")
-            logger.info(f"🔍 level_coupon_id из user_data: {level_coupon_id}")
-            logger.info(f"🔍 level_discount_percent из user_data: {level_discount_percent}")
-            logger.info(f"🔍 promo_code_used из user_data: {promo_code_used}")
-            logger.info(f"🔍 promo_discount_percent из user_data: {promo_discount_percent}")
+            logger.info(f"💰 Цена из user_data: {price}!")
+            logger.info(f"💰 free_service_applied: {free_service_applied}!")
+            logger.info(f"💰 level_coupon_id: {level_coupon_id}!")
+            logger.info(f"💰 level_discount_percent: {level_discount_percent}%!")
+            logger.info(f"💰 promo_code_used: {promo_code_used}!")
+            logger.info(f"💰 promo_discount_percent: {promo_discount_percent}%!")
 
             status = 'confirmed' if is_admin_booking else 'pending'
-            logger.info(f"🔍 Статус записи: {status} (админская: {is_admin_booking})")
+            logger.info(f"🔍 Статус записи: {status} (админская: {is_admin_booking})!")
             
             affected_dates = [clean_date]
 
+            # Инвалидируем кэш
             if clean_date and 'Не указана' not in clean_date and clean_date != 'Запись в студии':
                 MemoryCache.invalidate_date(clean_date)
                 
@@ -5865,7 +7535,7 @@ class BookingManager:
                             MemoryCache.invalidate_date(next_date_str)
                             affected_dates.append(next_date_str)
                     except ValueError as e:
-                        logger.error(f"Ошибка парсинга времени для сброса кэша: {e}")
+                        logger.error(f"❌ Ошибка парсинга времени для сброса кэша: {e}")
             
             with db.get_connection() as conn:
                 cursor = conn.cursor()
@@ -5873,17 +7543,17 @@ class BookingManager:
                 cursor.execute("SELECT seq FROM sqlite_sequence WHERE name='bookings'")
                 seq_result = cursor.fetchone()
                 seq_before = seq_result[0] if seq_result else 0
-                logger.info(f"🔍 Аутоинкремент ДО сохранения: {seq_before}")
+                logger.info(f"🔍 Аутоинкремент до сохранения: {seq_before}!")
                 
                 record_type = user_data.get('admin_record_type', '')
                 
                 if is_admin_booking:
                     if record_type == "📝 Договорная запись":
                         is_contractual = True
-                        logger.info(f"🔍 Админская договорная запись")
+                        logger.info(f"🔍 Админская договорная запись!")
                     else:
                         is_contractual = False
-                        logger.info(f"🔍 Админская запись в студии (не договорная)")
+                        logger.info(f"🔍 Админская запись в студии (не договорная)!")
                 else:
                     is_contractual = (
                         'Не указана' in clean_date or 
@@ -5894,9 +7564,9 @@ class BookingManager:
                         (is_track_creation and track_type and 'Альбом' in track_type)
                     )
                 
-                logger.info(f"🔍 is_contractual = {is_contractual} для записи: {service}")
+                logger.info(f"🔍 is_contractual = {is_contractual} для записи: {service}!")
                 
-                # ===== INSERT =====
+                # Вставляем запись
                 cursor.execute('''
                     INSERT INTO bookings (
                         timestamp, name, contact, telegram_id, service,
@@ -5922,30 +7592,30 @@ class BookingManager:
                 
                 booking_id = cursor.lastrowid
                 
-                logger.info(f"✅ Запись сохранена с ID: {booking_id}")
+                logger.info(f"✅ Запись сохранена с ID: {booking_id}!")
                 
-                # ===== ПОСЛЕ INSERT ОБНОВЛЯЕМ level_coupon_id =====
+                # Обновляем информацию о скидках
                 if level_coupon_id:
                     cursor.execute('UPDATE bookings SET level_coupon_id = ? WHERE id = ?', (level_coupon_id, booking_id))
-                    logger.info(f"💰 level_coupon_id {level_coupon_id} сохранён для записи #{booking_id}")
+                    logger.info(f"💰 level_coupon_id {level_coupon_id} сохранён для записи #{booking_id}!")
                 
                 if level_discount_percent:
                     cursor.execute('UPDATE bookings SET level_discount_percent = ? WHERE id = ?', (level_discount_percent, booking_id))
-                    logger.info(f"💰 level_discount_percent {level_discount_percent} сохранён для записи #{booking_id}")
+                    logger.info(f"💰 level_discount_percent {level_discount_percent}% сохранён для записи #{booking_id}!")
                 
                 if promo_code_used:
                     cursor.execute('UPDATE bookings SET promo_code_used = ? WHERE id = ?', (promo_code_used, booking_id))
-                    logger.info(f"💰 promo_code_used {promo_code_used} сохранён для записи #{booking_id}")
+                    logger.info(f"💰 promo_code_used {promo_code_used} сохранён для записи #{booking_id}!")
                 
                 if promo_discount_percent:
                     cursor.execute('UPDATE bookings SET promo_discount_percent = ? WHERE id = ?', (promo_discount_percent, booking_id))
-                    logger.info(f"💰 promo_discount_percent {promo_discount_percent} сохранён для записи #{booking_id}")
+                    logger.info(f"💰 promo_discount_percent {promo_discount_percent}% сохранён для записи #{booking_id}!")
                 
-                # ===== СОХРАНЯЕМ free_service_applied В БД =====
                 if free_service_applied:
                     cursor.execute('UPDATE bookings SET free_service_applied = 1 WHERE id = ?', (booking_id,))
-                    logger.info(f"💰 free_service_applied 1 сохранён для записи #{booking_id}")
+                    logger.info(f"💰 free_service_applied = 1 сохранён для записи #{booking_id}!")
                 
+                # Обновляем total_spent пользователя
                 if price and price != '0' and 'договорная' not in str(price).lower():
                     try:
                         price_value = 0
@@ -5957,7 +7627,7 @@ class BookingManager:
                                 price_value = int(cleaned_price)
                         
                         if price_value > 0:
-                            logger.info(f"💰 Обновляем total_spent для пользователя {telegram_id}: +{price_value}₽")
+                            logger.info(f"💰 Обновляю total_spent для пользователя {telegram_id}: +{price_value}₽!")
                             
                             cursor.execute('SELECT total_spent FROM users WHERE telegram_id = ?', (telegram_id,))
                             user_data_db = cursor.fetchone()
@@ -5967,7 +7637,7 @@ class BookingManager:
                                 new_total = current_total + price_value
                                 cursor.execute('UPDATE users SET total_spent = ? WHERE telegram_id = ?', 
                                             (new_total, telegram_id))
-                                logger.info(f"💰 Обновлен total_spent: {current_total} -> {new_total}₽")
+                                logger.info(f"💰 Обновлён total_spent: {current_total} -> {new_total}₽!")
                             else:
                                 unique_id = f"MC{int(time.time())}{telegram_id[-6:]}"
                                 registration_date = DateTimeUtils.now().strftime('%d.%m.%Y')
@@ -5977,15 +7647,16 @@ class BookingManager:
                                     (telegram_id, username, unique_id, registration_date, total_spent)
                                     VALUES (?, ?, ?, ?, ?)
                                 ''', (telegram_id, telegram_id, unique_id, registration_date, price_value))
-                                logger.info(f"💰 Создан новый пользователь с total_spent: {price_value}₽")
+                                logger.info(f"💰 Создан новый пользователь с total_spent: {price_value}₽!")
                     except Exception as e:
                         logger.error(f"❌ Ошибка обновления total_spent в save_to_sheets: {e}")
                 
                 cursor.execute("SELECT seq FROM sqlite_sequence WHERE name='bookings'")
                 seq_result = cursor.fetchone()
                 seq_after = seq_result[0] if seq_result else 0
-                logger.info(f"🔍 Аутоинкремент ПОСЛЕ сохранения: {seq_after}")
+                logger.info(f"🔍 Аутоинкремент после сохранения: {seq_after}!")
                 
+                # Обновляем кэш для 12-часовой аренды
                 if clean_date and 'Не указана' not in clean_date and is_12_hours:
                     if twelve_hours_type and ('День' in twelve_hours_type or 'день' in twelve_hours_type.lower()):
                         cache_service_type = '12_hours_day'
@@ -6002,19 +7673,20 @@ class BookingManager:
                         VALUES (?, ?, ?, ?)
                     ''', (clean_date, time_slot, cache_service_type, booking_id))
                     
-                    logger.info(f"📦 Обновлен кэш для 12-часовой аренды: {clean_date} {time_slot}")
+                    logger.info(f"📦 Обновлён кэш для 12-часовой аренды: {clean_date} {time_slot}!")
                 
                 cursor.execute('SELECT COUNT(*) FROM bookings')
                 count_after = cursor.fetchone()[0]
-                logger.info(f"🔍 Записей в базе ПОСЛЕ сохранения: {count_after}")
+                logger.info(f"🔍 Записей в базе после сохранения: {count_after}!")
                 
                 conn.commit()
                 
-                logger.info(f"✅ Сохранение завершено. Booking ID: {booking_id}")
-                logger.info(f"✅ УСПЕХ! Запись #{booking_id} создана.")
-                logger.info(f"🔍 Статус записи: {status}")
+                logger.info(f"✅ Сохранение завершено! Booking ID: {booking_id}!")
+                logger.info(f"✅ Запись #{booking_id} успешно создана!")
+                logger.info(f"🔍 Статус записи: {status}!")
                 logger.info("=" * 80)
                 
+                # Сохраняем в персистентную базу
                 if not is_admin_booking:
                     try:
                         booking_data_persistent = {
@@ -6030,9 +7702,9 @@ class BookingManager:
                         
                         persistent_booking_id = persistent_db.save_booking(booking_data_persistent)
                         if persistent_booking_id:
-                            logger.info(f"📦 Запись #{persistent_booking_id} сохранена в ПЕРСИСТЕНТНУЮ базу")
+                            logger.info(f"📦 Запись #{persistent_booking_id} сохранена в ПЕРСИСТЕНТНУЮ базу!")
                         else:
-                            logger.warning("⚠️ Не удалось сохранить в персистентную базу")
+                            logger.warning("⚠️ Не удалось сохранить в персистентную базу!")
                                 
                     except Exception as e:
                         logger.error(f"❌ Ошибка сохранения в персистентную базу: {e}")
@@ -6042,20 +7714,33 @@ class BookingManager:
                 return True
                         
         except sqlite3.IntegrityError as e:
-            logger.error(f"❌ ОШИБКА UNIQUE INDEX: Не удалось сохранить бронирование: {e}")
+            logger.error(f"❌ ОШИБКА UNIQUE INDEX! Не удалось сохранить бронирование: {e}!")
             if return_row_index:
                 return False, None
             return False
         except Exception as e:
-            logger.error(f"Ошибка сохранения бронирования: {e}")
+            logger.error(f"❌ Ошибка сохранения бронирования! Проверьте структуру данных!")
             import traceback
             traceback.print_exc()
             if return_row_index:
                 return False, None
             return False
 
+    # ============================================================
+    # ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ
+    # ============================================================
+    
     @staticmethod
     def force_normalize_time(time_str):
+        """
+        Принудительно нормализует время (24 → 0).
+        
+        Аргументы:
+            time_str: Время в формате "час-час"
+        
+        Возвращает:
+            str: Нормализованное время
+        """
         if not time_str or time_str == 'Не указано':
             return time_str
         
@@ -6079,53 +7764,91 @@ class BookingManager:
             return time_str
 
 class FreeIntervalCalculator:
+    """
+    Класс для расчёта свободных интервалов времени на дату.
+    
+    Учитывает:
+    - Занятые слоты (бронирования)
+    - Правила бронирования (минимальное время до начала)
+    - Особенности для создания трека (нужно 4 часа)
+    
+    Методы:
+    - format_interval_for_display: Форматирование интервала для отображения
+    - get_all_free_intervals: Получение всех свободных интервалов
+    - get_max_free_interval: Получение самого большого свободного интервала
+    - is_time_in_interval: Проверка, входит ли время в интервал
+    - debug_free_intervals: Отладочная функция
+    """
+    
     @staticmethod
     def format_interval_for_display(interval):
+        """
+        Форматирует интервал для отображения пользователю.
+        
+        Аргументы:
+            interval: Словарь с полями start, end, duration
+        
+        Возвращает:
+            str: Отформатированный интервал
+        """
         duration = interval['duration']
         formatted_duration = PriceCalculator.format_hours_ru(duration)
         
+        # Особые случаи для удобства пользователя
         if interval['start'] == 0 and interval['end'] == 24:
-            return "00:00 — 00:00 (24 часа доступно)"
+            return "00:00 — 00:00 (24 часа доступно)!"
         
         if interval['start'] == 23 and interval['end'] == 24:
-            return "23:00 — 00:00 (1 час доступен, можно бронировать через полночь)"
+            return "23:00 — 00:00 (1 час доступен, можно бронировать через полночь)!"
         
         if interval['start'] == 22 and interval['end'] == 24:
             formatted_duration = PriceCalculator.format_hours_ru(interval['duration'])
-            return f"22:00 — 00:00 ({formatted_duration} доступно, можно бронировать через полночь)"
+            return f"22:00 — 00:00 ({formatted_duration} доступно, можно бронировать через полночь)!"
         
         if interval['start'] == 21 and interval['end'] == 24:
             formatted_duration = PriceCalculator.format_hours_ru(interval['duration'])
-            return f"21:00 — 00:00 ({formatted_duration} доступно, можно бронировать через полночь)"
+            return f"21:00 — 00:00 ({formatted_duration} доступно, можно бронировать через полночь)!"
         
         if interval['start'] == 20 and interval['end'] == 24:
             formatted_duration = PriceCalculator.format_hours_ru(interval['duration'])
-            return f"20:00 — 00:00 ({formatted_duration} доступно, можно бронировать через полночь)"
+            return f"20:00 — 00:00 ({formatted_duration} доступно, можно бронировать через полночь)!"
         
+        # Интервалы, заканчивающиеся в полночь
         if interval['end'] == 24:
             start_display = f"{interval['start']:02d}"
             
             if duration >= 4:
-                return f"{start_display}:00 — 00:00 ({formatted_duration} доступно)"
+                return f"{start_display}:00 — 00:00 ({formatted_duration} доступно)!"
             else:
-                return f"{start_display}:00 — 00:00 ({formatted_duration} доступно, можно бронировать через полночь)"
+                return f"{start_display}:00 — 00:00 ({formatted_duration} доступно, можно бронировать через полночь)!"
         
+        # Обычные интервалы
         start_display = "00" if interval['start'] == 0 else f"{interval['start']:02d}"
         end_display = "00" if interval['end'] == 0 else f"{interval['end']:02d}"
         
-        return f"{start_display}:00 — {end_display}:00 ({formatted_duration} доступно)"
+        return f"{start_display}:00 — {end_display}:00 ({formatted_duration} доступно)!"
     
     @staticmethod
     def get_all_free_intervals(date_str: str, is_track_creation: bool, with_engineer: bool):
-        """Возвращает все свободные интервалы на дату с учетом ограничений"""
+        """
+        Возвращает все свободные интервалы на дату с учётом ограничений.
+        
+        Аргументы:
+            date_str: Дата в формате ДД.ММ.ГГГГ
+            is_track_creation: Создание трека (требует 4 часа)
+            with_engineer: С инженером или без
+        
+        Возвращает:
+            list: Список свободных интервалов
+        """
         try:
             clean_date = date_str.split('(')[0].strip() if '(' in date_str else date_str
             
-            logger.info(f"🔍 === get_all_free_intervals для {clean_date} ===")
+            logger.info(f"🔍 Рассчитываю свободные интервалы для даты {clean_date}!")
             logger.info(f"   is_track_creation: {is_track_creation}")
             logger.info(f"   with_engineer: {with_engineer}")
             
-            # ПОЛУЧАЕМ ЗАНЯТЫЕ СЛОТЫ
+            # Получаем занятые слоты
             booked_slots = BookingManager.get_all_time_slots_for_date(clean_date)
             logger.info(f"🔍 Занятые слоты на {clean_date}: {booked_slots}")
             
@@ -6153,23 +7876,21 @@ class FreeIntervalCalculator:
                             occupied_hours.add(hour)
                             
                 except Exception as e:
-                    logger.error(f"Ошибка обработки слота {slot}: {e}")
+                    logger.error(f"❌ Ошибка обработки слота {slot}: {e}")
                     continue
             
-            # ============================================================
-            # БЛОКИРОВКА ПО ВРЕМЕНИ (ПРАВИЛА БРОНИРОВАНИЯ)
-            # ============================================================
+            # Блокировка по времени (правила бронирования)
             blocked_hours = set()
             
             for hour in range(24):
                 hour_datetime = target_date + timedelta(hours=hour)
                 
                 if is_track_creation:
-                    min_hours = Config.MIN_BOOKING_ADVANCE['track_creation']  # 72 часа
+                    min_hours = Config.MIN_BOOKING_ADVANCE['track_creation']
                 elif with_engineer:
-                    min_hours = Config.MIN_BOOKING_ADVANCE['with_engineer']  # 48 часов
+                    min_hours = Config.MIN_BOOKING_ADVANCE['with_engineer']
                 else:
-                    min_hours = Config.MIN_BOOKING_ADVANCE['without_engineer']  # 24 часа
+                    min_hours = Config.MIN_BOOKING_ADVANCE['without_engineer']
                 
                 can_book, _ = DateTimeUtils.can_book_in_advance(
                     hour_datetime, hour, with_engineer, 
@@ -6178,7 +7899,7 @@ class FreeIntervalCalculator:
                 
                 if not can_book:
                     blocked_hours.add(hour)
-                    logger.info(f"🔍 Час {hour:02d} заблокирован правилами (требуется {min_hours} часов)")
+                    logger.info(f"🔍 Час {hour:02d} заблокирован правилами! Требуется {min_hours} часов!")
             
             logger.info(f"🔍 Занятые часы (брони): {sorted(occupied_hours)}")
             logger.info(f"🔍 Заблокированные часы (правила): {sorted(blocked_hours)}")
@@ -6190,7 +7911,7 @@ class FreeIntervalCalculator:
             logger.info(f"🔍 Свободные часы: {free_hours}")
             
             if not free_hours:
-                logger.info(f"🔍 Нет свободных часов на {clean_date}")
+                logger.info(f"🔍 Нет свободных часов на {clean_date}!")
                 return []
             
             # Формируем интервалы
@@ -6217,7 +7938,7 @@ class FreeIntervalCalculator:
                             'duration': duration
                         })
                         
-                        logger.info(f"🔍 Добавлен интервал: {current_start:02d}:00-{end_hour_display:02d}:00 ({duration} часов)")
+                        logger.info(f"🔍 Добавлен интервал: {current_start:02d}:00-{end_hour_display:02d}:00 ({duration} часов)!")
                     
                     current_start = free_hours[i]
                     current_end = free_hours[i]
@@ -6235,23 +7956,34 @@ class FreeIntervalCalculator:
                     'duration': duration
                 })
                 
-                logger.info(f"🔍 Добавлен последний интервал: {current_start:02d}:00-{end_hour_display:02d}:00 ({duration} часов)")
+                logger.info(f"🔍 Добавлен последний интервал: {current_start:02d}:00-{end_hour_display:02d}:00 ({duration} часов)!")
             
             logger.info(f"🔍 Итоговые интервалы: {[(i['start'], i['end'], i['duration']) for i in intervals]}")
             
             return intervals
                     
         except Exception as e:
-            logger.error(f"Ошибка расчета всех свободных интервалов: {e}")
+            logger.error(f"❌ Ошибка расчёта всех свободных интервалов для даты {date_str}! Проверьте структуру данных!")
             import traceback
             traceback.print_exc()
             return []
 
     @staticmethod
     def debug_free_intervals(date_str: str, is_track_creation: bool, with_engineer: bool):
+        """
+        Отладочная функция для проверки свободных интервалов.
+        
+        Аргументы:
+            date_str: Дата в формате ДД.ММ.ГГГГ
+            is_track_creation: Создание трека
+            with_engineer: С инженером или без
+        
+        Возвращает:
+            dict или str: Результат анализа
+        """
         logger.info("=" * 60)
-        logger.info(f"🔍 ДЕБАГ СВОБОДНЫХ ИНТЕРВАЛОВ НА ДАТУ: {date_str}")
-        logger.info(f"🔍 Параметры: is_track_creation={is_track_creation}, with_engineer={with_engineer}")
+        logger.info(f"🔍 Отладка свободных интервалов на дату: {date_str}!")
+        logger.info(f"🔍 Параметры: is_track_creation={is_track_creation}, with_engineer={with_engineer}!")
         logger.info("=" * 60)
         
         result = FreeIntervalCalculator.get_max_free_interval(date_str, is_track_creation, with_engineer)
@@ -6263,13 +7995,25 @@ class FreeIntervalCalculator:
 
     @staticmethod
     def get_max_free_interval(date_str: str, is_track_creation: bool, with_engineer: bool):
+        """
+        Возвращает самый большой свободный интервал.
+        
+        Аргументы:
+            date_str: Дата в формате ДД.ММ.ГГГГ
+            is_track_creation: Создание трека
+            with_engineer: С инженером или без
+        
+        Возвращает:
+            dict или str: Максимальный интервал или код ошибки
+        """
         try:
             intervals = FreeIntervalCalculator.get_all_free_intervals(date_str, is_track_creation, with_engineer)
             
             if not intervals:
-                return "NO_SLOTS"
+                return "NO_SLOTS"  # Нет свободных слотов
             
             if is_track_creation:
+                # Для трека нужны интервалы >= 4 часов
                 suitable_intervals = []
                 
                 for interval in intervals:
@@ -6280,16 +8024,17 @@ class FreeIntervalCalculator:
                         suitable_intervals.append(interval)
                 
                 if not suitable_intervals:
-                    return "NO_4H_SLOT"
+                    return "NO_4H_SLOT"  # Нет 4-часовых слотов
                 
                 max_interval = max(suitable_intervals, key=lambda x: x['duration'])
                 return max_interval
             
+            # Для обычных услуг берём самый большой интервал
             max_interval = max(intervals, key=lambda x: x['duration'])
             return max_interval
             
         except Exception as e:
-            logger.error(f"Ошибка расчета свободных интервалов: {e}")
+            logger.error(f"❌ Ошибка расчёта свободных интервалов для даты {date_str}! Проверьте структуру данных!")
             import traceback
             traceback.print_exc()
             return "NO_SLOTS"
@@ -6297,15 +8042,26 @@ class FreeIntervalCalculator:
  
     @staticmethod
     def is_time_in_interval(time_str: str, interval: dict, is_track_creation: bool = False):
+        """
+        Проверяет, входит ли время в указанный интервал.
+        
+        Аргументы:
+            time_str: Время в формате "час-час"
+            interval: Интервал с полями start, end
+            is_track_creation: Создание трека
+        
+        Возвращает:
+            tuple: (результат, сообщение об ошибке)
+        """
         try:
             if not time_str or '-' not in time_str:
-                return False, "Неверный формат времени"
+                return False, "Неверный формат времени!"
             
             time_str = time_str.replace(' ', '')
             
             parts = time_str.split('-')
             if len(parts) != 2:
-                return False, "Неверный формат времени. Используйте час-час"
+                return False, "Неверный формат времени! Используйте час-час!"
             
             start_str, end_str = parts[0].strip(), parts[1].strip()
             
@@ -6313,8 +8069,9 @@ class FreeIntervalCalculator:
                 start_hour = int(start_str)
                 end_hour = int(end_str)
             except ValueError:
-                return False, "Часы должны быть числами"
+                return False, "Часы должны быть числами!"
             
+            # Расчёт длительности
             if end_hour > start_hour:
                 duration = end_hour - start_hour
             elif end_hour < start_hour:
@@ -6322,48 +8079,51 @@ class FreeIntervalCalculator:
             else:
                 duration = 0
             
+            # Проверка длительности для создания трека
             if is_track_creation:
                 if duration == 0:
-                    return False, f"❌ Для создания трека требуется ровно 4 часа! У вас: 0 часов"
+                    return False, f"❌ Для создания трека требуется ровно 4 часа! У вас: 0 часов!"
                 if duration != 4:
-                    return False, f"❌ Для создания трека требуется ровно 4 часа! У вас: {duration} часов"
+                    return False, f"❌ Для создания трека требуется ровно 4 часа! У вас: {duration} часов!"
             else:
                 if duration == 0:
-                    return False, f"❌ Минимальное время записи — 1 час! У вас: 0 часов"
+                    return False, f"❌ Минимальное время записи — 1 час! У вас: 0 часов!"
                 if duration > 6:
-                    return False, f"❌ Максимальное время записи — 6 часов! У вас: {duration} часов"
+                    return False, f"❌ Максимальное время записи — 6 часов! У вас: {duration} часов!"
                 if duration < 1:
-                    return False, f"❌ Минимально 1 час! У вас: {duration} часов"
+                    return False, f"❌ Минимально 1 час! У вас: {duration} часов!"
             
             interval_start = interval['start']
             interval_end = interval['end']
             
-            logger.info(f"🔍 Проверка времени: {time_str} в интервале {interval_start}-{interval_end}")
+            logger.info(f"🔍 Проверяю время: {time_str} в интервале {interval_start}-{interval_end}!")
             logger.info(f"   calc: {start_hour}-{end_hour}, duration: {duration}")
             logger.info(f"   interval: {interval}")
             
+            # Для создания трека с кроссночным бронированием
             if is_track_creation and end_hour <= start_hour:
-                logger.info(f"🔍 Кроссночное бронирование трека: {start_hour}-{end_hour}")
+                logger.info(f"🔍 Кроссночное бронирование трека: {start_hour}-{end_hour}!")
                 
                 if interval_end == 24 and interval_start <= start_hour:
                     hours_before_midnight = 24 - start_hour
                     hours_after_midnight = end_hour
                     total_hours = hours_before_midnight + hours_after_midnight
                     
-                    logger.info(f"🔍 Кроссночное: до полуночи={hours_before_midnight}ч, после={hours_after_midnight}ч, всего={total_hours}ч")
+                    logger.info(f"🔍 Кроссночное: до полуночи={hours_before_midnight}ч, после={hours_after_midnight}ч, всего={total_hours}ч!")
                     
                     if total_hours == 4:
                         if start_hour >= interval_start:
                             return True, ""
                         else:
-                            return False, f"❌ Время должно начинаться с {interval_start:02d}:00 или позже"
+                            return False, f"❌ Время должно начинаться с {interval_start:02d}:00 или позже!"
                     else:
-                        return False, f"❌ Для создания трека требуется ровно 4 часа! У вас: {duration} часов"
+                        return False, f"❌ Для создания трека требуется ровно 4 часа! У вас: {duration} часов!"
                 else:
-                    return False, f"❌ Для кроссночного бронирования трека выберите время, начинающееся с {interval_start:02d}:00 или позже"
+                    return False, f"❌ Для кроссночного бронирования трека выберите время, начинающееся с {interval_start:02d}:00 или позже!"
             
+            # Интервал до полуночи
             if interval_end == 24:
-                logger.info(f"🔍 Обработка интервала {interval_start}-24 (до полночи)")
+                logger.info(f"🔍 Обработка интервала {interval_start}-24 (до полуночи)!")
                 
                 if interval_start <= start_hour < 24:
                     if end_hour <= start_hour:
@@ -6371,55 +8131,86 @@ class FreeIntervalCalculator:
                             if duration == 4:
                                 return True, ""
                             else:
-                                return False, f"❌ Для создания трека требуется ровно 4 часа! У вас: {duration} часов"
+                                return False, f"❌ Для создания трека требуется ровно 4 часа! У вас: {duration} часов!"
                         else:
                             if 1 <= duration <= 6:
                                 return True, ""
                             else:
-                                return False, f"❌ Длительность должна быть 1-6 часов! У вас: {duration} часов"
+                                return False, f"❌ Длительность должна быть 1-6 часов! У вас: {duration} часов!"
                     else:
                         if end_hour <= 24:
                             return True, ""
                         else:
-                            return False, f"❌ Время должно быть до 24:00! Вы ввели: {end_hour}"
+                            return False, f"❌ Время должно быть до 24:00! Вы ввели: {end_hour}!"
                 else:
-                    return False, f"❌ Время должно начинаться с {interval_start:02d}:00 или позже! Вы ввели: {start_hour}"
+                    return False, f"❌ Время должно начинаться с {interval_start:02d}:00 или позже! Вы ввели: {start_hour}!"
             
+            # Обычный интервал
             else:
-                logger.info(f"🔍 Обработка обычного интервала {interval_start}-{interval_end}")
+                logger.info(f"🔍 Обработка обычного интервала {interval_start}-{interval_end}!")
                 
                 if end_hour <= start_hour:
-                    return False, "❌ Время пересекает полночь, но интервал не позволяет этого"
+                    return False, "❌ Время пересекает полночь, но интервал не позволяет этого!"
                 
                 if interval_start <= start_hour and end_hour <= interval_end:
                     return True, ""
                 else:
-                    return False, f"❌ Время должно быть внутри {interval_start:02d}:00-{interval_end:02d}:00"
+                    return False, f"❌ Время должно быть внутри {interval_start:02d}:00-{interval_end:02d}:00!"
                             
         except Exception as e:
-            logger.error(f"Ошибка проверки времени в интервале: {e}")
+            logger.error(f"❌ Ошибка проверки времени в интервале: {e}")
             import traceback
             traceback.print_exc()
-            return False, "❌ Ошибка проверки времени"
+            return False, "❌ Ошибка проверки времени!"
+
 
 class NotificationManager:
+    """
+    Менеджер для управления уведомлениями о предстоящих записях.
+    
+    Создаёт уведомления для подтверждённых записей.
+    Уведомления отправляются за определённое количество часов до начала.
+    
+    Интервалы уведомлений зависят от типа услуги:
+    - Вокал с инженером: 48, 24, 12, 6 часов
+    - Вокал без инженера: 24, 12, 6, 3 часа
+    - Аренда: 48, 24, 12 часов
+    - Создание трека: 48, 24, 12 часов
+    - Сведение: уведомлений нет
+    """
+    
     @staticmethod
     def create_notification(booking_id: int, user_id: str, service_type: str, 
                         booking_datetime: datetime, notification_type: str, 
                         hours_before: int):
+        """
+        Создаёт уведомление для записи.
+        
+        Аргументы:
+            booking_id: ID записи
+            user_id: ID пользователя
+            service_type: Тип услуги
+            booking_datetime: Дата и время начала записи
+            notification_type: Тип уведомления
+            hours_before: За сколько часов до начала
+        
+        Возвращает:
+            bool: True если уведомление создано, False если уже существует
+        """
         try:
-            logger.info(f"Создание уведомления: booking_id={booking_id}, тип={notification_type}")
+            logger.info(f"🔔 Создаю уведомление для записи #{booking_id}, тип {notification_type}!")
             
             send_time = booking_datetime - timedelta(hours=hours_before)
             send_time_str = send_time.strftime('%Y-%m-%d %H:%M:%S')
             created_time = DateTimeUtils.now().strftime('%Y-%m-%d %H:%M:%S')
             
-            logger.info(f"Время отправки: {send_time_str}")
-            logger.info(f"Время создания: {created_time}")
+            logger.info(f"🔔 Время отправки: {send_time_str}!")
+            logger.info(f"🔔 Время создания: {created_time}!")
             
             with db.get_connection() as conn:
                 cursor = conn.cursor()
                 
+                # Проверяем, нет ли уже такого уведомления
                 cursor.execute('''
                     SELECT id FROM notifications 
                     WHERE booking_id = ? AND notification_type = ? AND status = 'pending'
@@ -6427,9 +8218,10 @@ class NotificationManager:
                 
                 existing = cursor.fetchone()
                 if existing:
-                    logger.info(f"Уведомление {notification_type} для записи #{booking_id} уже существует (ID: {existing[0]})")
+                    logger.info(f"🔔 Уведомление {notification_type} для записи #{booking_id} уже существует (ID: {existing[0]})!")
                     return False
                 
+                # Создаём уведомление
                 cursor.execute('''
                     INSERT INTO notifications (
                         booking_id, user_id, service_type, notification_type,
@@ -6441,24 +8233,31 @@ class NotificationManager:
                 ))
                 
                 notification_id = cursor.lastrowid
-                logger.info(f"Уведомление успешно добавлено в базу (ID: {notification_id})")
+                logger.info(f"🔔 Уведомление успешно добавлено в базу (ID: {notification_id})!")
                 return True
                 
         except Exception as e:
-            logger.error(f"Ошибка создания уведомления: {e}")
+            logger.error(f"❌ Ошибка создания уведомления для записи #{booking_id}! Проверьте структуру базы данных!")
             import traceback
             traceback.print_exc()
             return False
 
     @staticmethod
     def get_pending_notifications():
+        """
+        Получает все ожидающие отправки уведомления.
+        
+        Возвращает:
+            list: Список уведомлений, готовых к отправке
+        """
         try:
             with db.get_connection() as conn:
                 cursor = conn.cursor()
                 
+                # Проверяем существование таблицы
                 cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='notifications'")
                 if not cursor.fetchone():
-                    logger.warning("⚠️ Таблица notifications не существует, создаем...")
+                    logger.warning("⚠️ Таблица notifications не существует! Создаю...")
                     cursor.execute('''
                         CREATE TABLE IF NOT EXISTS notifications (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -6478,6 +8277,7 @@ class NotificationManager:
                 
                 now = DateTimeUtils.now().strftime('%Y-%m-%d %H:%M:%S')
                 
+                # Получаем уведомления, готовые к отправке
                 cursor.execute('''
                     SELECT n.id, n.booking_id, n.user_id, n.service_type, 
                         n.notification_type, n.status, n.planned_send_time,
@@ -6508,41 +8308,60 @@ class NotificationManager:
                     }
                     pending.append(notification_data)
                 
+                logger.info(f"🔔 Найдено {len(pending)} уведомлений для отправки!")
                 return pending
             
         except Exception as e:
-            logger.error(f"Ошибка получения ожидающих уведомлений: {e}")
+            logger.error(f"❌ Ошибка получения ожидающих уведомлений! Проверьте структуру базы данных!")
             import traceback
             traceback.print_exc()
             return []
 
     @staticmethod
     def update_notification_status(booking_id: int, notification_type: str, status: str):
+        """
+        Обновляет статус уведомления (или удаляет его).
+        
+        Аргументы:
+            booking_id: ID записи
+            notification_type: Тип уведомления
+            status: Новый статус ('sent' или другой)
+        
+        Возвращает:
+            bool: True если обновление успешно
+        """
         try:
             with db.get_connection() as conn:
                 cursor = conn.cursor()
                 
+                # Удаляем уведомление (независимо от статуса)
+                cursor.execute('''
+                    DELETE FROM notifications 
+                    WHERE booking_id = ? AND notification_type = ?
+                ''', (booking_id, notification_type))
+                
                 if status == 'sent':
-                    cursor.execute('''
-                        DELETE FROM notifications 
-                        WHERE booking_id = ? AND notification_type = ?
-                    ''', (booking_id, notification_type))
-                    logger.info(f"Уведомление удалено после отправки")
+                    logger.info(f"🔔 Уведомление удалено после отправки для записи #{booking_id}!")
                 else:
-                    cursor.execute('''
-                        DELETE FROM notifications 
-                        WHERE booking_id = ? AND notification_type = ?
-                    ''', (booking_id, notification_type))
-                    logger.info(f"Уведомление удалено (статус: {status})")
+                    logger.info(f"🔔 Уведомление удалено (статус: {status}) для записи #{booking_id}!")
                 
                 return cursor.rowcount > 0
             
         except Exception as e:
-            logger.error(f"Ошибка обновления статуса уведомления: {e}")
+            logger.error(f"❌ Ошибка обновления статуса уведомления для записи #{booking_id}! Проверьте структуру базы данных!")
             return False
 
     @staticmethod
     def cancel_notifications_for_booking(booking_id: int):
+        """
+        Отменяет все уведомления для записи.
+        
+        Аргументы:
+            booking_id: ID записи
+        
+        Возвращает:
+            bool: True если уведомления удалены
+        """
         try:
             with db.get_connection() as conn:
                 cursor = conn.cursor()
@@ -6553,30 +8372,57 @@ class NotificationManager:
                 ''', (booking_id,))
                 
                 deleted = cursor.rowcount
-                logger.info(f"Удалено уведомлений для записи #{booking_id}: {deleted}")
+                logger.info(f"🔔 Удалено {deleted} уведомлений для записи #{booking_id}!")
                 return deleted > 0
                 
         except Exception as e:
-            logger.error(f"Ошибка удаления уведомлений: {e}")
+            logger.error(f"❌ Ошибка удаления уведомлений для записи #{booking_id}! Проверьте структуру базы данных!")
             return False
 
+
 class KeyboardManager:
-    """Менеджер клавиатур для бота"""
+    """
+    Менеджер клавиатур для бота.
+    
+    Создаёт ReplyKeyboardMarkup и InlineKeyboardMarkup для различных сценариев:
+    - Главное меню
+    - Выбор услуг
+    - Выбор дат
+    - Подтверждение
+    - Админские функции
+    - Промокоды
+    - Рефералы
+    """
+    
+    # ============================================================
+    # ОСНОВНЫЕ КЛАВИАТУРЫ
+    # ============================================================
     
     @staticmethod
     def get_main_menu_and_back_keyboard():
+        """Клавиатура с кнопками 'Главное меню' и 'Назад'"""
         return ReplyKeyboardMarkup([
             ["↩️ Главное меню", "↩️ Назад"]
         ], resize_keyboard=True)
     
     @staticmethod
     def get_main_menu_only_keyboard():
+        """Клавиатура только с кнопкой 'Главное меню'"""
         return ReplyKeyboardMarkup([
             ["↩️ Главное меню"]
         ], resize_keyboard=True)
     
     @staticmethod
     def get_main_keyboard(user=None):
+        """
+        Главное меню бота.
+        
+        Аргументы:
+            user: Объект пользователя (для проверки прав администратора)
+        
+        Возвращает:
+            ReplyKeyboardMarkup: Клавиатура главного меню
+        """
         user_id = user.id if user else None
         
         keyboard = [
@@ -6597,8 +8443,13 @@ class KeyboardManager:
         
         return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
     
+    # ============================================================
+    # КЛАВИАТУРЫ ДЛЯ БРОНИРОВАНИЯ
+    # ============================================================
+    
     @staticmethod
     def get_services():
+        """Клавиатура выбора услуг"""
         return ReplyKeyboardMarkup([
             ["🎤 Запись вокала", "🎸 Запись инструментов"],
             ["⏰ 12-часовая аренда", "🎚️ Сведение/мастеринг"],
@@ -6608,6 +8459,7 @@ class KeyboardManager:
     
     @staticmethod
     def get_engineer_options():
+        """Клавиатура выбора работы с инженером"""
         return ReplyKeyboardMarkup([
             ["👨‍🔧 С инженером", "💪 Без инженера"],
             ["↩️ Главное меню", "↩️ Назад"]
@@ -6615,42 +8467,56 @@ class KeyboardManager:
     
     @staticmethod
     def get_contact_request():
-        """Клавиатура с кнопками слева и справа для ввода контакта"""
+        """Клавиатура для ввода контакта (с кнопкой отправки контакта)"""
         contact_button = KeyboardButton("📲 Отправить контакт", request_contact=True)
         return ReplyKeyboardMarkup([
-            [contact_button, "✏️ Ввести вручную"],  # ← КНОПКИ СЛЕВА И СПРАВА
-            ["↩️ Главное меню", "↩️ Назад"]         # ← КНОПКИ СЛЕВА И СПРАВА
+            [contact_button, "✏️ Ввести вручную"],
+            ["↩️ Главное меню", "↩️ Назад"]
         ], resize_keyboard=True)
     
     @staticmethod
     def get_text_contact_input():
+        """Клавиатура для ручного ввода контакта"""
         return ReplyKeyboardMarkup([
-            ["↩️ Главное меню", "↩️ Назад"]         # ← КНОПКИ СЛЕВА И СПРАВА
+            ["↩️ Главное меню", "↩️ Назад"]
         ], resize_keyboard=True)
     
     @staticmethod
     def get_mixing():
+        """Клавиатура выбора типа сведения (Трек/Альбом)"""
         return ReplyKeyboardMarkup([
-            ["🎵 Трек", "💿 Альбом"],                # ← КНОПКИ СЛЕВА И СПРАВА
-            ["↩️ Главное меню", "↩️ Назад"]         # ← КНОПКИ СЛЕВА И СПРАВА
+            ["🎵 Трек", "💿 Альбом"],
+            ["↩️ Главное меню", "↩️ Назад"]
         ], resize_keyboard=True)
     
     @staticmethod
     def get_track_creation_options():
+        """Клавиатура выбора типа трека (Трек/Альбом)"""
         return ReplyKeyboardMarkup([
-            ["🎵 Трек", "💿 Альбом"],                # ← КНОПКИ СЛЕВА И СПРАВА
-            ["↩️ Главное меню", "↩️ Назад"]         # ← КНОПКИ СЛЕВА И СПРАВА
+            ["🎵 Трек", "💿 Альбом"],
+            ["↩️ Главное меню", "↩️ Назад"]
         ], resize_keyboard=True)
     
     @staticmethod
     def get_12_hours_options():
+        """Клавиатура выбора типа аренды (День/Ночь)"""
         return ReplyKeyboardMarkup([
-            ["☀️ День (9-21)", "🌙 Ночь (21-9)"],   # ← КНОПКИ СЛЕВА И СПРАВА
-            ["↩️ Главное меню", "↩️ Назад"]         # ← КНОПКИ СЛЕВА И СПРАВА
+            ["☀️ День (9-21)", "🌙 Ночь (21-9)"],
+            ["↩️ Главное меню", "↩️ Назад"]
         ], resize_keyboard=True)
     
     @staticmethod
     def get_dates(service_type="vocal", with_engineer=False):
+        """
+        Клавиатура выбора дат с цветовой индикацией.
+        
+        Аргументы:
+            service_type: Тип услуги
+            with_engineer: С инженером или без
+        
+        Возвращает:
+            ReplyKeyboardMarkup: Клавиатура с датами
+        """
         dates = DateTimeUtils.get_future_dates(Config.MAX_BOOKING_DAYS)
         
         colored_dates = []
@@ -6664,77 +8530,87 @@ class KeyboardManager:
             row = colored_dates[i:i+2]
             keyboard.append(row)
         
-        keyboard.append(["↩️ Главное меню", "↩️ Назад"])  # ← КНОПКИ СЛЕВА И СПРАВА
+        keyboard.append(["↩️ Главное меню", "↩️ Назад"])
         return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
     
     @staticmethod
     def get_confirmation():
+        """Клавиатура подтверждения бронирования"""
         return ReplyKeyboardMarkup([
-            ["✅ Всё верно, отправить!", "✏️ Исправить данные"],  # ← КНОПКИ СЛЕВА И СПРАВА
-            ["❌ Отменить"]                                       # ← ЦЕНТР
+            ["✅ Всё верно, отправить!", "✏️ Исправить данные"],
+            ["❌ Отменить"]
         ], resize_keyboard=True)
     
     @staticmethod
     def get_back_only():
+        """Клавиатура только с кнопкой 'Назад'"""
         return ReplyKeyboardMarkup([["↩️ Назад"]], resize_keyboard=True)
     
     @staticmethod
     def get_time_input():
+        """Клавиатура для ввода времени"""
         return ReplyKeyboardMarkup([
-            ["↩️ Главное меню", "↩️ Назад"]         # ← КНОПКИ СЛЕВА И СПРАВА
+            ["↩️ Главное меню", "↩️ Назад"]
         ], resize_keyboard=True)
+    
+    # ============================================================
+    # АДМИНСКИЕ КЛАВИАТУРЫ
+    # ============================================================
     
     @staticmethod
     def get_admin_user_id_input():
+        """Клавиатура для ввода ID пользователя (админ)"""
         return ReplyKeyboardMarkup([
             ["↩️ Главное меню"]
         ], resize_keyboard=True)
     
     @staticmethod
     def get_admin_record_type():
+        """Клавиатура выбора типа записи (админ)"""
         return ReplyKeyboardMarkup([
-            ["📝 Договорная запись", "🎤 Запись в студии"],  # ← КНОПКИ СЛЕВА И СПРАВА
-            ["↩️ Главное меню", "↩️ Назад"]                 # ← КНОПКИ СЛЕВА И СПРАВА
+            ["📝 Договорная запись", "🎤 Запись в студии"],
+            ["↩️ Главное меню", "↩️ Назад"]
         ], resize_keyboard=True)
     
     @staticmethod
     def get_admin_price_input():
+        """Клавиатура для ввода цены (админ)"""
         return ReplyKeyboardMarkup([
-            ["↩️ Главное меню", "↩️ Назад"]         # ← КНОПКИ СЛЕВА И СПРАВА
+            ["↩️ Главное меню", "↩️ Назад"]
         ], resize_keyboard=True)
     
     @staticmethod
     def get_admin_confirmation():
+        """Клавиатура подтверждения админской записи"""
         return ReplyKeyboardMarkup([
-            ["✅ Да, создать запись", "✏️ Исправить данные"],  # ← КНОПКИ СЛЕВА И СПРАВА
-            ["❌ Отменить", "↩️ Назад"]                       # ← КНОПКИ СЛЕВА И СПРАВА
+            ["✅ Да, создать запись", "✏️ Исправить данные"],
+            ["❌ Отменить", "↩️ Назад"]
         ], resize_keyboard=True)
     
     @staticmethod
     def get_admin_back_only():
+        """Клавиатура только с кнопкой 'Назад' (админ)"""
         return ReplyKeyboardMarkup([["↩️ Назад"]], resize_keyboard=True)
     
     @staticmethod
     def get_admin_achievement_back():
+        """Клавиатура для админских достижений"""
         return ReplyKeyboardMarkup([
-            ["↩️ Главное меню", "↩️ Назад"]         # ← КНОПКИ СЛЕВА И СПРАВА
+            ["↩️ Главное меню", "↩️ Назад"]
         ], resize_keyboard=True)
+    
+    # ============================================================
+    # КЛАВИАТУРЫ ДЛЯ ПРОМОКОДОВ
+    # ============================================================
     
     @staticmethod
     def get_promo_keyboard():
+        """Клавиатура для ввода промокода"""
         return ReplyKeyboardMarkup([
             ["🎟 Ввести промокод"],
-            ["↩️ Главное меню", "↩️ Назад"]         # ← КНОПКИ СЛЕВА И СПРАВА
+            ["↩️ Главное меню", "↩️ Назад"]
         ], resize_keyboard=True)
     
-    @staticmethod
-    def get_referral_keyboard():
-        return ReplyKeyboardMarkup([
-            ["👥 Мои рефералы", "🎟 Ввести код друга"],  # ← КНОПКИ СЛЕВА И СПРАВА
-            ["↩️ Главное меню", "↩️ Назад"]             # ← КНОПКИ СЛЕВА И СПРАВА
-        ], resize_keyboard=True)
-    
-    # ===== МЕТОДЫ ДЛЯ ПРОМОКОДОВ (INLINE-КЛАВИАТУРЫ) =====
     @staticmethod
     def get_promo_main_menu():
         """Главное меню промокодов (inline-клавиатура)"""
@@ -6750,57 +8626,93 @@ class KeyboardManager:
             [InlineKeyboardButton("↩️ Назад", callback_data="promo_back_to_main")]
         ])
     
-    # ===== МЕТОДЫ ДЛЯ СОЗДАНИЯ ПРОМОКОДОВ (АДМИНСКИЕ) =====
+    # ============================================================
+    # КЛАВИАТУРЫ ДЛЯ РЕФЕРАЛОВ
+    # ============================================================
+    
+    @staticmethod
+    def get_referral_keyboard():
+        """Клавиатура реферального меню"""
+        return ReplyKeyboardMarkup([
+            ["👥 Мои рефералы", "🎟 Ввести код друга"],
+            ["↩️ Главное меню", "↩️ Назад"]
+        ], resize_keyboard=True)
+    
+    # ============================================================
+    # АДМИНСКИЕ КЛАВИАТУРЫ ДЛЯ ПРОМОКОДОВ
+    # ============================================================
+    
     @staticmethod
     def get_admin_promo_type_keyboard():
+        """Клавиатура выбора типа промокода (админ)"""
         return ReplyKeyboardMarkup([
-            ["💰 % на все", "🎯 % на услугу"],           # ← КНОПКИ СЛЕВА И СПРАВА
-            ["⏱️ Бесплатный час", "🎵 Бесплатная услуга"], # ← КНОПКИ СЛЕВА И СПРАВА
-            ["↩️ Главное меню", "↩️ Назад"]              # ← КНОПКИ СЛЕВА И СПРАВА
+            ["💰 % на все", "🎯 % на услугу"],
+            ["⏱️ Бесплатный час", "🎵 Бесплатная услуга"],
+            ["↩️ Главное меню", "↩️ Назад"]
         ], resize_keyboard=True)
     
     @staticmethod
     def get_admin_promo_service_keyboard():
+        """Клавиатура выбора услуги для промокода (админ)"""
         return ReplyKeyboardMarkup([
             ["🎤 Вокал", "🎸 Инструмент", "⏰ Аренда"],
             ["🎚️ Сведение", "🎵 Создание трека"],
-            ["↩️ Главное меню", "↩️ Назад"]              # ← КНОПКИ СЛЕВА И СПРАВА
+            ["↩️ Главное меню", "↩️ Назад"]
         ], resize_keyboard=True)
     
     @staticmethod
     def get_admin_promo_duration_keyboard():
+        """Клавиатура выбора срока действия промокода (админ)"""
         return ReplyKeyboardMarkup([
-            ["♾️ Бессрочный", "⏱️ Временный"],          # ← КНОПКИ СЛЕВА И СПРАВА
-            ["↩️ Главное меню", "↩️ Назад"]              # ← КНОПКИ СЛЕВА И СПРАВА
+            ["♾️ Бессрочный", "⏱️ Временный"],
+            ["↩️ Главное меню", "↩️ Назад"]
         ], resize_keyboard=True)
     
     @staticmethod
     def get_admin_promo_confirm_keyboard():
+        """Клавиатура подтверждения создания промокода (админ)"""
         return ReplyKeyboardMarkup([
-            ["✅ Да, создать промокод", "✏️ Исправить данные"],  # ← КНОПКИ СЛЕВА И СПРАВА
-            ["❌ Отменить"]                                      # ← ЦЕНТР
+            ["✅ Да, создать промокод", "✏️ Исправить данные"],
+            ["❌ Отменить"]
         ], resize_keyboard=True)
     
     @staticmethod
     def get_admin_promo_delete_type_keyboard():
+        """Клавиатура выбора типа промокода для удаления (админ)"""
         return ReplyKeyboardMarkup([
-            ["🌍 Общий промокод", "👤 Персональный промокод"],  # ← КНОПКИ СЛЕВА И СПРАВА
+            ["🌍 Общий промокод", "👤 Персональный промокод"],
             ["↩️ Главное меню"]
         ], resize_keyboard=True)
     
     @staticmethod
     def get_admin_promo_delete_user_keyboard():
+        """Клавиатура для ввода пользователя (админ, удаление промокода)"""
         return ReplyKeyboardMarkup([
-            ["↩️ Главное меню", "↩️ Назад"]              # ← КНОПКИ СЛЕВА И СПРАВА
+            ["↩️ Главное меню", "↩️ Назад"]
         ], resize_keyboard=True)
     
     @staticmethod
     def get_admin_promo_delete_back_keyboard():
+        """Клавиатура возврата (админ, удаление промокода)"""
         return ReplyKeyboardMarkup([
             ["↩️ Главное меню"]
         ], resize_keyboard=True)
 
+
+# ============================================================
+# ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ДЛЯ ПОЛУЧЕНИЯ ИНФОРМАЦИИ О ЗАПИСИ
+# ============================================================
+
 async def get_booking_info(booking_id: int):
+    """
+    Получает информацию о бронировании по ID.
+    
+    Аргументы:
+        booking_id: ID записи
+    
+    Возвращает:
+        dict: Информация о записи или None
+    """
     try:
         with db.get_connection() as conn:
             cursor = conn.cursor()
@@ -6830,10 +8742,26 @@ async def get_booking_info(booking_id: int):
             return booking_info
             
     except Exception as e:
-        logger.error(f"Ошибка получения информации о бронировании: {e}")
+        logger.error(f"❌ Ошибка получения информации о бронировании #{booking_id}! Проверьте структуру базы данных!")
         return None
 
+# ============================================================
+# ОТПРАВКА УВЕДОМЛЕНИЯ ПОЛЬЗОВАТЕЛЮ
+# ============================================================
+
 async def send_notification_message(context, user_id: str, booking_info: dict, hours_before: int):
+    """
+    Отправляет уведомление пользователю о предстоящей записи.
+    
+    Аргументы:
+        context: Контекст бота
+        user_id: ID пользователя
+        booking_info: Информация о записи
+        hours_before: За сколько часов до начала отправляется уведомление
+    
+    Возвращает:
+        bool: True если уведомление отправлено успешно
+    """
     try:
         booking_id = booking_info.get('booking_id', 'N/A')
         service = booking_info.get('service', '')
@@ -6845,45 +8773,46 @@ async def send_notification_message(context, user_id: str, booking_info: dict, h
         
         service_lower = service.lower() if service else ""
         
+        # Формируем сообщение в зависимости от типа услуги
         if 'аренд' in service_lower or '12-час' in service_lower:
             rent_price = 7000 if '9-21' in str(time_str) else 6500
             deposit = 7000
             total = rent_price + deposit
             
             message = (
-                f"*🔔 Напоминание о 12-часовой аренде студии*\n\n"
+                f"*🔔 Напоминание о 12-часовой аренде студии!*\n\n"
                 f"*📋 Детали аренды:*\n"
                 f"• Услуга: ⏰ 12-часовая аренда\n"
                 f"• Дата: {date_str}\n"
                 f"• Время: {time_str}\n"
                 f"• ID записи: #{int(booking_id)}\n\n"
-                f"*⏰ До начала осталось: {hours_text}*\n\n"
+                f"*⏰ До начала осталось: {hours_text}!*\n\n"
                 f"*📍 Адрес студии: Садовая ул., 91*\n"
                 f"*📱 Контакты: @mothman32*\n\n"
                 f"*❓ Если у вас изменились планы, пожалуйста, свяжитесь с администратором*"
             )
         elif 'создание трека' in service_lower and 'альбом' not in service_lower:
             message = (
-                f"*🔔 Напоминание о создании трека*\n\n"
+                f"*🔔 Напоминание о создании трека!*\n\n"
                 f"*📋 Детали записи:*\n"
                 f"• Услуга: {service}\n"
                 f"• Дата: {date_str}\n"
                 f"• Время: {time_str} (4 часа)\n"
                 f"• ID записи: #{int(booking_id)}\n\n"
-                f"*⏰ До начала осталось: {hours_text}*\n\n"
+                f"*⏰ До начала осталось: {hours_text}!*\n\n"
                 f"*📍 Адрес студии: Садовая ул., 91*\n"
                 f"*📱 Контакты: @mothman32*\n\n"
                 f"*❓ Если у вас изменились планы, пожалуйста, свяжитесь с администратором*"
             )
         else:
             message = (
-                f"*🔔 Напоминание о записи*\n\n"
+                f"*🔔 Напоминание о записи!*\n\n"
                 f"*📋 Детали записи:*\n"
                 f"• Услуга: {service}\n"
                 f"• Дата: {date_str}\n"
                 f"• Время: {time_str}\n"
                 f"• ID записи: #{int(booking_id)}\n\n"
-                f"*⏰ До начала осталось: {hours_text}\n\n*"
+                f"*⏰ До начала осталось: {hours_text}!*\n\n"
                 f"*📍 Адрес студии: Садовая ул., 91*\n"
                 f"*📱 Контакты: @mothman32*\n\n"
                 f"*❓ Если у вас изменились планы, пожалуйста, свяжитесь с администратором*"
@@ -6898,17 +8827,31 @@ async def send_notification_message(context, user_id: str, booking_info: dict, h
         return True
         
     except Exception as e:
-        logger.error(f"Ошибка отправки уведомления: {e}")
+        logger.error(f"❌ Ошибка отправки уведомления пользователю {user_id}! Проверьте права бота!")
         return False
 
+
+# ============================================================
+# ОБРАБОТКА УВЕДОМЛЕНИЙ (ФОНОВАЯ ЗАДАЧА)
+# ============================================================
+
 async def process_notifications(context: ContextTypes.DEFAULT_TYPE):
-    """Обработка уведомлений - отправляет только для подтвержденных записей"""
+    """
+    Обработка уведомлений - отправляет только для подтверждённых записей.
+    
+    Логика:
+    1. Получает все ожидающие уведомления
+    2. Для каждого проверяет, подтверждена ли запись
+    3. Отправляет уведомление и удаляет из базы
+    
+    Выполняется автоматически каждую минуту через JobQueue.
+    """
     try:
         logger.info("=" * 60)
-        logger.info("ЗАПУСК ПРОВЕРКИ УВЕДОМЛЕНИЙ")
+        logger.info("🔔 Запускаю проверку уведомлений!")
         
         pending = NotificationManager.get_pending_notifications()
-        logger.info(f"Найдено уведомлений для отправки: {len(pending)}")
+        logger.info(f"🔔 Найдено уведомлений для отправки: {len(pending)}!")
         
         if not pending:
             return
@@ -6922,7 +8865,7 @@ async def process_notifications(context: ContextTypes.DEFAULT_TYPE):
                 booking_info = await get_booking_info(int(booking_id))
                 
                 if not booking_info:
-                    logger.info(f"Запись #{booking_id} не найдена, удаляем уведомление")
+                    logger.info(f"🔔 Запись #{booking_id} не найдена! Удаляю уведомление!")
                     with db.get_connection() as conn:
                         cursor = conn.cursor()
                         cursor.execute('DELETE FROM notifications WHERE booking_id = ? AND notification_type = ?', 
@@ -6931,9 +8874,9 @@ async def process_notifications(context: ContextTypes.DEFAULT_TYPE):
                 
                 status = booking_info.get('status', '').lower()
                 
-                # Отправляем только для подтвержденных записей
+                # Отправляем только для подтверждённых записей
                 if 'confirmed' not in status and 'подтвержден' not in status:
-                    logger.info(f"Запись #{booking_id} не подтверждена (статус: {status}), удаляем уведомление")
+                    logger.info(f"🔔 Запись #{booking_id} не подтверждена (статус: {status})! Удаляю уведомление!")
                     with db.get_connection() as conn:
                         cursor = conn.cursor()
                         cursor.execute('DELETE FROM notifications WHERE booking_id = ? AND notification_type = ?', 
@@ -6945,7 +8888,7 @@ async def process_notifications(context: ContextTypes.DEFAULT_TYPE):
                 except:
                     hours_before = 0
                 
-                logger.info(f"Отправка уведомления за {hours_before} часов")
+                logger.info(f"🔔 Отправляю уведомление за {hours_before} часов!")
                 
                 success = await send_notification_message(context, user_id, booking_info, hours_before)
                 
@@ -6954,28 +8897,43 @@ async def process_notifications(context: ContextTypes.DEFAULT_TYPE):
                         cursor = conn.cursor()
                         cursor.execute('DELETE FROM notifications WHERE booking_id = ? AND notification_type = ?', 
                                      (booking_id, notification_type))
-                    logger.info(f"✅ Уведомление отправлено и удалено из базы")
+                    logger.info(f"✅ Уведомление отправлено и удалено из базы!")
                 else:
-                    logger.error(f"❌ Ошибка отправки уведомления, оставляем для повторной попытки")
+                    logger.error(f"❌ Ошибка отправки уведомления! Оставляю для повторной попытки!")
                     
             except Exception as e:
-                logger.error(f"❌ Ошибка обработки уведомления: {e}")
+                logger.error(f"❌ Ошибка обработки уведомления для записи #{booking_id}! Проверьте структуру данных!")
                 continue
                 
     except Exception as e:
-        logger.error(f"❌ Ошибка обработки уведомлений: {e}")
+        logger.error(f"❌ Критическая ошибка в process_notifications! Проверьте подключение к базе данных!")
         import traceback
         traceback.print_exc()
 
+
+# ============================================================
+# ДЕКОРАТОР ДЛЯ ОГРАНИЧЕНИЯ ЗАПРОСОВ
+# ============================================================
+
 def handle_errors_with_rate_limit(func):
+    """
+    Декоратор для обработки ошибок и ограничения частоты запросов.
+    
+    - Проверяет лимит запросов (60 в минуту)
+    - Блокирует на 5 минут при превышении
+    - Администраторы не ограничиваются
+    - Обрабатывает ошибки Telegram (Forbidden, TimedOut)
+    """
     @wraps(func)
     async def wrapper(update: Update, context, *args, **kwargs):
         try:
             user_id = str(update.effective_user.id)
             
+            # Администраторы не ограничиваются
             if update.effective_user.id in Config.ADMIN_IDS:
                 return await func(update, context, *args, **kwargs)
             
+            # Проверяем лимит запросов
             is_allowed, message, seconds_to_wait = RateLimiter.check_rate_limit(
                 user_id, 
                 limit=Config.RATE_LIMIT, 
@@ -6987,43 +8945,60 @@ def handle_errors_with_rate_limit(func):
                     if seconds_to_wait and seconds_to_wait > 60:
                         await update.message.reply_text(
                             f"⏰ {message}\n\n"
-                            f"Пожалуйста, подождите {int(seconds_to_wait)} секунд перед следующим запросом.",
+                            f"Пожалуйста, подождите {int(seconds_to_wait)} секунд перед следующим запросом!",
                             parse_mode="Markdown"
                         )
                 return
             
             return await func(update, context, *args, **kwargs)
+            
         except telegram.error.Forbidden:
+            # Бот заблокирован пользователем
             return ConversationHandler.END
+            
         except telegram.error.TimedOut:
+            # Превышено время ожидания
             if update and update.message:
                 await update.message.reply_text(
-                    "⏳ Превышено время ожидания. Попробуйте еще раз.",
+                    "⏳ Превышено время ожидания! Попробуйте ещё раз!",
                     reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
                 )
             return ConversationHandler.END
+            
         except Exception as e:
+            # Другая ошибка
             return ConversationHandler.END
+            
     return wrapper
 
+
+# ============================================================
+# ОБРАБОТЧИК КНОПКИ "ГЛАВНОЕ МЕНЮ"
+# ============================================================
+
 async def handle_main_menu_button(update: Update, context):
+    """
+    Обрабатывает нажатие кнопки 'Главное меню'.
+    
+    Очищает все данные пользователя и возвращает в главное меню.
+    """
     if await check_user_blocked(update, context):
         return ConversationHandler.END
     
     user_id = update.effective_user.id
     username = update.effective_user.username or "Неизвестный"
     
-    logger.info(f"🔍 Пользователь {user_id} (@{username}) нажал 'Главное меню'. Очистка данных.")
+    logger.info(f"🔍 Пользователь {user_id} (@{username}) нажал 'Главное меню'! Очищаю данные!")
     
+    # Очищаем данные пользователя
     context.user_data.pop('visible_booking_ids', None)
-    
     context.user_data.clear()
     context.user_data.pop('_conversation_state', None)
     
     menu_message = (
-        '*🏠 Возвращаемся в главное меню...*\n\n'
-        '*✨ Процесс записи завершён*\n'  # <-- ИСПРАВЛЕНО: было "Процесс отмены записи завершён"
-        '*💾 Все введенные данные очищены*\n\n'
+        '*🏠 Возвращаемся в главное меню!*\n\n'
+        '*✨ Процесс записи завершён!*\n'
+        '*💾 Все введённые данные очищены!*\n\n'
         '*👇 Выберите подходящий вариант:*'
     )
     
@@ -7035,10 +9010,25 @@ async def handle_main_menu_button(update: Update, context):
     
     return ConversationHandler.END
 
+
+# ============================================================
+# ПРОВЕРКА БЛОКИРОВКИ ПОЛЬЗОВАТЕЛЯ
+# ============================================================
+
 async def check_user_blocked(update: Update, context) -> bool:
-    """Проверяет, заблокирован ли пользователь. Если да - отправляет сообщение и возвращает True"""
+    """
+    Проверяет, заблокирован ли пользователь.
+    
+    Аргументы:
+        update: Объект Update
+        context: Контекст бота
+    
+    Возвращает:
+        bool: True если пользователь заблокирован, False если нет
+    """
     user_id = update.effective_user.id
     
+    # Администраторы не блокируются
     if user_id in Config.ADMIN_IDS:
         return False
     
@@ -7084,10 +9074,11 @@ async def check_user_blocked(update: Update, context) -> bool:
                                 WHERE telegram_id = ?
                             ''', (str(user_id),))
                             conn.commit()
-                            logger.info(f"✅ Пользователь {user_id} автоматически разблокирован при попытке действия")
+                            logger.info(f"✅ Пользователь {user_id} автоматически разблокирован при попытке действия!")
                             return False
+                            
                     except Exception as e:
-                        logger.error(f"Ошибка парсинга времени блокировки: {e}")
+                        logger.error(f"❌ Ошибка парсинга времени блокировки для пользователя {user_id}!")
                         await update.message.reply_text(
                             f"*🔒 Вы заблокированы!*\n\n"
                             f"*⏳ Тип блокировки: Навсегда*\n\n"
@@ -7103,16 +9094,25 @@ async def check_user_blocked(update: Update, context) -> bool:
                         parse_mode="Markdown"
                     )
                     return True
+                    
     except Exception as e:
-        logger.error(f"Ошибка проверки блокировки: {e}")
+        logger.error(f"❌ Ошибка проверки блокировки для пользователя {user_id}! Проверьте структуру базы данных!")
         return False
     
     return False
 
+
+# ============================================================
+# ОБРАБОТЧИК ПОМОЩИ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def help_handler(update: Update, context):
-    """Показывает информацию о помощи"""
+    """
+    Показывает информацию о помощи.
     
+    Выводит список всех доступных команд и функций бота.
+    """
     if await check_user_blocked(update, context):
         return ConversationHandler.END
     
@@ -7128,7 +9128,7 @@ async def help_handler(update: Update, context):
         "• *👥 Рефералы* — реферальная программа\n"
         "• *📈 Мой уровень* — прогресс и скидки\n"
         "• *🏆 Топ пользователей* — рейтинг по пластинкам\n\n"
-        "*⚠️ Бот находится в бета-тестировании*\n"
+        "*⚠️ Бот находится в бета-тестировании!*\n"
         "• Возможны небольшие ошибки\n"
         "• Мы постоянно улучшаем бота\n"
         "• Ваши отзывы помогают нам стать лучше\n\n"
@@ -7143,16 +9143,29 @@ async def help_handler(update: Update, context):
         reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
     )
 
+
+# ============================================================
+# ОБРАБОТЧИК ПОЛЕЗНОЙ ИНФОРМАЦИИ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def useful_info_handler(update: Update, context):
-    """Показывает полезную информацию с фото студии"""
+    """
+    Показывает полезную информацию с фото студии.
     
+    Отображает:
+    - Адрес студии
+    - Режим работы
+    - Оборудование
+    - Услуги и цены
+    - Способы оплаты
+    - Контакты
+    """
     if await check_user_blocked(update, context):
         return ConversationHandler.END
     
     photo_path = "photos/studio.jpg"
     
-    # Текст БЕЗ Markdown (простой текст)
     caption = (
         "❗️ Полезная информация\n\n"
         "📍 Адрес студии:\n"
@@ -7179,7 +9192,7 @@ async def useful_info_handler(update: Update, context):
         "📞 Контакты:\n"
         "• Администратор: @mothman32\n"
         "• Telegram канал: @godspeed_records\n\n"
-        "⚠️ Внимание! Бот находится в бета-тестировании\n"
+        "⚠️ Внимание! Бот находится в бета-тестировании!\n"
         "• Возможны небольшие ошибки\n"
         "• Мы постоянно улучшаем бота\n"
         "• Ваши отзывы помогают нам стать лучше\n\n"
@@ -7187,13 +9200,12 @@ async def useful_info_handler(update: Update, context):
     )
     
     try:
-        # Проверяем наличие фото
         if os.path.exists(photo_path) and os.path.getsize(photo_path) > 0:
             with open(photo_path, 'rb') as photo:
                 await update.message.reply_photo(
                     photo=photo,
                     caption=caption,
-                    parse_mode=None,  # ← БЕЗ Markdown!
+                    parse_mode=None,
                     reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
                 )
         else:
@@ -7203,15 +9215,25 @@ async def useful_info_handler(update: Update, context):
                 reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
             )
     except Exception as e:
-        logger.error(f"❌ Ошибка отправки: {e}")
+        logger.error(f"❌ Ошибка отправки полезной информации: {e}")
         await update.message.reply_text(
             caption,
             parse_mode=None,
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
         )
 
+
+# ============================================================
+# ОБРАБОТЧИК КОМАНДЫ /START
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def start(update: Update, context):
+    """
+    Обрабатывает команду /start.
+    
+    Регистрирует нового пользователя или показывает приветствие существующему.
+    """
     user = update.effective_user
     user_id = str(user.id)
     username = user.username or ""
@@ -7219,6 +9241,7 @@ async def start(update: Update, context):
     if await check_user_blocked(update, context):
         return ConversationHandler.END
     
+    # Регистрируем пользователя если его нет
     with db.get_connection() as conn:
         cursor = conn.cursor()
         
@@ -7238,19 +9261,17 @@ async def start(update: Update, context):
             
             try:
                 CouponManager.add_level_coupons(user_id, 1, db_conn=conn)
-                logger.info(f"✅ Новый пользователь {user_id} зарегистрирован с купоном уровня 1 (50%)")
+                logger.info(f"✅ Новый пользователь {user_id} зарегистрирован с купоном уровня 1 (50%)!")
             except Exception as e:
-                logger.error(f"❌ Ошибка добавления купона: {e}")
+                logger.error(f"❌ Ошибка добавления купона для пользователя {user_id}: {e}")
             
             conn.commit()
-            logger.info(f"✅ Новый пользователь {user_id} зарегистрирован")
+            logger.info(f"✅ Новый пользователь {user_id} зарегистрирован!")
         else:
-            logger.info(f"👤 Существующий пользователь {user_id} - пропускаем выдачу купона")
+            logger.info(f"👤 Существующий пользователь {user_id} - пропускаю выдачу купона!")
     
-    # Путь к фото для приветствия
     welcome_photo_path = "photos/welcome.jpg"
     
-    # Текст приветствия (ИСПРАВЛЕН)
     welcome_text = (
         "*🎙️ Добро пожаловать в студию Godspeed Records!*\n\n"
         "*✨ Профессиональная студия звукозаписи в самом сердце Санкт-Петербурга*\n\n"
@@ -7264,13 +9285,12 @@ async def start(update: Update, context):
         "• Получайте пластинки за записи\n"
         "• Открывайте уровни и скидки\n"
         "• Приводите друзей и зарабатывайте\n\n"
-        "*⚠️ Бот находится в бета-тестировании*\n"
+        "*⚠️ Бот находится в бета-тестировании!*\n"
         "*🛠 По техническим вопросам: @mothman32*\n\n"
         "*👇 Выберите подходящий вариант:*"
     )
     
     try:
-        # Отправляем фото с подписью
         with open(welcome_photo_path, 'rb') as photo:
             await update.message.reply_photo(
                 photo=photo,
@@ -7279,7 +9299,6 @@ async def start(update: Update, context):
                 reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
             )
     except FileNotFoundError:
-        # Если фото не найдено, отправляем только текст
         logger.warning(f"⚠️ Приветственное фото не найдено: {welcome_photo_path}")
         await update.message.reply_text(
             welcome_text,
@@ -7296,16 +9315,23 @@ async def start(update: Update, context):
     
     return ConversationHandler.END
 
+
+# ============================================================
+# ВСПОМОГАТЕЛЬНЫЕ ОБРАБОТЧИКИ ДЛЯ КУПОНОВ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def fix_my_coupons(update: Update, context):
-    """Добавляет купоны текущему пользователю"""
+    """
+    Добавляет купоны текущему пользователю.
+    
+    Используется для исправления проблем с купонами.
+    """
     user_id = str(update.effective_user.id)
     
     try:
-        # Добавляем купон уровня 1
         CouponManager.add_level_coupons(user_id, 1)
         
-        # Проверяем, добавился ли купон
         with db.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute('SELECT COUNT(*) FROM user_coupons WHERE user_id = ?', (user_id,))
@@ -7313,21 +9339,24 @@ async def fix_my_coupons(update: Update, context):
         
         await update.message.reply_text(
             f"✅ Купоны уровня 1 добавлены!\n\n"
-            f"📊 Теперь у вас есть {count} активных купонов.\n\n"
-            f"Нажмите '📈 Мой уровень' чтобы проверить.",
+            f"📊 Теперь у вас есть {count} активных купонов!\n\n"
+            f"Нажмите '📈 Мой уровень' чтобы проверить!",
             parse_mode="Markdown"
         )
     except Exception as e:
-        logger.error(f"Ошибка добавления купонов: {e}")
+        logger.error(f"❌ Ошибка добавления купонов для пользователя {user_id}: {e}")
         await update.message.reply_text(
             f"❌ Ошибка: {e}\n\n"
             f"Обратитесь к администратору @mothman32",
             parse_mode="Markdown"
         )
 
+
 @handle_errors_with_rate_limit
 async def check_coupons_table(update: Update, context):
-    """Проверяет таблицу купонов (только для админа)"""
+    """
+    Проверяет таблицу купонов (только для админа).
+    """
     user_id = str(update.effective_user.id)
     
     if user_id not in [str(admin_id) for admin_id in Config.ADMIN_IDS]:
@@ -7340,15 +9369,13 @@ async def check_coupons_table(update: Update, context):
     with db.get_connection() as conn:
         cursor = conn.cursor()
         
-        # Проверяем существование таблицы
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='user_coupons'")
         table_exists = cursor.fetchone()
         
         if not table_exists:
-            await update.message.reply_text("❌ Таблица user_coupons не существует! Нужно выполнить миграцию.")
+            await update.message.reply_text("❌ Таблица user_coupons не существует! Нужно выполнить миграцию!")
             return
         
-        # Получаем купоны пользователя
         cursor.execute('''
             SELECT id, level, discount_percent, remaining_uses, is_permanent, created_at
             FROM user_coupons WHERE user_id = ?
@@ -7364,8 +9391,16 @@ async def check_coupons_table(update: Update, context):
         else:
             await update.message.reply_text(f"❌ У пользователя {target_id} нет купонов!")
 
+
+# ============================================================
+# ОБРАБОТЧИКИ ДОСТИЖЕНИЙ И УРОВНЕЙ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def achievements_handler(update: Update, context):
+    """
+    Показывает список достижений пользователя.
+    """
     if await check_user_blocked(update, context):
         return ConversationHandler.END
     
@@ -7380,8 +9415,18 @@ async def achievements_handler(update: Update, context):
     )
     return ConversationHandler.END
 
+
 @handle_errors_with_rate_limit
 async def level_handler(update: Update, context):
+    """
+    Показывает информацию об уровне пользователя.
+    
+    Отображает:
+    - Текущий уровень и пластинки
+    - Прогресс до следующего уровня
+    - Все уровни с их бонусами
+    - Активные купоны
+    """
     if await check_user_blocked(update, context):
         return ConversationHandler.END
     
@@ -7410,11 +9455,9 @@ async def level_handler(update: Update, context):
             
             coupons_text = CouponManager.format_coupons_for_display(user_id)
             
-            # ===== ПОЛУЧАЕМ АКТИВНЫЕ КУПОНЫ =====
             active_coupons = CouponManager.get_user_coupons(user_id)
             active_levels = {coupon['level'] for coupon in active_coupons}
             
-            # ===== НОВОЕ ОФОРМЛЕНИЕ =====
             text = f"*📈 Мой уровень*\n\n"
             
             text += f"*📊 Статистика:*\n"
@@ -7431,13 +9474,9 @@ async def level_handler(update: Update, context):
             
             text += f"*Все уровни:*\n"
             for lvl in AchievementSystem.LEVELS:
-                # ===== ✅ ТОЛЬКО ЕСЛИ ЕСТЬ АКТИВНЫЙ КУПОН ЭТОГО УРОВНЯ =====
                 emoji = "✅ " if lvl['level'] in active_levels else ""
-                
                 medal = "🥇" if lvl['level'] == 1 else "🏅" if lvl['level'] == 2 else "🎖" if lvl['level'] == 3 else "👑"
-                
                 text += f"{emoji}{medal} {lvl['name']} — {lvl['discount']}%"
-                
                 if lvl['discount_type'] == 'permanent':
                     text += f" (вечная)\n"
                 else:
@@ -7450,17 +9489,29 @@ async def level_handler(update: Update, context):
             )
             
     except Exception as e:
-        logger.error(f"Ошибка в level_handler: {e}")
+        logger.error(f"❌ Ошибка в level_handler для пользователя {user_id}: {e}")
         await update.message.reply_text(
-            "❌ Ошибка загрузки информации об уровне",
+            "❌ Ошибка загрузки информации об уровне!",
             parse_mode="Markdown",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
         )
 
+
+# ============================================================
+# ОБРАБОТЧИК ТОПА ПОЛЬЗОВАТЕЛЕЙ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def top_vinyls_handler(update: Update, context):
-    """Показывает топ-10 пользователей по пластинкам"""
+    """
+    Показывает топ-10 пользователей по пластинкам.
     
+    Отображает:
+    - Место пользователя
+    - Количество пластинок
+    - Уровень
+    - Отмечает текущего пользователя
+    """
     if await check_user_blocked(update, context):
         return ConversationHandler.END
     
@@ -7498,7 +9549,7 @@ async def top_vinyls_handler(update: Update, context):
             
             if not top_users:
                 await update.message.reply_text(
-                    "*📭 Пока нет пользователей с пластинками*\n\n"
+                    "*📭 Пока нет пользователей с пластинками!*\n\n"
                     "*✨ Будьте первым! Записывайтесь в студию и получайте пластинки!*",
                     parse_mode="Markdown",
                     reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
@@ -7525,7 +9576,7 @@ async def top_vinyls_handler(update: Update, context):
                 else:
                     medal = f"{i}."
                 
-                is_current = "⬅️" if display_name == current_user_display else ""
+                is_current = " ⬅️" if display_name == current_user_display else ""
                 
                 message += f"{medal} {safe_display_name} — {vinyls} 💿{is_current}\n"
             
@@ -7548,7 +9599,7 @@ async def top_vinyls_handler(update: Update, context):
                         message += f"• Место: {user_rank}\n"
                         message += f"• Пластинок: {user_vinyls}\n\n"
                     else:
-                        message += f"*💡 У вас пока нет пластинок*\n\n"
+                        message += f"*💡 У вас пока нет пластинок!*\n\n"
             
             message += "*✨ Как получить пластинки:*\n"
             message += "• Запись в студии - +25 пластинок\n"
@@ -7562,18 +9613,27 @@ async def top_vinyls_handler(update: Update, context):
             )
             
     except Exception as e:
-        logger.error(f"Ошибка в top_vinyls_handler: {e}")
+        logger.error(f"❌ Ошибка в top_vinyls_handler: {e}")
         import traceback
         traceback.print_exc()
         await update.message.reply_text(
-            "❌ Ошибка загрузки топа пластинок",
+            "❌ Ошибка загрузки топа пластинок!",
             parse_mode="Markdown",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
         )
 
+
+# ============================================================
+# ОБРАБОТЧИКИ ПРОМОКОДОВ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def promo_main_menu(update: Update, context, edit_mode: bool = False, query=None):
-    """Главное меню промокодов - показывает ТОЛЬКО доступные для пользователя"""
+    """
+    Главное меню промокодов.
+    
+    Показывает все доступные для пользователя промокоды.
+    """
     user_id = str(update.effective_user.id)
     
     if await check_user_blocked(update, context):
@@ -7614,7 +9674,7 @@ async def promo_main_menu(update: Update, context, edit_mode: bool = False, quer
     else:
         message = (
             f"*🎁 Доступные промокоды*\n\n"
-            f"*📭 Нет доступных промокодов*\n\n"
+            f"*📭 Нет доступных промокодов!*\n\n"
             f"*✨ Все доступные промокоды уже использованы или истекли*"
         )
     
@@ -7631,9 +9691,17 @@ async def promo_main_menu(update: Update, context, edit_mode: bool = False, quer
             reply_markup=KeyboardManager.get_promo_main_menu()
         )
 
+
 @handle_errors_with_rate_limit
 async def promo_callback_handler(update: Update, context):
-    """Обработчик inline-кнопок промокодов"""
+    """
+    Обработчик inline-кнопок промокодов.
+    
+    Обрабатывает:
+    - Ввод промокода
+    - Просмотр активного промокода
+    - Возврат в меню
+    """
     query = update.callback_query
     await query.answer()
     
@@ -7648,7 +9716,7 @@ async def promo_callback_handler(update: Update, context):
         
         await query.edit_message_text(
             text=(
-                f"*🎟 Введите промокод*\n\n"
+                f"*🎟 Введите промокод!*\n\n"
                 f"*Чтобы активировать промокод, напишите:*\n"
                 f"`promo КОД`\n\n"
                 f"*Пример:* `promo ABCD10`\n\n"
@@ -7664,8 +9732,8 @@ async def promo_callback_handler(update: Update, context):
         if not active_promo:
             message = (
                 "*📋 Ваш активированный промокод*\n\n"
-                "*📭 У вас нет активированного промокода*\n\n"
-                "*✨ Нажмите \"Ввести промокод\", чтобы активировать*"
+                "*📭 У вас нет активированного промокода!*\n\n"
+                "*✨ Нажмите \"Ввести промокод\", чтобы активировать!*"
             )
         else:
             promo_text = PromoCodeManager.format_promo_info(active_promo)
@@ -7688,10 +9756,17 @@ async def promo_callback_handler(update: Update, context):
         context.user_data.pop('awaiting_promo_code', None)
         await promo_main_menu(update, context, edit_mode=True, query=query)
 
+# ============================================================
+# ОБРАБОТКА ВВЕДЁННОГО ПРОМОКОДА
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def process_promo_code_message(update: Update, context):
-    """Обработка введённого промокода"""
+    """
+    Обработка введённого промокода.
     
+    Проверяет формат, активирует промокод и показывает результат.
+    """
     user_id = str(update.effective_user.id)
     
     if await check_user_blocked(update, context):
@@ -7700,11 +9775,13 @@ async def process_promo_code_message(update: Update, context):
     
     text = update.message.text.strip()
     
+    # Обработка кнопок навигации
     if text in ["↩️ Главное меню", "↩️ Назад"]:
         context.user_data.pop('awaiting_promo_code', None)
         await promo_main_menu(update, context)
         return
     
+    # Проверка формата
     if not text.lower().startswith('promo '):
         error_message = (
             f"*❌ Неверный формат!*\n\n"
@@ -7720,9 +9797,11 @@ async def process_promo_code_message(update: Update, context):
         )
         return
     
+    # Извлекаем код
     code = text[5:].strip().upper()
-    logger.info(f"🔍 Попытка активации промокода: '{code}' от пользователя {user_id}")
+    logger.info(f"🔍 Попытка активации промокода '{code}' от пользователя {user_id}!")
     
+    # Активируем промокод
     success, result_code, promo_info = await PromoCodeManager.activate_promo_code(user_id, code, context)
     
     if success:
@@ -7738,40 +9817,29 @@ async def process_promo_code_message(update: Update, context):
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
         )
         
-        logger.info(f"✅ Пользователь {user_id} активировал промокод {code}")
+        logger.info(f"✅ Пользователь {user_id} успешно активировал промокод {code}!")
         
     else:
+        # Обработка ошибок
         if result_code == "NOT_FOUND":
-            error_message = (
-                f"*❌ Промокод не найден!*"
-            )
+            error_message = f"*❌ Промокод не найден!*"
             
         elif result_code == "EXPIRED":
             expiry = promo_info.get('expiry', 'неизвестно')
-            error_message = (
-                f"*❌ Промокод истёк!*"
-            )
+            error_message = f"*❌ Промокод истёк!*"
             
         elif result_code == "NOT_YOURS":
-            error_message = (
-                f"*❌ Промокод не принадлежит вам!*"
-            )
+            error_message = f"*❌ Промокод не принадлежит вам!*"
             
         elif result_code == "ALREADY_USED":
             active_promo = promo_info.get('active_promo', 'неизвестно')
-            error_message = (
-                f"*❌ Нельзя активировать больше 1 промокода!*"
-            )
+            error_message = f"*❌ Нельзя активировать больше 1 промокода!*"
             
         elif result_code == "ALREADY_USED_BEFORE":
-            error_message = (
-                f"*❌ Вы уже использовали этот промокод ранее!*"
-            )
+            error_message = f"*❌ Вы уже использовали этот промокод ранее!*"
             
         else:
-            error_message = (
-                f"*❌ Ошибка активации!*"
-            )
+            error_message = f"*❌ Ошибка активации!*"
         
         await update.message.reply_text(
             error_message,
@@ -7781,14 +9849,33 @@ async def process_promo_code_message(update: Update, context):
     
     context.user_data.pop('awaiting_promo_code', None)
 
+
+# ============================================================
+# ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ДЛЯ ФОРМАТИРОВАНИЯ ВАЛЮТЫ
+# ============================================================
+
 def format_currency(amount):
-    """Форматирует число в валюту"""
+    """Форматирует число в валюту с разделителями тысяч."""
     return f"{amount:,}₽".replace(',', ' ')
 
+
+# ============================================================
+# РАСЧЁТ И ОТОБРАЖЕНИЕ ВЫРУЧКИ
+# ============================================================
+
 async def calculate_and_show_revenue(update: Update, context, start_date, end_date, period_name):
-    """Рассчитывает выручку за период"""
+    """
+    Рассчитывает и показывает выручку за период.
     
+    Аргументы:
+        update: Объект Update
+        context: Контекст бота
+        start_date: Начало периода
+        end_date: Конец периода
+        period_name: Название периода для отображения
+    """
     try:
+        # Определяем тип обновления
         if hasattr(update, 'callback_query') and update.callback_query:
             query = update.callback_query
             user_id = query.from_user.id
@@ -7799,6 +9886,7 @@ async def calculate_and_show_revenue(update: Update, context, start_date, end_da
             message = update.message
             is_callback = False
         
+        # Проверяем права
         if user_id not in Config.ADMIN_IDS:
             error_text = "❌ У вас нет прав для просмотра выручки!"
             if is_callback:
@@ -7810,6 +9898,7 @@ async def calculate_and_show_revenue(update: Update, context, start_date, end_da
         with db.get_connection() as conn:
             cursor = conn.cursor()
             
+            # Получаем записи за период
             if start_date:
                 start_str = start_date.strftime('%Y-%m-%d %H:%M:%S')
                 end_str = end_date.strftime('%Y-%m-%d %H:%M:%S')
@@ -7861,7 +9950,7 @@ async def calculate_and_show_revenue(update: Update, context, start_date, end_da
                 elif is_track_creation == 1:
                     booking_price = 9000
                 
-                # ===== ПРАВИЛЬНАЯ ЛОГИКА УЧЁТА =====
+                # Логика учёта
                 should_count = False
                 reason = ""
                 
@@ -7885,7 +9974,7 @@ async def calculate_and_show_revenue(update: Update, context, start_date, end_da
                     should_count = True
                     reason = "создание трека"
                 
-                # 5. Обычные записи (вокал, инструмент, аренда) - только после физического завершения
+                # 5. Обычные записи - только после физического завершения
                 elif status == 'completed':
                     should_count = True
                     reason = "завершённая запись"
@@ -7942,14 +10031,14 @@ async def calculate_and_show_revenue(update: Update, context, start_date, end_da
             message_text += f"• Общая выручка: {formatted_revenue}\n\n"
             
             if counted_bookings:
-                message_text += "*📋 Последние учтенные записи:*\n"
+                message_text += "*📋 Последние учтённые записи:*\n"
                 for booking in counted_bookings[:10]:
                     formatted_price = f"{booking['price']:,}₽".replace(',', ' ')
                     message_text += f"• #{booking['id']} - {formatted_price} - {booking['reason']}\n"
                 message_text += "\n"
             
             if skipped_bookings:
-                message_text += "📋 Последние неучтенные записи:\n"
+                message_text += "📋 Последние неучтённые записи:\n"
                 for booking in skipped_bookings[:10]:
                     if booking['price'] > 0:
                         formatted_price = f"{booking['price']:,}₽".replace(',', ' ')
@@ -7974,11 +10063,11 @@ async def calculate_and_show_revenue(update: Update, context, start_date, end_da
                 )
             
     except Exception as e:
-        logger.error(f"Ошибка расчета выручки: {e}")
+        logger.error(f"❌ Ошибка расчёта выручки: {e}")
         import traceback
         traceback.print_exc()
         
-        error_message = "❌ Ошибка при расчете выручки!"
+        error_message = "❌ Ошибка при расчёте выручки!"
         
         if 'is_callback' in locals() and is_callback:
             try:
@@ -7991,12 +10080,19 @@ async def calculate_and_show_revenue(update: Update, context, start_date, end_da
             except:
                 pass
 
+
+# ============================================================
+# МЕНЮ ВЫБОРА ПЕРИОДА ДЛЯ ВЫРУЧКИ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def handle_revenue_menu(update: Update, context):
-    """Показывает меню выбора периода для выручки с inline-кнопками"""
+    """
+    Показывает меню выбора периода для выручки с inline-кнопками.
+    """
     user_id = update.effective_user.id
     
-    logger.info(f"🔍 handle_revenue_menu вызвана пользователем {user_id}")
+    logger.info(f"🔍 handle_revenue_menu вызвана пользователем {user_id}!")
     
     if user_id not in Config.ADMIN_IDS:
         await update.message.reply_text(
@@ -8006,7 +10102,6 @@ async def handle_revenue_menu(update: Update, context):
         )
         return ConversationHandler.END
     
-    # Используем ТОЧНЫЕ строки для callback_data
     keyboard = [
         [
             InlineKeyboardButton("📅 Сегодня", callback_data="revenue_today"),
@@ -8034,8 +10129,15 @@ async def handle_revenue_menu(update: Update, context):
         reply_markup=reply_markup
     )
 
+
+# ============================================================
+# ОБРАБОТКА ВЫБОРА ПЕРИОДА
+# ============================================================
+
 async def handle_revenue_period_selection(update: Update, context):
-    """Обрабатывает выбор периода из inline-меню"""
+    """
+    Обрабатывает выбор периода из inline-меню.
+    """
     query = update.callback_query
     await query.answer()
     
@@ -8044,7 +10146,6 @@ async def handle_revenue_period_selection(update: Update, context):
     
     logger.info(f"🔍 handle_revenue_period_selection: data={data}")
     
-    # Используем ТОЧНЫЕ строки для сравнения
     if data == "revenue_today":
         start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
         end_date = now
@@ -8103,7 +10204,6 @@ async def handle_revenue_period_selection(update: Update, context):
     
     elif data == "revenue_back_to_periods":
         context.user_data.pop('awaiting_custom_revenue_period', None)
-        # Возвращаем меню выбора периода
         keyboard = [
             [
                 InlineKeyboardButton("📅 Сегодня", callback_data="revenue_today"),
@@ -8130,7 +10230,6 @@ async def handle_revenue_period_selection(update: Update, context):
         return
     
     else:
-        # Неизвестный callback
         logger.warning(f"⚠️ Неизвестный callback data: {data}")
         await query.edit_message_text(
             text="❌ Неизвестная команда",
@@ -8140,9 +10239,16 @@ async def handle_revenue_period_selection(update: Update, context):
     
     await calculate_and_show_revenue(update, context, start_date, end_date, period_name)
 
+
+# ============================================================
+# ОБРАБОТКА ПОЛЬЗОВАТЕЛЬСКОГО ПЕРИОДА (INLINE)
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def handle_custom_revenue_period_inline(update: Update, context):
-    """Обрабатывает ввод пользовательского периода для выручки (через inline)"""
+    """
+    Обрабатывает ввод пользовательского периода для выручки (через inline).
+    """
     text = update.message.text.strip()
     user_id = update.effective_user.id
     
@@ -8180,7 +10286,7 @@ async def handle_custom_revenue_period_inline(update: Update, context):
         
         context.user_data.pop('awaiting_custom_revenue_period', None)
         
-        # Создаем fake query для отправки результата
+        # Создаём fake query для отправки результата
         class FakeQuery:
             def __init__(self, message, from_user):
                 self.message = message
@@ -8197,18 +10303,23 @@ async def handle_custom_revenue_period_inline(update: Update, context):
         return ConversationHandler.END
         
     except Exception as e:
-        logger.error(f"Ошибка парсинга дат: {e}")
-        
-        # Просто отправляем сообщение об ошибке БЕЗ КНОПКИ "Назад"
+        logger.error(f"❌ Ошибка парсинга дат: {e}")
         await update.message.reply_text(
             "*❌ Неверный формат даты!*",
             parse_mode="Markdown"
         )
         return
 
+
+# ============================================================
+# ОБРАБОТКА ПОЛЬЗОВАТЕЛЬСКОГО ПЕРИОДА (КЛАВИАТУРА)
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def handle_custom_revenue_period(update: Update, context):
-    """Обрабатывает ввод пользовательского периода для выручки"""
+    """
+    Обрабатывает ввод пользовательского периода для выручки (через клавиатуру).
+    """
     text = update.message.text.strip()
     user_id = update.effective_user.id
     
@@ -8223,7 +10334,7 @@ async def handle_custom_revenue_period(update: Update, context):
         await update.message.reply_text(
             "*🏠 Возвращаемся в главное меню...*\n\n"
             "*✨ Процесс создания промокода завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*💾 Все введённые данные очищены*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -8253,7 +10364,7 @@ async def handle_custom_revenue_period(update: Update, context):
         return ConversationHandler.END
         
     except Exception as e:
-        logger.error(f"Ошибка парсинга дат: {e}")
+        logger.error(f"❌ Ошибка парсинга дат: {e}")
         
         await update.message.reply_text(
             "*❌ Неверный формат даты!*",
@@ -8264,8 +10375,16 @@ async def handle_custom_revenue_period(update: Update, context):
         )
         return
 
+
+# ============================================================
+# ОБРАБОТЧИК ПРОМОКОДОВ (ОСНОВНОЙ)
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def promo_handler(update: Update, context):
+    """
+    Показывает информацию о промокодах.
+    """
     if await check_user_blocked(update, context):
         return ConversationHandler.END
     
@@ -8281,10 +10400,22 @@ async def promo_handler(update: Update, context):
     )
     return ConversationHandler.END
 
+
+# ============================================================
+# РЕФЕРАЛЬНАЯ СИСТЕМА
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def referral_command(update: Update, context):
-    """Показывает реферальную информацию пользователя"""
+    """
+    Показывает реферальную информацию пользователя.
     
+    Отображает:
+    - Реферальный код пользователя
+    - Количество приглашённых друзей
+    - Заработанные пластинки
+    - Достижения за рефералов
+    """
     if await check_user_blocked(update, context):
         return ConversationHandler.END
     
@@ -8300,7 +10431,7 @@ async def referral_command(update: Update, context):
             
             user_data = cursor.fetchone()
             
-            # Если пользователь новый — создаем запись
+            # Если пользователь новый — создаём запись
             if not user_data:
                 username = update.effective_user.username or ""
                 first_name = update.effective_user.first_name or ""
@@ -8324,7 +10455,7 @@ async def referral_command(update: Update, context):
                 referred_by = user_data[1]
                 vinyls = user_data[2] or 0
             
-            # Считаем активных рефералов (кто сделал запись)
+            # Считаем активных рефералов
             cursor.execute('''
                 SELECT COUNT(DISTINCT u.telegram_id)
                 FROM users u
@@ -8342,18 +10473,18 @@ async def referral_command(update: Update, context):
             active_referrals = cursor.fetchone()[0] or 0
             earned_vinyls = active_referrals * 25
             
-            # Если пользователь был приглашен — +15 пластинок
+            # Если пользователь был приглашён — +15 пластинок
             if referred_by:
                 earned_vinyls += 15
             
             user_achievements = AchievementSystem.get_user_achievements(user_id)
             
-            # ===== ФОРМИРУЕМ СООБЩЕНИЕ =====
+            # Формируем сообщение
             message = (
                 f"*👥 Реферальная система*\n\n"
                 f"*🔑 Ваш реферальный код:* `{referral_code}`\n\n"
                 f"*📊 Статистика:*\n"
-                f"• Приглашенных друзей: {active_referrals}\n"
+                f"• Приглашённых друзей: {active_referrals}\n"
                 f"• Заработано пластинок: {earned_vinyls} 💿\n\n"
             )
             
@@ -8398,17 +10529,24 @@ async def referral_command(update: Update, context):
             )
             
     except Exception as e:
-        logger.error(f"Ошибка в referral_command: {e}")
+        logger.error(f"❌ Ошибка в referral_command для пользователя {user_id}: {e}")
         import traceback
         traceback.print_exc()
         await update.message.reply_text(
-            "❌ Ошибка загрузки реферальной информации",
+            "❌ Ошибка загрузки реферальной информации!",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
         )
 
+
+# ============================================================
+# ОБРАБОТЧИК ВВОДА РЕФЕРАЛЬНОГО КОДА
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def enter_referral_code_callback(update: Update, context):
-    """Обработчик кнопки 'Ввести код друга'"""
+    """
+    Обработчик кнопки 'Ввести код друга'.
+    """
     query = update.callback_query
     await query.answer()
     
@@ -8425,9 +10563,15 @@ async def enter_referral_code_callback(update: Update, context):
     )
 
 
+# ============================================================
+# ПОКАЗ СПИСКА РЕФЕРАЛОВ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def show_my_referrals_callback(update: Update, context):
-    """Показывает список рефералов пользователя"""
+    """
+    Показывает список рефералов пользователя.
+    """
     query = update.callback_query
     await query.answer()
     
@@ -8442,7 +10586,7 @@ async def show_my_referrals_callback(update: Update, context):
             
             if not user_data:
                 await query.edit_message_text(
-                    "❌ Данные не найдены",
+                    "❌ Данные не найдены!",
                     parse_mode="Markdown",
                     reply_markup=InlineKeyboardMarkup([[
                         InlineKeyboardButton("↩️ Назад", callback_data="back_to_referral")
@@ -8486,7 +10630,7 @@ async def show_my_referrals_callback(update: Update, context):
             if not referrals:
                 await query.edit_message_text(
                     "*👥 Мои рефералы*\n\n"
-                    "*📭 У вас пока нет приглашенных друзей*\n\n"
+                    "*📭 У вас пока нет приглашённых друзей!*\n\n"
                     "*✨ Поделитесь своим кодом и получайте бонусы!*",
                     parse_mode="Markdown",
                     reply_markup=InlineKeyboardMarkup([[
@@ -8550,12 +10694,19 @@ async def show_my_referrals_callback(update: Update, context):
             )
             
     except Exception as e:
-        logger.error(f"Ошибка в show_my_referrals_callback: {e}")
-        await query.answer("❌ Ошибка загрузки данных", show_alert=True)
+        logger.error(f"❌ Ошибка в show_my_referrals_callback для пользователя {user_id}: {e}")
+        await query.answer("❌ Ошибка загрузки данных!", show_alert=True)
+
+
+# ============================================================
+# ВОЗВРАТ В МЕНЮ РЕФЕРАЛОВ
+# ============================================================
 
 @handle_errors_with_rate_limit
 async def back_to_referral_callback(update: Update, context):
-    """Возврат в главное меню рефералов"""
+    """
+    Возврат в главное меню рефералов.
+    """
     query = update.callback_query
     await query.answer()
     
@@ -8576,7 +10727,7 @@ async def back_to_referral_callback(update: Update, context):
             
             if not user_data:
                 await query.edit_message_text(
-                    "❌ Ошибка загрузки данных",
+                    "❌ Ошибка загрузки данных!",
                     parse_mode="Markdown"
                 )
                 return
@@ -8608,12 +10759,11 @@ async def back_to_referral_callback(update: Update, context):
             
             user_achievements = AchievementSystem.get_user_achievements(user_id)
             
-            # ===== ФОРМИРУЕМ СООБЩЕНИЕ =====
             message = (
                 f"*👥 Реферальная система*\n\n"
                 f"*🔑 Ваш реферальный код:* `{referral_code}`\n\n"
                 f"*📊 Статистика:*\n"
-                f"• Приглашенных друзей: {active_referrals}\n"
+                f"• Приглашённых друзей: {active_referrals}\n"
                 f"• Заработано пластинок: {earned_vinyls} 💿\n\n"
             )
             
@@ -8656,28 +10806,36 @@ async def back_to_referral_callback(update: Update, context):
             )
             
     except Exception as e:
-        logger.error(f"Ошибка в back_to_referral_callback: {e}")
+        logger.error(f"❌ Ошибка в back_to_referral_callback для пользователя {user_id}: {e}")
         await query.edit_message_text(
-            "❌ Ошибка загрузки реферальной информации",
+            "❌ Ошибка загрузки реферальной информации!",
             parse_mode="Markdown"
         )
 
+
+# ============================================================
+# ОБРАБОТКА ВВЕДЁННОГО РЕФЕРАЛЬНОГО КОДА
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def process_referral_code_message(update: Update, context):
-    """Обработка введенного реферального кода"""
+    """
+    Обработка введённого реферального кода.
     
+    Проверяет код, начисляет бонусы и отправляет уведомления.
+    """
     if not context.user_data.get('awaiting_referral_code'):
         return await handle_main_menu(update, context)
     
     code = update.message.text.strip().upper()
     user_id = str(update.effective_user.id)
     
-    logger.info(f"🔍 Попытка активации кода: '{code}' от пользователя {user_id}")
+    logger.info(f"🔍 Попытка активации реферального кода '{code}' от пользователя {user_id}!")
     
     if code in ["↩️ ГЛАВНОЕ МЕНЮ", "↩️ НАЗАД", "↩️ Главное меню", "↩️ Назад"]:
         context.user_data.pop('awaiting_referral_code', None)
         await update.message.reply_text(
-            "🏠 Возврат в меню",
+            "🏠 Возврат в меню!",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
         )
         return ConversationHandler.END
@@ -8696,7 +10854,7 @@ async def process_referral_code_message(update: Update, context):
             
             if not referrer:
                 await update.message.reply_text(
-                    "*❌ Код не найден*",
+                    "*❌ Код не найден!*",
                     parse_mode="Markdown"
                 )
                 return
@@ -8707,7 +10865,7 @@ async def process_referral_code_message(update: Update, context):
             # Нельзя ввести свой код
             if referrer_id == user_id:
                 await update.message.reply_text(
-                    "*❌ Нельзя ввести свой собственный код*",
+                    "*❌ Нельзя ввести свой собственный код!*",
                     parse_mode="Markdown"
                 )
                 return
@@ -8718,13 +10876,13 @@ async def process_referral_code_message(update: Update, context):
             
             if user_data and user_data[0]:
                 await update.message.reply_text(
-                    "*❌ Вы уже использовали реферальный код*",
+                    "*❌ Вы уже использовали реферальный код!*",
                     parse_mode="Markdown"
                 )
                 context.user_data.pop('awaiting_referral_code', None)
                 return ConversationHandler.END
             
-            # Проверяем, есть ли у пользователя записи (только для новых)
+            # Проверяем, есть ли у пользователя записи
             cursor.execute('''
                 SELECT 
                     COUNT(CASE 
@@ -8778,8 +10936,8 @@ async def process_referral_code_message(update: Update, context):
             has_first_booking = cursor.fetchone()[0] > 0
             
             logger.info(f"🔍 Проверка реферального кода для {user_id}:")
-            logger.info(f"   • Подтвержденных пользовательских: {confirmed_user}")
-            logger.info(f"   • Подтвержденных договорных: {confirmed_contract}")
+            logger.info(f"   • Подтверждённых пользовательских: {confirmed_user}")
+            logger.info(f"   • Подтверждённых договорных: {confirmed_contract}")
             logger.info(f"   • Админских: {admin_bookings}")
             logger.info(f"   • Прошедших пользовательских: {completed_user}")
             logger.info(f"   • ВСЕГО записей: {total_existing_bookings}")
@@ -8788,7 +10946,7 @@ async def process_referral_code_message(update: Update, context):
             # Если есть записи — нельзя активировать код
             if total_existing_bookings > 0 or has_first_booking:
                 await update.message.reply_text(
-                    f"*❌ Реферальный код нельзя активировать*\n\n"
+                    f"*❌ Реферальный код нельзя активировать!*\n\n"
                     f"*💡 Реферальные бонусы доступны только новым пользователям*",
                     parse_mode="Markdown"
                 )
@@ -8802,7 +10960,7 @@ async def process_referral_code_message(update: Update, context):
             current_vinyls = 0
             
             if not existing_user:
-                # Создаем нового пользователя
+                # Создаём нового пользователя
                 username = update.effective_user.username or ""
                 first_name = update.effective_user.first_name or ""
                 unique_id = f"MC{int(time.time())}{user_id[-6:]}"
@@ -8816,13 +10974,13 @@ async def process_referral_code_message(update: Update, context):
                 ''', (user_id, username, first_name, unique_id, registration_date, user_referral_code, 15))
                 
                 current_vinyls = 15
-                logger.info(f"✅ Новый пользователь {user_id} получил +15 пластинок")
+                logger.info(f"✅ Новый пользователь {user_id} получил +15 пластинок за регистрацию!")
             else:
                 current_vinyls = existing_user[1] or 0
                 cursor.execute('''
                     UPDATE users SET vinyls = ? WHERE telegram_id = ?
                 ''', (current_vinyls + 15, user_id))
-                logger.info(f"✅ Пользователь {user_id} получил +15 пластинок (было {current_vinyls}, стало {current_vinyls + 15})")
+                logger.info(f"✅ Пользователь {user_id} получил +15 пластинок! Было {current_vinyls}, стало {current_vinyls + 15}!")
                 current_vinyls += 15
             
             # Сохраняем, кто пригласил
@@ -8844,41 +11002,51 @@ async def process_referral_code_message(update: Update, context):
                     text=(
                         f"*🎉 Новый реферал!*\n\n"
                         f"*👤 Пользователь {user_display} зарегистрировался по вашему реферальному коду!*\n\n"
-                        f"*⚡ Когда он сделает первую запись, вы получите +25 пластинок*"
+                        f"*⚡ Когда он сделает первую запись, вы получите +25 пластинок!*"
                     ),
                     parse_mode="Markdown"
                 )
             except Exception as e:
-                logger.error(f"Не удалось отправить уведомление пригласившему: {e}")
+                logger.error(f"❌ Не удалось отправить уведомление пригласившему {referrer_id}: {e}")
             
             context.user_data.pop('awaiting_referral_code', None)
             
             await update.message.reply_text(
                 f"*✅ Код активирован!*\n\n"
                 f"*🎉 Вы были приглашены пользователем {referrer_name}*\n\n"
-                f"*🎁 Вы получили +15 пластинок за регистрацию*\n\n"
-                f"*⚡ Когда вы сделаете первую запись, {referrer_name} получит +25 пластинок*",
+                f"*🎁 Вы получили +15 пластинок за регистрацию!*\n\n"
+                f"*⚡ Когда вы сделаете первую запись, {referrer_name} получит +25 пластинок!*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
             )
             
     except Exception as e:
-        logger.error(f"Ошибка активации реферального кода: {e}")
+        logger.error(f"❌ Ошибка активации реферального кода {code} для пользователя {user_id}: {e}")
         import traceback
         traceback.print_exc()
         await update.message.reply_text(
-            "*❌ Ошибка активации кода*\n\n"
+            "*❌ Ошибка активации кода!*\n\n"
             "*💡 Пожалуйста, попробуйте позже или свяжитесь с администратором.*",
             parse_mode="Markdown"
         )
         return
 
+
+# ============================================================
+# НАЧИСЛЕНИЕ РЕФЕРАЛЬНОГО БОНУСА
+# ============================================================
+
 async def award_referral_bonus(booking_user_id: str, booking_data: dict, context):
     """
-    Начисляет бонус пригласившему пользователю, когда реферал делает первую запись
+    Начисляет бонус пригласившему пользователю, когда реферал делает первую запись.
+    
+    Аргументы:
+        booking_user_id: ID пользователя, сделавшего запись
+        booking_data: Данные записи
+        context: Контекст бота
     """
     try:
-        logger.info(f"🎯 Начисление реферального бонуса для пользователя {booking_user_id}")
+        logger.info(f"🎯 Начисляю реферальный бонус для пользователя {booking_user_id}!")
         
         with db.get_connection() as conn:
             cursor = conn.cursor()
@@ -8890,7 +11058,7 @@ async def award_referral_bonus(booking_user_id: str, booking_data: dict, context
             user_data = cursor.fetchone()
             
             if not user_data or not user_data[0]:
-                logger.info(f"Пользователь {booking_user_id} не был приглашен")
+                logger.info(f"ℹ️ Пользователь {booking_user_id} не был приглашён!")
                 return
             
             referrer_code = user_data[0]
@@ -8902,7 +11070,7 @@ async def award_referral_bonus(booking_user_id: str, booking_data: dict, context
             referrer = cursor.fetchone()
             
             if not referrer:
-                logger.warning(f"Реферер с кодом {referrer_code} не найден")
+                logger.warning(f"⚠️ Реферер с кодом {referrer_code} не найден!")
                 return
             
             referrer_id = referrer[0]
@@ -8916,7 +11084,7 @@ async def award_referral_bonus(booking_user_id: str, booking_data: dict, context
             ''', (booking_user_id, referrer_id))
             
             if cursor.fetchone()[0] > 0:
-                logger.info(f"Бонус для реферера {referrer_id} уже начислен")
+                logger.info(f"ℹ️ Бонус для реферера {referrer_id} уже начислен!")
                 return
             
             # Проверяем, подходит ли запись для начисления бонуса
@@ -8931,21 +11099,21 @@ async def award_referral_bonus(booking_user_id: str, booking_data: dict, context
             
             if is_contractual and status in ['confirmed', 'подтвержден']:
                 should_award = True
-                award_reason = "подтвержденная договорная запись"
-                logger.info(f"✅ Случай 1: Подтвержденная договорная запись")
+                award_reason = "подтверждённая договорная запись"
+                logger.info(f"✅ Условие выполнено: подтверждённая договорная запись!")
             
             elif is_admin_booking:
                 should_award = True
                 award_reason = "админская запись"
-                logger.info(f"✅ Случай 2: Админская запись")
+                logger.info(f"✅ Условие выполнено: админская запись!")
             
             elif status == 'completed' and date_str and 'Не указана' not in date_str and 'договорная' not in date_str.lower():
                 should_award = True
                 award_reason = "прошедшая запись с датой"
-                logger.info(f"✅ Случай 3: Прошедшая запись с датой")
+                logger.info(f"✅ Условие выполнено: прошедшая запись с датой!")
             
             if not should_award:
-                logger.info(f"❌ Запись не подходит для начисления бонуса: is_admin={is_admin_booking}, is_contract={is_contractual}, status={status}")
+                logger.info(f"❌ Запись не подходит для начисления бонуса! is_admin={is_admin_booking}, is_contract={is_contractual}, status={status}")
                 return
             
             # Начисляем бонус
@@ -8967,7 +11135,7 @@ async def award_referral_bonus(booking_user_id: str, booking_data: dict, context
             
             conn.commit()
             
-            logger.info(f"✅ Пригласившему {referrer_id} начислено +25 пластинок ({award_reason})")
+            logger.info(f"✅ Пригласившему {referrer_id} начислено +25 пластинок за {award_reason}!")
             
             # Отправляем уведомление пригласившему
             try:
@@ -8984,21 +11152,30 @@ async def award_referral_bonus(booking_user_id: str, booking_data: dict, context
                     text=vinyl_message,
                     parse_mode="Markdown"
                 )
-                logger.info(f"✅ Уведомление о +25 пластинках отправлено {referrer_id}")
+                logger.info(f"✅ Уведомление о +25 пластинках успешно отправлено рефереру {referrer_id}!")
             except Exception as e:
-                logger.error(f"❌ Не удалось отправить уведомление о пластинках: {e}")
+                logger.error(f"❌ Не удалось отправить уведомление о пластинках рефереру {referrer_id}: {e}")
             
             # Проверяем достижения
             await AchievementSystem.check_and_award_achievements(str(referrer_id), context, update=None)
             await AchievementSystem.check_and_award_achievements(str(booking_user_id), context, update=None)
             
     except Exception as e:
-        logger.error(f"❌ Ошибка начисления бонуса: {e}")
+        logger.error(f"❌ Критическая ошибка начисления реферального бонуса для пользователя {booking_user_id}! Проверьте структуру базы данных!")
         import traceback
         traceback.print_exc()
 
+# ============================================================
+# НАЧАЛО БРОНИРОВАНИЯ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def start_booking(update: Update, context):
+    """
+    Начинает процесс бронирования.
+    
+    Шаг 1: Ввод имени пользователя.
+    """
     if await check_user_blocked(update, context):
         return ConversationHandler.END
     
@@ -9006,7 +11183,7 @@ async def start_booking(update: Update, context):
     
     context.user_data.clear()
     
-    logger.info(f"🔍 Начало записи для пользователя {user_id}")
+    logger.info(f"🔍 Начинаю процесс бронирования для пользователя {user_id}!")
     
     await update.message.reply_text(
         "*👤 Шаг 1/7: Ввод имени*\n\n"
@@ -9021,12 +11198,24 @@ async def start_booking(update: Update, context):
     )
     return NAME
 
+
+# ============================================================
+# ПОКАЗ ЗАПИСЕЙ ПОЛЬЗОВАТЕЛЯ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def show_my_bookings(update: Update, context):
-    """Показывает записи пользователя: все студийные + ожидающие договорные"""
+    """
+    Показывает записи пользователя: все студийные + ожидающие договорные.
     
+    Отображает:
+    - Обычные записи в студии (с датой и временем)
+    - Договорные записи (ожидающие подтверждения)
+    - Кнопки для отмены записей
+    - Информацию о применённых скидках и промокодах
+    """
     if not update or not update.message:
-        logger.error("show_my_bookings: update или update.message равен None")
+        logger.error("❌ show_my_bookings: update или update.message равен None!")
         return
     
     if await check_user_blocked(update, context):
@@ -9034,7 +11223,7 @@ async def show_my_bookings(update: Update, context):
     
     user = update.effective_user
     if not user:
-        logger.error("show_my_bookings: effective_user равен None")
+        logger.error("❌ show_my_bookings: effective_user равен None!")
         return
     
     user_id = str(user.id)
@@ -9043,6 +11232,7 @@ async def show_my_bookings(update: Update, context):
         with db.get_connection() as conn:
             cursor = conn.cursor()
             
+            # Получаем информацию о пользователе для отображения
             cursor.execute('SELECT username, unique_id FROM users WHERE telegram_id = ?', (user_id,))
             user_info = cursor.fetchone()
             if user_info:
@@ -9054,7 +11244,7 @@ async def show_my_bookings(update: Update, context):
             else:
                 current_user_display = f"ID: ...{user_id[-4:]}"
             
-            # ===== SQL ЗАПРОС =====
+            # Получаем активные записи пользователя
             cursor.execute('''
                 SELECT b.id, b.service, b.time_slot, b.date_str, b.status, b.price,
                     b.is_mixing, b.mixing_type, b.is_track_creation, b.track_type,
@@ -9084,7 +11274,7 @@ async def show_my_bookings(update: Update, context):
             
             if not rows:
                 await update.message.reply_text(
-                    f"*📭 У вас нет активных записей*\n\n"
+                    f"*📭 У вас нет активных записей!*\n\n"
                     f"*✨ Хотите записаться?*\n\n"
                     f"*Нажмите 🎤 \"Записаться в студию\"*",
                     parse_mode="Markdown",
@@ -9125,12 +11315,9 @@ async def show_my_bookings(update: Update, context):
                 if is_admin_booking:
                     safe_name = "Администратор"
                 
-                # ===== ИСПРАВЛЕННОЕ ФОРМИРОВАНИЕ ТЕКСТА КУПОНА / СКИДКИ ПО УРОВНЮ =====
+                # Формируем текст купона/скидки по уровню
                 coupon_text = ""
-                
-                # Сначала проверяем level_discount_percent из записи
                 if level_discount_percent and level_discount_percent > 0:
-                    # Пытаемся найти купон в user_coupons для деталей
                     if level_coupon_id:
                         cursor.execute('''
                             SELECT level, discount_percent FROM user_coupons WHERE id = ?
@@ -9140,13 +11327,11 @@ async def show_my_bookings(update: Update, context):
                             level, discount = coupon_info
                             coupon_text = f"• Купон уровня {level}: {discount}%"
                         else:
-                            # Купон удалён, но скидка была применена
                             coupon_text = f"• Скидка по уровню: {level_discount_percent}%"
                     else:
-                        # Нет ID купона, но скидка была применена
                         coupon_text = f"• Скидка по уровню: {level_discount_percent}%"
                 
-                # ===== ФОРМИРУЕМ ТЕКСТ ПРОМОКОДА =====
+                # Формируем текст промокода
                 promo_text = ""
                 if promo_code_used:
                     cursor.execute('''
@@ -9201,7 +11386,7 @@ async def show_my_bookings(update: Update, context):
                     'promo_discount_percent': promo_discount_percent
                 }
                 
-                # ===== РАЗДЕЛЯЕМ ЗАПИСИ =====
+                # Разделяем записи
                 if is_mixing == 1 or is_contractual:
                     contract_bookings.append(booking_info)
                 else:
@@ -9213,7 +11398,7 @@ async def show_my_bookings(update: Update, context):
             message_parts = []
             current_part = f"*📋 Мои записи*\n\n*👤 Профиль: {SecurityUtils.safe_markdown_text(current_user_display)}*\n\n"
             
-            # ===== ОБЫЧНЫЕ ЗАПИСИ =====
+            # Обычные записи
             if dated_bookings:
                 current_part += "*📅 Записи в студии:*\n\n"
                 
@@ -9277,11 +11462,9 @@ async def show_my_bookings(update: Update, context):
                                 safe_price = SecurityUtils.safe_markdown_text(str(booking['price']))
                                 booking_text += f"• Стоимость: {safe_price}\n"
                     
-                    # ===== ДОБАВЛЯЕМ КУПОН / СКИДКУ ПО УРОВНЮ =====
                     if booking.get('coupon_text'):
                         booking_text += f"{booking['coupon_text']}\n"
                     
-                    # ===== ДОБАВЛЯЕМ ПРОМОКОД =====
                     if booking.get('promo_text'):
                         booking_text += f"{booking['promo_text']}\n"
                     
@@ -9293,7 +11476,7 @@ async def show_my_bookings(update: Update, context):
                     else:
                         current_part += booking_text
             
-            # ===== ДОГОВОРНЫЕ ЗАПИСИ (ТОЛЬКО PENDING) =====
+            # Договорные записи (только PENDING)
             if contract_bookings:
                 if len(current_part + "*📝 Ожидающие договорные записи:*\n\n") > 3500:
                     message_parts.append(current_part)
@@ -9326,11 +11509,9 @@ async def show_my_bookings(update: Update, context):
                                 safe_price = SecurityUtils.safe_markdown_text(str(booking['price']))
                                 booking_text += f"• Стоимость: {safe_price}\n"
                     
-                    # ===== ДОБАВЛЯЕМ КУПОН / СКИДКУ ПО УРОВНЮ =====
                     if booking.get('coupon_text'):
                         booking_text += f"{booking['coupon_text']}\n"
                     
-                    # ===== ДОБАВЛЯЕМ ПРОМОКОД =====
                     if booking.get('promo_text'):
                         booking_text += f"{booking['promo_text']}\n"
                     
@@ -9347,7 +11528,7 @@ async def show_my_bookings(update: Update, context):
                     current_part += "*👇 Отменить записи в студии:*"
                 message_parts.append(current_part)
             
-            # ===== КНОПКИ ТОЛЬКО ДЛЯ dated_bookings =====
+            # Создаём кнопки для отмены записей
             keyboard_buttons = []
             for booking in dated_bookings:
                 button_text = f"❌ Отменить #{booking['id']}"
@@ -9364,6 +11545,7 @@ async def show_my_bookings(update: Update, context):
             else:
                 reply_markup = KeyboardManager.get_main_keyboard(update.effective_user)
             
+            # Отправляем сообщения
             for i, part in enumerate(message_parts):
                 if i == len(message_parts) - 1:
                     await update.message.reply_text(
@@ -9378,26 +11560,36 @@ async def show_my_bookings(update: Update, context):
                     )
         
     except Exception as e:
-        logger.error(f"Ошибка показа записей пользователя: {e}")
+        logger.error(f"❌ Ошибка показа записей пользователя {user_id}: {e}")
         import traceback
         traceback.print_exc()
         await update.message.reply_text(
             "*📋 Мои записи*\n\n"
-            "*⚠️ Не удалось загрузить информацию*",
+            "*⚠️ Не удалось загрузить информацию!*",
             parse_mode="Markdown",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
         )
 
+
+# ============================================================
+# ОСНОВНОЙ ОБРАБОТЧИК ГЛАВНОГО МЕНЮ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def handle_main_menu(update: Update, context):
+    """
+    Обрабатывает нажатия кнопок в главном меню.
+    
+    Маршрутизирует запросы к соответствующим обработчикам.
+    """
     text = update.message.text.strip()
     user_id = update.effective_user.id
     
-    # ===== ОБРАБОТКА КНОПКИ "ГЛАВНОЕ МЕНЮ" =====
+    # Обработка кнопки "Главное меню"
     if text == "↩️ Главное меню":
         return await handle_main_menu_button(update, context)
     
-    # ===== ОБРАБОТКА КНОПКИ "НАЗАД" =====
+    # Обработка кнопки "Назад"
     if text == "↩️ Назад":
         current_state = context.user_data.get('_conversation_state')
         
@@ -9413,15 +11605,15 @@ async def handle_main_menu(update: Update, context):
             context.user_data.clear()
             await update.message.reply_text(
                 "*🏠 Возвращаемся в главное меню...*\n\n"
-                "*✨ Процесс записи завершён*\n"
-                "*💾 Все введенные данные очищены*\n\n"
+                "*✨ Процесс записи завершён!*\n"
+                "*💾 Все введённые данные очищены!*\n\n"
                 "*👇 Выберите подходящий вариант:*",
                 reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
                 parse_mode="Markdown"
             )
             return ConversationHandler.END
     
-    # ===== КОМАНДЫ =====
+    # Команды
     if text == '/start':
         return await start(update, context)
     
@@ -9440,14 +11632,14 @@ async def handle_main_menu(update: Update, context):
     if context.user_data.get('_conversation_state') is not None:
         return
     
-    # ===== НОВЫЕ КНОПКИ =====
+    # Новые кнопки
     if text == "❓ Помощь":
         return await help_handler(update, context)
     
     if text == "❗️ Полезная информация":
         return await useful_info_handler(update, context)
     
-    # ===== ОСНОВНЫЕ КНОПКИ ПОЛЬЗОВАТЕЛЯ =====
+    # Основные кнопки пользователя
     if text == "🎤 Записаться в студию":
         if await check_user_blocked(update, context):
             return ConversationHandler.END
@@ -9485,7 +11677,7 @@ async def handle_main_menu(update: Update, context):
         await top_vinyls_handler(update, context)
         return ConversationHandler.END
     
-    # ===== АДМИНСКИЕ КНОПКИ =====
+    # Админские кнопки
     if text == "👑 Создать запись":
         return await handle_admin_create_booking(update, context)
     
@@ -9519,17 +11711,27 @@ async def handle_main_menu(update: Update, context):
     # Если ничего не подошло - игнорируем
     return None
 
+
+# ============================================================
+# ГЛОБАЛЬНЫЙ ОБРАБОТЧИК КНОПОК
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def handle_global_buttons(update: Update, context):
+    """
+    Глобальный обработчик кнопок для всех меню.
+    
+    Обрабатывает кнопки, которые не обрабатываются ConversationHandler.
+    """
     text = update.message.text.strip()
     
-    logger.info(f"🔍 ГЛОБАЛЬНЫЙ ОБРАБОТЧИК КНОПОК: '{text}'")
+    logger.info(f"🔍 Глобальный обработчик кнопок: '{text}'!")
     
-    # ===== КНОПКИ, КОТОРЫЕ ДОЛЖЕН ОБРАБАТЫВАТЬ CONVERSATIONHANDLER =====
+    # Кнопки, которые должен обрабатывать ConversationHandler
     if text in ["✅ Всё верно, отправить!", "✏️ Исправить данные", "❌ Отменить", "↩️ Назад"]:
         return None  # Пропускаем, чтобы обработал ConversationHandler
     
-    # ===== ОСНОВНЫЕ КНОПКИ ПОЛЬЗОВАТЕЛЯ =====
+    # Основные кнопки пользователя
     if text == "📅 Мои записи":
         await show_my_bookings(update, context)
         return ConversationHandler.END
@@ -9562,22 +11764,26 @@ async def handle_global_buttons(update: Update, context):
         await top_vinyls_handler(update, context)
         return ConversationHandler.END
     
-    # ===== АДМИНСКИЕ КНОПКИ =====
+    # Админские кнопки
     if text == "👑 Выручка":
         return await handle_revenue_menu(update, context)
     
     if text == "👑 Удалить промокод":
         return await admin_promo_delete_start(update, context)
     
-    # ===== КНОПКА "НАЗАД" - НЕ ОБРАБАТЫВАЕМ ЗДЕСЬ ВООБЩЕ =====
-    # Она должна обрабатываться в handle_back_button для пользовательских состояний
-    # и в админских функциях для админских состояний
-    
     # Если ничего не подошло - игнорируем
     return None
 
+
+# ============================================================
+# ПОКАЗ УВЕДОМЛЕНИЙ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def notifications_command(update: Update, context):
+    """
+    Показывает ожидающие уведомления пользователя.
+    """
     if await check_user_blocked(update, context):
         return ConversationHandler.END
     
@@ -9607,8 +11813,8 @@ async def notifications_command(update: Update, context):
             
             if not rows:
                 await update.message.reply_text(
-                    "*🔕 Ожидающих уведомлений нет*\n\n"
-                    "*✨ Все напоминания уже отправлены*\n\n"
+                    "*🔕 Ожидающих уведомлений нет!*\n\n"
+                    "*✨ Все напоминания уже отправлены!*\n\n"
                     "*👇 Запишитесь снова — и мы снова напомним!*",
                     parse_mode="Markdown",
                     reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
@@ -9684,16 +11890,26 @@ async def notifications_command(update: Update, context):
         )
         
     except Exception as e:
-        logger.error(f"Ошибка показа уведомлений: {e}")
+        logger.error(f"❌ Ошибка показа уведомлений для пользователя {user_id}: {e}")
         await update.message.reply_text(
             "🔔 Мои уведомления\n\n"
-            "⚠️ Не удалось загрузить информацию",
+            "⚠️ Не удалось загрузить информацию!",
             parse_mode="Markdown",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
         )
 
+
+# ============================================================
+# ОБРАБОТЧИК ВВОДА ИМЕНИ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def get_name(update: Update, context):
+    """
+    Обрабатывает ввод имени пользователя.
+    
+    Шаг 1/7 процесса бронирования.
+    """
     if await check_user_blocked(update, context):
         return ConversationHandler.END
     
@@ -9701,7 +11917,7 @@ async def get_name(update: Update, context):
     
     text = update.message.text.strip()
     
-    logger.info(f"🔍 get_name вызван с текстом: '{text}'")
+    logger.info(f"🔍 get_name вызван с текстом: '{text}'!")
     
     if text == "↩️ Главное меню":
         return await handle_main_menu_button(update, context)
@@ -9709,8 +11925,8 @@ async def get_name(update: Update, context):
     if text == "↩️ Назад":
         await update.message.reply_text(
             "🎙️ Добро пожаловать в студию Godspeed Records!\n\n"
-            "✨ Профессиональная студия звукозаписи в самом сердце Санкт-Петербурга\n\n"
-            "🎧 Чем можем вам помочь\n"
+            "✨ Профессиональная студия звукозаписи в самом сердце Санкт-Петербурга!\n\n"
+            "🎧 Чем можем вам помочь:\n"
             "• Запись вокала и инструментов\n"
             "• Аренда студии на 12 часов\n"
             "• Сведение и мастеринг\n"
@@ -9754,8 +11970,21 @@ async def get_name(update: Update, context):
     )
     return CONTACT
 
+
+# ============================================================
+# ОБРАБОТЧИК ВВОДА КОНТАКТА
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def get_contact(update: Update, context):
+    """
+    Обрабатывает ввод контакта пользователя.
+    
+    Шаг 2/7 процесса бронирования.
+    Поддерживает:
+    - Отправку контакта через Telegram
+    - Ручной ввод
+    """
     if await check_user_blocked(update, context):
         return ConversationHandler.END
     
@@ -9771,7 +12000,7 @@ async def get_contact(update: Update, context):
         
         if text not in ["↩️ Назад", "✏️ Ввести вручную"]:
             await update.message.reply_text(
-                "*❌ Пожалуйста, используйте кнопки!\n\n👇 Выберите подходящий вариант:*",
+                "*❌ Пожалуйста, используйте кнопки!*\n\n*👇 Выберите подходящий вариант:*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_contact_request()
             )
@@ -9806,7 +12035,7 @@ async def get_contact(update: Update, context):
         
         if len(phone_number) > Config.MAX_CONTACT_LENGTH:
             await update.message.reply_text(
-                f"❌ Максимально {Config.MAX_CONTACT_LENGTH} символов, слишком длинный номер телефона!",
+                f"❌ Максимально {Config.MAX_CONTACT_LENGTH} символов! Слишком длинный номер телефона!",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_contact_request()
             )
@@ -9850,8 +12079,18 @@ async def get_contact(update: Update, context):
     )
     return CONTACT
 
+
+# ============================================================
+# ОБРАБОТЧИК РУЧНОГО ВВОДА КОНТАКТА
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def get_contact_input(update: Update, context):
+    """
+    Обрабатывает ручной ввод контакта.
+    
+    Шаг 2/7 процесса бронирования (альтернативный вариант).
+    """
     if await check_user_blocked(update, context):
         return ConversationHandler.END
     
@@ -9863,8 +12102,8 @@ async def get_contact_input(update: Update, context):
         context.user_data.clear()
         await update.message.reply_text(
             "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс записи завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*✨ Процесс записи завершён!*\n"
+            "*💾 Все введённые данные очищены!*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -9920,8 +12159,18 @@ async def get_contact_input(update: Update, context):
     )
     return SERVICE
 
+# ============================================================
+# ОБРАБОТЧИК ВЫБОРА УСЛУГИ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def get_service(update: Update, context):
+    """
+    Обрабатывает выбор услуги.
+    
+    Шаг 3/7 процесса бронирования.
+    Проверяет лимиты пользователя перед переходом к следующему шагу.
+    """
     if await check_user_blocked(update, context):
         return ConversationHandler.END
     
@@ -9933,7 +12182,7 @@ async def get_service(update: Update, context):
         return await handle_main_menu_button(update, context)
     
     if text == "↩️ Назад":
-        logger.info(f"🔍 Пользователь нажал 'Назад' в get_service")
+        logger.info(f"🔍 Пользователь нажал 'Назад' в get_service!")
         context.user_data.pop('with_engineer', None)
         context.user_data.pop('service', None)
         
@@ -9964,7 +12213,7 @@ async def get_service(update: Update, context):
     
     user_id = str(update.effective_user.id)
     
-    # ===== ПРОВЕРКА ЛИМИТОВ ДЛЯ ВСЕХ УСЛУГ (КРОМЕ СОЗДАНИЯ ТРЕКА) =====
+    # Проверка лимитов для всех услуг (кроме создания трека)
     if text == "🎚️ Сведение/мастеринг":
         is_allowed, message, current_count = UserLimits.check_user_limits(user_id, False)
         if not is_allowed:
@@ -9995,10 +12244,8 @@ async def get_service(update: Update, context):
             )
             return ConversationHandler.END
     
-    # ===== СОЗДАНИЕ ТРЕКА - ПРОВЕРКУ УБРАЛИ! ОНА БУДЕТ В get_track_creation_type() =====
+    # Создание трека - проверка лимитов в get_track_creation_type()
     elif text == "🎵 Создание трека":
-        # Проверка лимитов ПЕРЕНЕСЕНА в get_track_creation_type()
-        # Здесь только устанавливаем данные и переходим к выбору формата
         pass
     
     keys_to_remove = [
@@ -10018,7 +12265,7 @@ async def get_service(update: Update, context):
         
         await update.message.reply_text(
             "*👨‍🔧 Шаг 4/7: Выбор формата*\n\n"
-            "*✨ Вам требуется помощь звукорежиссера?*\n\n"
+            "*✨ Вам требуется помощь звукорежиссёра?*\n\n"
             "*🎯 С инженером — рекомендуем:*\n"
             "• Профессиональная настройка оборудования\n"
             "• Помощь в процессе записи\n"
@@ -10038,7 +12285,7 @@ async def get_service(update: Update, context):
         
         await update.message.reply_text(
             "*👨‍🔧 Шаг 4/7: Выбор формата*\n\n"
-            "*✨ Вам требуется помощь звукорежиссера?*\n\n"
+            "*✨ Вам требуется помощь звукорежиссёра?*\n\n"
             "*🎯 С инженером — рекомендуем:*\n"
             "• Профессиональная настройка оборудования\n"
             "• Помощь в процессе записи\n"
@@ -10111,7 +12358,7 @@ async def get_service(update: Update, context):
             if key in context.user_data:
                 context.user_data.pop(key)
         
-        logger.info(f"🔍 Переход к выбору формата трека")
+        logger.info(f"🔍 Перехожу к выбору формата трека!")
         
         await update.message.reply_text(
             "*🎵 Шаг 4/7: Выбор формата*\n\n"
@@ -10159,14 +12406,24 @@ async def get_service(update: Update, context):
     keyboard = KeyboardManager.get_services()
     
     await update.message.reply_text(
-        "*❌ Пожалуйста, используйте кнопки!\n\n👇 Выберите подходящий вариант:*",
+        "*❌ Пожалуйста, используйте кнопки!*\n\n*👇 Выберите подходящий вариант:*",
         parse_mode="Markdown",
         reply_markup=keyboard
     )
     return SERVICE
 
+
+# ============================================================
+# ОБРАБОТЧИК ВЫБОРА С ИНЖЕНЕРОМ/БЕЗ ИНЖЕНЕРА
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def get_engineer_option(update: Update, context):
+    """
+    Обрабатывает выбор работы с инженером.
+    
+    Шаг 4/7 процесса бронирования (для вокала и инструментов).
+    """
     if await check_user_blocked(update, context):
         return ConversationHandler.END
     
@@ -10178,7 +12435,7 @@ async def get_engineer_option(update: Update, context):
         return await handle_main_menu_button(update, context)
     
     if text == "↩️ Назад":
-        logger.info(f"🔍 Пользователь нажал 'Назад' в get_engineer_option")
+        logger.info(f"🔍 Пользователь нажал 'Назад' в get_engineer_option!")
         context.user_data.pop('with_engineer', None)
         context.user_data.pop('service', None)
         
@@ -10209,16 +12466,16 @@ async def get_engineer_option(update: Update, context):
             await update.message.edit_reply_markup(reply_markup=reply_markup)
             
             await update.message.reply_text(
-                "*❌ Пожалуйста, используйте кнопки!\n\n👇 Выберите подходящий вариант:*",
+                "*❌ Пожалуйста, используйте кнопки!*\n\n*👇 Выберите подходящий вариант:*",
                 parse_mode="Markdown",
                 reply_markup=reply_markup
             )
             
         except Exception as edit_error:
-            logger.error(f"Ошибка редактирования клавиатуры: {edit_error}")
+            logger.error(f"❌ Ошибка редактирования клавиатуры: {edit_error}")
             
             await update.message.reply_text(
-                "*❌ Пожалуйста, используйте кнопки!\n\n👇 Выберите подходящий вариант:*",
+                "*❌ Пожалуйста, используйте кнопки!*\n\n*👇 Выберите подходящий вариант:*",
                 parse_mode="Markdown",
                 reply_markup=reply_markup
             )
@@ -10268,7 +12525,7 @@ async def get_engineer_option(update: Update, context):
         "*✨ Когда Вы планируете записаться?*\n\n"
         f"{rules_text}\n"
         "*🎨 Легенда цветов:*\n"
-        "🟢 — Свободно более 18 часов \n"
+        "🟢 — Свободно более 18 часов\n"
         "🟡 — Свободно более 12 часов\n"
         "🟠 — Свободно более 6 часов\n"
         "🔴 — Свободно менее 6 часов\n\n"
@@ -10278,8 +12535,18 @@ async def get_engineer_option(update: Update, context):
     )
     return DATE
 
+
+# ============================================================
+# ОБРАБОТЧИК ВЫБОРА 12-ЧАСОВОЙ АРЕНДЫ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def get_twelve_hours_option(update: Update, context):
+    """
+    Обрабатывает выбор 12-часовой аренды (День/Ночь).
+    
+    Шаг 4/6 процесса бронирования.
+    """
     if await check_user_blocked(update, context):
         return ConversationHandler.END
     
@@ -10310,16 +12577,16 @@ async def get_twelve_hours_option(update: Update, context):
     is_night = any(night_text in text for night_text in ["🌙 Ночь", "Ночь (21-9)", "Ночь"])
     
     if not is_day and not is_night:
-        logger.warning(f"❌ Неизвестный выбор: '{text}'")
+        logger.warning(f"❌ Неизвестный выбор: '{text}'!")
         await update.message.reply_text(
-            "*❌ Пожалуйста, используйте кнопки!\n\n👇 Выберите подходящий вариант:*",
+            "*❌ Пожалуйста, используйте кнопки!*\n\n*👇 Выберите подходящий вариант:*",
             parse_mode="Markdown",
             reply_markup=KeyboardManager.get_12_hours_options()
         )
         return TWELVE_HOURS_OPTION
     
     if is_day:
-        logger.info("✅ Выбран день (9-21)")
+        logger.info("✅ Выбран день (9-21)!")
         keys_to_remove = [
             'is_mixing', 'mixing_type', 'is_track_creation', 'track_type',
             'with_engineer', 'display_period', 'free_intervals', 'free_interval',
@@ -10336,7 +12603,7 @@ async def get_twelve_hours_option(update: Update, context):
         service_type = "12_hours_day"
         selected_text = "☀️ День (9-21)"
     else:
-        logger.info("✅ Выбрана ночь (21-9)")
+        logger.info("✅ Выбрана ночь (21-9)!")
         keys_to_remove = [
             'is_mixing', 'mixing_type', 'is_track_creation', 'track_type',
             'with_engineer', 'display_period', 'free_intervals', 'free_interval',
@@ -10383,8 +12650,18 @@ async def get_twelve_hours_option(update: Update, context):
     )
     return DATE
 
+
+# ============================================================
+# ОБРАБОТЧИК ВЫБОРА ТИПА СВЕДЕНИЯ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def get_mixing_type(update: Update, context):
+    """
+    Обрабатывает выбор типа сведения (Трек/Альбом).
+    
+    Шаг 4/5 процесса бронирования.
+    """
     if await check_user_blocked(update, context):
         return ConversationHandler.END
     
@@ -10413,7 +12690,7 @@ async def get_mixing_type(update: Update, context):
     
     if text not in ["🎵 Трек", "💿 Альбом"]:
         await update.message.reply_text(
-            "*❌ Пожалуйста, используйте кнопки!\n\n👇 Выберите подходящий вариант:*",
+            "*❌ Пожалуйста, используйте кнопки!*\n\n*👇 Выберите подходящий вариант:*",
             parse_mode="Markdown",
             reply_markup=KeyboardManager.get_mixing()
         )
@@ -10427,7 +12704,7 @@ async def get_mixing_type(update: Update, context):
         context.user_data['service'] = "🎛️ Сведение/мастеринг"
         context.user_data['is_mixing'] = True
         
-        # ===== РАСЧЕТ ЦЕНЫ =====
+        # Расчёт цены
         price_result = PriceCalculator.calculate(
             service=context.user_data['service'],
             duration=1,
@@ -10440,7 +12717,7 @@ async def get_mixing_type(update: Update, context):
         context.user_data['price_result'] = price_result
         context.user_data['price'] = price_result['final_price']
         
-        # ===== ФОРМИРУЕМ ТЕКСТ О СКИДКАХ =====
+        # Формируем текст о скидках
         discount_text = ""
         
         if price_result.get('level_discount_percent', 0) > 0:
@@ -10455,7 +12732,6 @@ async def get_mixing_type(update: Update, context):
         safe_name = context.user_data.get('safe_name', context.user_data.get('name', ''))
         safe_contact = context.user_data.get('safe_contact', context.user_data.get('contact', ''))
         
-        # ===== ЕДИНЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
         confirmation_text = (
             f"*✅ Шаг 5/5: Подтверждение*\n\n"
             f"*✨ Проверьте правильность введённых данных:*\n\n"
@@ -10483,7 +12759,6 @@ async def get_mixing_type(update: Update, context):
         safe_name = context.user_data.get('safe_name', context.user_data.get('name', ''))
         safe_contact = context.user_data.get('safe_contact', context.user_data.get('contact', ''))
         
-        # ===== ЕДИНЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
         confirmation_text = (
             f"*✅ Шаг 5/5: Подтверждение*\n\n"
             f"*✨ Проверьте правильность введённых данных:*\n\n"
@@ -10502,8 +12777,19 @@ async def get_mixing_type(update: Update, context):
         )
         return CONFIRM
 
+
+# ============================================================
+# ОБРАБОТЧИК ВЫБОРА ТИПА СОЗДАНИЯ ТРЕКА
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def get_track_creation_type(update: Update, context):
+    """
+    Обрабатывает выбор типа создания трека (Трек/Альбом).
+    
+    Шаг 4/7 процесса бронирования.
+    Проверяет лимиты для трека.
+    """
     if await check_user_blocked(update, context):
         return ConversationHandler.END
     
@@ -10533,7 +12819,7 @@ async def get_track_creation_type(update: Update, context):
     if text == "🎵 Трек":
         user_id = str(update.effective_user.id)
         
-        # ===== ПРОВЕРКА ЛИМИТА ЗАПИСЕЙ С ДАТОЙ (2) =====
+        # Проверка лимита записей с датой (2)
         is_allowed, message, current_count = UserLimits.check_user_limits(user_id, True)
         if not is_allowed:
             await update.message.reply_text(
@@ -10579,7 +12865,7 @@ async def get_track_creation_type(update: Update, context):
     elif text == "💿 Альбом":
         user_id = str(update.effective_user.id)
         
-        # ===== ПРОВЕРКА ЛИМИТА ДОГОВОРНЫХ ЗАПИСЕЙ (3) =====
+        # Проверка лимита договорных записей (3)
         is_allowed, message, current_count = UserLimits.check_user_limits(user_id, False)
         if not is_allowed:
             await update.message.reply_text(
@@ -10607,7 +12893,6 @@ async def get_track_creation_type(update: Update, context):
         safe_name = context.user_data.get('safe_name', context.user_data.get('name', ''))
         safe_contact = context.user_data.get('safe_contact', context.user_data.get('contact', ''))
         
-        # ===== ЕДИНЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
         confirmation_text = (
             f"*✅ Шаг 5/5: Подтверждение*\n\n"
             f"*✨ Проверьте правильность введённых данных:*\n\n"
@@ -10633,15 +12918,24 @@ async def get_track_creation_type(update: Update, context):
         ], resize_keyboard=True, one_time_keyboard=True)
         
         await update.message.reply_text(
-            "*❌ Пожалуйста, используйте кнопки!\n\n👇 Выберите подходящий вариант:*",
+            "*❌ Пожалуйста, используйте кнопки!*\n\n*👇 Выберите подходящий вариант:*",
             parse_mode="Markdown",
             reply_markup=reply_markup
         )
         return TRACK_CREATION_TYPE
 
+
+# ============================================================
+# ОБРАБОТКА ДОГОВОРНОЙ ЗАПИСИ (БЕЗ ДАТЫ)
+# ============================================================
+
 async def handle_no_date_option(update: Update, context):
-    """Обработка выбора 'Договорная (без даты)'"""
-    logger.info("🔍 Выбрана договорная запись без даты")
+    """
+    Обработка выбора 'Договорная (без даты)'.
+    
+    Переход к подтверждению для договорных записей.
+    """
+    logger.info("🔍 Выбрана договорная запись без даты!")
     
     is_mixing = context.user_data.get('is_mixing', False)
     is_track_creation = context.user_data.get('is_track_creation', False)
@@ -10650,7 +12944,6 @@ async def handle_no_date_option(update: Update, context):
         safe_name = context.user_data.get('safe_name', context.user_data.get('name', ''))
         safe_contact = context.user_data.get('safe_contact', context.user_data.get('contact', ''))
         
-        # ===== ЕДИНЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
         confirmation_text = (
             f"*✅ Шаг 5/5: Подтверждение*\n\n"
             f"*✨ Проверьте правильность введённых данных:*\n\n"
@@ -10674,7 +12967,6 @@ async def handle_no_date_option(update: Update, context):
         safe_name = context.user_data.get('safe_name', context.user_data.get('name', ''))
         safe_contact = context.user_data.get('safe_contact', context.user_data.get('contact', ''))
         
-        # ===== ЕДИНЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
         confirmation_text = (
             f"*✅ Шаг 5/5: Подтверждение*\n\n"
             f"*✨ Проверьте правильность введённых данных:*\n\n"
@@ -10701,7 +12993,6 @@ async def handle_no_date_option(update: Update, context):
         safe_name = context.user_data.get('safe_name', context.user_data.get('name', ''))
         safe_contact = context.user_data.get('safe_contact', context.user_data.get('contact', ''))
         
-        # ===== ЕДИНЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
         confirmation_text = (
             f"*✅ Шаг 5/5: Подтверждение*\n\n"
             f"*✨ Проверьте правильность введённых данных:*\n\n"
@@ -10719,9 +13010,16 @@ async def handle_no_date_option(update: Update, context):
         )
         return CONFIRM
 
+
+# ============================================================
+# КОМАНДА /PENDING (ДЛЯ АДМИНОВ)
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def pending_command(update: Update, context):
-    """Команда /pending - показать все ожидающие заявки (только для админов)"""
+    """
+    Команда /pending - показать все ожидающие заявки (только для админов).
+    """
     user_id = update.effective_user.id
     
     if user_id not in Config.ADMIN_IDS:
@@ -10757,7 +13055,7 @@ async def pending_command(update: Update, context):
             
             if not pending_bookings:
                 await update.message.reply_text(
-                    "*✅ Нет ожидающих подтверждения заявок*",
+                    "*✅ Нет ожидающих подтверждения заявок!*",
                     parse_mode="Markdown",
                     reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
                 )
@@ -10774,12 +13072,11 @@ async def pending_command(update: Update, context):
                 if date_str and '(' in date_str:
                     display_date = date_str.split('(')[0].strip()
                 
-                # ===== ИСПРАВЛЕНО: format_time_for_display() нормализует 24→00 =====
                 display_time = time_slot
                 if time_slot and '-' in time_slot:
                     display_time = DateTimeUtils.format_time_for_display(time_slot)
                 
-                # ===== ФОРМИРУЕМ ТЕКСТ СО СКИДКАМИ (БЕЗ ЛИШНИХ ПРОБЕЛОВ) =====
+                # Формируем текст со скидками
                 discount_lines = []
                 if level_discount_percent and level_discount_percent > 0:
                     discount_lines.append(f"🎟 Скидка по уровню: {level_discount_percent}%")
@@ -10897,7 +13194,7 @@ async def pending_command(update: Update, context):
                 sent_count += 1
             
             await update.message.reply_text(
-                f"*✅ Найдено и отправлено {sent_count} ожидающих заявок*",
+                f"*✅ Найдено и отправлено {sent_count} ожидающих заявок!*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
             )
@@ -10912,8 +13209,19 @@ async def pending_command(update: Update, context):
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
         )
 
+
+# ============================================================
+# ОБРАБОТЧИК ВЫБОРА ДАТЫ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def get_date(update: Update, context):
+    """
+    Обрабатывает выбор даты.
+    
+    Шаг 5/7 процесса бронирования.
+    Проверяет доступность даты и переходит к выбору времени.
+    """
     if await check_user_blocked(update, context):
         return ConversationHandler.END
     
@@ -10921,14 +13229,14 @@ async def get_date(update: Update, context):
     
     text = update.message.text.strip()
     
-    logger.info(f"🔍 get_date вызван: '{text}'")
+    logger.info(f"🔍 get_date вызван с текстом: '{text}'!")
     logger.info(f"🔍 Текущее время: {DateTimeUtils.now()}")
     
     if text == "↩️ Главное меню":
         return await handle_main_menu_button(update, context)
     
     if text == "↩️ Назад":
-        logger.info(f"🔍 Пользователь нажал 'Назад' на шаге DATE")
+        logger.info(f"🔍 Пользователь нажал 'Назад' на шаге DATE!")
         
         is_track_creation = context.user_data.get('is_track_creation', False)
         is_12_hours = context.user_data.get('is_12_hours', False)
@@ -10999,7 +13307,7 @@ async def get_date(update: Update, context):
             if service_type == "Запись вокала":
                 await update.message.reply_text(
                     "*👨‍🔧 Шаг 4/7: Выбор формата*\n\n"
-                    "*✨ Вам требуется помощь звукорежиссера?*\n\n"
+                    "*✨ Вам требуется помощь звукорежиссёра?*\n\n"
                     "*🎯 С инженером — рекомендуем:*\n"
                     "• Профессиональная настройка оборудования\n"
                     "• Помощь в процессе записи\n"
@@ -11017,7 +13325,7 @@ async def get_date(update: Update, context):
             elif service_type == "Запись инструментов":
                 await update.message.reply_text(
                     "*👨‍🔧 Шаг 4/7: Выбор формата*\n\n"
-                    "*✨ Вам требуется помощь звукорежиссера?*\n\n"
+                    "*✨ Вам требуется помощь звукорежиссёра?*\n\n"
                     "*🎯 С инженером — рекомендуем:*\n"
                     "• Профессиональная настройка оборудования\n"
                     "• Помощь в процессе записи\n"
@@ -11103,9 +13411,17 @@ async def get_date(update: Update, context):
     )
     return DATE
 
+
+# ============================================================
+# ОБРАБОТКА ВЫБОРА ДАТЫ (ВНУТРЕННЯЯ ФУНКЦИЯ)
+# ============================================================
+
 async def handle_date_selection(update: Update, context, text: str):
-    """Обработка выбора даты"""
+    """
+    Обработка выбора даты (внутренняя функция).
     
+    Парсит дату, проверяет доступность и переходит к выбору времени.
+    """
     if text == "Договорная (без даты)":
         is_mixing = context.user_data.get('is_mixing', False)
         if is_mixing:
@@ -11139,20 +13455,20 @@ async def handle_date_selection(update: Update, context, text: str):
     if not parsed_date:
         if text and len(text) > 2 and text[0] in "🟢🟡🟠🔴⚪️":
             clean_text = text[2:].strip()
-            logger.info(f"🔍 Убрали эмодзи: '{clean_text}'")
+            logger.info(f"🔍 Убрали эмодзи: '{clean_text}'!")
         
         if '(' in clean_text:
             clean_text = clean_text.split('(')[0].strip()
-            logger.info(f"🔍 Убрали день недели: '{clean_text}'")
+            logger.info(f"🔍 Убрали день недели: '{clean_text}'!")
         
         parsed_date, error_msg = DateTimeUtils.parse_date_input(clean_text)
         
         if parsed_date:
-            logger.info(f"🔍 Успешно спарсили после очистки: '{clean_text}'")
+            logger.info(f"🔍 Успешно спарсили после очистки: '{clean_text}'!")
             context.user_data['date_with_color'] = original_text
             context.user_data['date'] = clean_text
         else:
-            logger.error(f"🔍 Не удалось спарсить даже после очистки: '{clean_text}'")
+            logger.error(f"🔍 Не удалось спарсить даже после очистки: '{clean_text}'!")
             context.user_data['date_with_color'] = original_text
             context.user_data['date'] = original_text
     else:
@@ -11160,7 +13476,7 @@ async def handle_date_selection(update: Update, context, text: str):
         context.user_data['date'] = text
     
     if not parsed_date:
-        logger.error(f"🔍 НЕВОЗМОЖНО спарсить дату: '{text}', ошибка: {error_msg}")
+        logger.error(f"🔍 НЕВОЗМОЖНО спарсить дату: '{text}', ошибка: {error_msg}!")
         
         is_track_creation = context.user_data.get('is_track_creation', False)
         is_12_hours = context.user_data.get('is_12_hours', False)
@@ -11251,8 +13567,8 @@ async def handle_date_selection(update: Update, context, text: str):
         date_str = parsed_date.strftime('%d.%m.%Y')
         twelve_hours_type = context.user_data.get('12_hours_type', '')
         
-        logger.info(f"🔍 Проверка 12-часовой аренды на дату: {date_str}")
-        logger.info(f"🔍 Тип аренды: {twelve_hours_type}")
+        logger.info(f"🔍 Проверяю 12-часовую аренду на дату: {date_str}!")
+        logger.info(f"🔍 Тип аренды: {twelve_hours_type}!")
         
         if 'Ночь' in twelve_hours_type or "night" in twelve_hours_type.lower():
             service_type = "12_hours_night"
@@ -11278,7 +13594,7 @@ async def handle_date_selection(update: Update, context, text: str):
         time_until_booking = booking_datetime - now
         hours_until_booking = time_until_booking.total_seconds() / 3600
         
-        logger.info(f"🔍 До начала аренды: {hours_until_booking:.1f} часов")
+        logger.info(f"🔍 До начала аренды: {hours_until_booking:.1f} часов!")
         
         if hours_until_booking < 72:
             await update.message.reply_text(
@@ -11290,7 +13606,7 @@ async def handle_date_selection(update: Update, context, text: str):
         
         is_available = BookingManager.check_12_hours_slot_available(date_str, service_type)
         
-        logger.info(f"🔍 Результат проверки доступности: {is_available}")
+        logger.info(f"🔍 Результат проверки доступности: {is_available}!")
         
         if not is_available:
             await update.message.reply_text(
@@ -11300,15 +13616,15 @@ async def handle_date_selection(update: Update, context, text: str):
             )
             return DATE
         
-        # ===== СОХРАНЯЕМ ДАННЫЕ =====
+        # Сохраняем данные
         context.user_data['time'] = target_time_slot
         context.user_data['display_time'] = target_time_slot
         context.user_data['duration'] = 12
         context.user_data['rent_price'] = rent_price
         
-        logger.info(f"✅ Дата {date_str} свободна для {service_type} аренды")
+        logger.info(f"✅ Дата {date_str} свободна для {service_type} аренды!")
         
-        # ===== ПЕРЕХОДИМ К SHOW_SLOTS =====
+        # Переходим к SHOW_SLOTS
         context.user_data['_conversation_state'] = SHOW_SLOTS
         
         await show_slots(update, context)
@@ -11322,7 +13638,7 @@ async def handle_date_selection(update: Update, context, text: str):
         clean_text, is_track_creation, with_engineer
     )
     
-    logger.info(f"🔍 Свободные интервалы на {clean_text}: {len(free_intervals) if free_intervals else 0}")
+    logger.info(f"🔍 Свободные интервалы на {clean_text}: {len(free_intervals) if free_intervals else 0}!")
     
     if not free_intervals:
         if is_track_creation:
@@ -11354,9 +13670,7 @@ async def handle_date_selection(update: Update, context, text: str):
         else:
             date_color = DateColorAnalyzer.get_color_for_date(clean_text, "vocal", with_engineer)
     
-    # ============================================================
-    # ===== БЛОК ДЛЯ СОЗДАНИЯ ТРЕКА (ШАГ 6) =====
-    # ============================================================
+    # Блок для создания трека (шаг 6)
     if is_track_creation and "Договорная" not in str(context.user_data.get('track_type', '')):
         suitable_intervals = []
         has_direct_4h_slot = False
@@ -11375,7 +13689,7 @@ async def handle_date_selection(update: Update, context, text: str):
                 has_direct_4h_slot = True
                 suitable_intervals.append(interval)
                 added_intervals.add(interval_key)
-                logger.info(f"🔍 Найден прямой 4-часовой слот: {interval['start']}-{interval['end']}")
+                logger.info(f"🔍 Найден прямой 4-часовой слот: {interval['start']}-{interval['end']}!")
             
             elif interval['end'] == 24 and interval['start'] >= 20 and interval_key not in added_intervals:
                 try:
@@ -11383,7 +13697,7 @@ async def handle_date_selection(update: Update, context, text: str):
                     next_date = current_date + timedelta(days=1)
                     next_date_str = next_date.strftime('%d.%m.%Y')
                     
-                    logger.info(f"🔍 Проверка следующего дня для кросс-ночного слота: {next_date_str}")
+                    logger.info(f"🔍 Проверяю следующий день для кросс-ночного слота: {next_date_str}!")
                     
                     next_day_intervals = FreeIntervalCalculator.get_all_free_intervals(
                         next_date_str, is_track_creation, with_engineer
@@ -11396,10 +13710,10 @@ async def handle_date_selection(update: Update, context, text: str):
                                 has_cross_night_slot = True
                                 suitable_intervals.append(interval)
                                 added_intervals.add(interval_key)
-                                logger.info(f"🔍 Найден кросс-ночной слот: {interval['start']}-{interval['end']} + следующий день ({next_interval['start']}-{next_interval['end']})")
+                                logger.info(f"🔍 Найден кросс-ночной слот: {interval['start']}-{interval['end']} + следующий день ({next_interval['start']}-{next_interval['end']})!")
                                 break
                 except Exception as e:
-                    logger.error(f"Ошибка проверки следующего дня: {e}")
+                    logger.error(f"❌ Ошибка проверки следующего дня: {e}")
         
         for interval in free_intervals:
             interval_key = f"{interval['start']}-{interval['end']}"
@@ -11407,7 +13721,7 @@ async def handle_date_selection(update: Update, context, text: str):
                 has_direct_4h_slot = True
                 suitable_intervals.append(interval)
                 added_intervals.add(interval_key)
-                logger.info(f"🔍 Найден прямой 4-часовой слот после полуночи: {interval['start']}-{interval['end']}")
+                logger.info(f"🔍 Найден прямой 4-часовой слот после полуночи: {interval['start']}-{interval['end']}!")
         
         if not has_direct_4h_slot and not has_cross_night_slot:
             await update.message.reply_text(
@@ -11418,11 +13732,8 @@ async def handle_date_selection(update: Update, context, text: str):
             return DATE
         else:
             context.user_data['suitable_intervals'] = suitable_intervals
-            logger.info(f"✅ Найдены подходящие интервалы для трека: {len(suitable_intervals)}")
+            logger.info(f"✅ Найдены подходящие интервалы для трека: {len(suitable_intervals)}!")
             
-            # ============================================================
-            # ===== ИСПРАВЛЕННОЕ СООБЩЕНИЕ ДЛЯ ШАГА 6 ТРЕКА =====
-            # ============================================================
             message = f"*🎵 Шаг 6/7: Выбор времени*\n\n"
             
             message += f"*✨ Свободное время:*\n"
@@ -11450,9 +13761,6 @@ async def handle_date_selection(update: Update, context, text: str):
             )
             context.user_data['_conversation_state'] = SHOW_SLOTS
             return SHOW_SLOTS
-    # ============================================================
-    # ===== КОНЕЦ БЛОКА ДЛЯ ТРЕКА =====
-    # ============================================================
     
     if not is_mixing and not (is_track_creation and "Договорная" in str(context.user_data.get('track_type', ''))):
         user_id = str(update.effective_user.id)
@@ -11532,7 +13840,6 @@ async def handle_date_selection(update: Update, context, text: str):
     else:
         service_type = context.user_data.get('service_type', '')
         
-        # ===== ФОРМИРУЕМ СООБЩЕНИЕ ДЛЯ ОБЫЧНОЙ ЗАПИСИ =====
         message = ""
         
         if service_type == "Запись вокала":
@@ -11561,8 +13868,21 @@ async def handle_date_selection(update: Update, context, text: str):
         context.user_data['_conversation_state'] = SHOW_SLOTS
         return SHOW_SLOTS
 
+# ============================================================
+# ОБРАБОТЧИК ПОДТВЕРЖДЕНИЯ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def handle_confirmation_text(update: Update, context):
+    """
+    Обрабатывает нажатие кнопок на шаге подтверждения.
+    
+    Варианты:
+    - ✅ Всё верно, отправить! → confirm_booking
+    - ✏️ Исправить данные → handle_edit_data
+    - ❌ Отменить → handle_cancel_booking
+    - ↩️ Назад → handle_back_to_previous_step
+    """
     if await check_user_blocked(update, context):
         return ConversationHandler.END
     
@@ -11570,14 +13890,14 @@ async def handle_confirmation_text(update: Update, context):
         return CONFIRM
     
     text = update.message.text.strip()
-    logger.info(f"🔍 handle_confirmation_text вызван с текстом: '{text}'")
+    logger.info(f"🔍 handle_confirmation_text вызван с текстом: '{text}'!")
     
     valid_buttons = ["✅ Всё верно, отправить!", "✏️ Исправить данные", "❌ Отменить", "↩️ Назад"]
     
     if text not in valid_buttons:
         keyboard = KeyboardManager.get_confirmation()
         await update.message.reply_text(
-            "*❌ Пожалуйста, используйте кнопки!\n\n👇 Выберите подходящий вариант:*",
+            "*❌ Пожалуйста, используйте кнопки!*\n\n*👇 Выберите подходящий вариант:*",
             parse_mode="Markdown",
             reply_markup=keyboard
         )
@@ -11595,13 +13915,28 @@ async def handle_confirmation_text(update: Update, context):
     if text == "✅ Всё верно, отправить!":
         return await confirm_booking(update, context)
 
+
+# ============================================================
+# ПОДТВЕРЖДЕНИЕ БРОНИРОВАНИЯ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def confirm_booking(update: Update, context):
-    """Подтверждение и отправка заявки (списываем купон при создании)"""
+    """
+    Подтверждение и отправка заявки (списываем купон при создании).
+    
+    Этапы:
+    1. Получение купона без списания (проверка)
+    2. Расчёт цены со списанием купона
+    3. Сохранение записи в базу данных
+    4. Обновление статистики пользователя
+    5. Отправка уведомлений пользователю и админам
+    6. Проверка реферального бонуса
+    """
     if await check_user_blocked(update, context):
         return ConversationHandler.END
     
-    logger.info("🔍 confirm_booking вызван")
+    logger.info("🔍 confirm_booking вызван!")
     
     try:
         user_id = update.effective_user.id
@@ -11640,8 +13975,8 @@ async def confirm_booking(update: Update, context):
         promo_code_used = price_result_preview.get('promo_code_used')
         promo_discount_percent = price_result_preview.get('promo_discount_percent')
         
-        logger.info(f"💰 КУПОН ДО СПИСАНИЯ: level_coupon_id={level_coupon_id}, level_discount_percent={level_discount_percent}")
-        logger.info(f"💰 ПРОМОКОД ДО СПИСАНИЯ: promo_code_used={promo_code_used}, promo_discount_percent={promo_discount_percent}")
+        logger.info(f"💰 Купон до списания: level_coupon_id={level_coupon_id}, level_discount_percent={level_discount_percent}%!")
+        logger.info(f"💰 Промокод до списания: promo_code_used={promo_code_used}, promo_discount_percent={promo_discount_percent}%!")
         
         # ===== 2. ТЕПЕРЬ РАССЧИТЫВАЕМ ЦЕНУ СО СПИСАНИЕМ =====
         price_result = PriceCalculator.calculate(
@@ -11669,9 +14004,9 @@ async def confirm_booking(update: Update, context):
         context.user_data['price'] = price_result['final_price']
         context.user_data['free_service_applied'] = price_result.get('free_service_applied', False)
         
-        logger.info(f"💰 price_result['final_price']: {price_result['final_price']}")
-        logger.info(f"💰 УСТАНОВЛЕНА ЦЕНА В USER_DATA: {context.user_data['price']}")
-        logger.info(f"💰 free_service_applied: {context.user_data['free_service_applied']}")
+        logger.info(f"💰 price_result['final_price']: {price_result['final_price']}!")
+        logger.info(f"💰 Установлена цена в user_data: {context.user_data['price']}!")
+        logger.info(f"💰 free_service_applied: {context.user_data['free_service_applied']}!")
         
         # Проверяем доступность слота
         if selected_date and time_slot and 'Не указана' not in selected_date and 'Не указано' not in time_slot:
@@ -11693,8 +14028,8 @@ async def confirm_booking(update: Update, context):
                 context.user_data.clear()
                 return ConversationHandler.END
         
-        logger.info(f"💰 ПЕРЕД СОХРАНЕНИЕМ В BOOKING: context.user_data.get('price') = {context.user_data.get('price')}")
-        logger.info(f"💰 ПЕРЕД СОХРАНЕНИЕМ free_service_applied: {context.user_data.get('free_service_applied')}")
+        logger.info(f"💰 Перед сохранением в booking: context.user_data.get('price') = {context.user_data.get('price')}!")
+        logger.info(f"💰 Перед сохранением free_service_applied: {context.user_data.get('free_service_applied')}!")
         
         # Сохраняем запись
         success, booking_id = BookingManager.save_to_sheets(
@@ -11706,7 +14041,7 @@ async def confirm_booking(update: Update, context):
         if not success:
             await update.message.reply_text(
                 f"❌ Не удалось создать запись!\n\n"
-                f"💡 Пожалуйста, попробуйте снова",
+                f"💡 Пожалуйста, попробуйте снова!",
                 reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
                 parse_mode="Markdown"
             )
@@ -11719,19 +14054,19 @@ async def confirm_booking(update: Update, context):
             
             if level_coupon_id:
                 cursor.execute('UPDATE bookings SET level_coupon_id = ? WHERE id = ?', (level_coupon_id, booking_id))
-                logger.info(f"💰 Купон ID {level_coupon_id} сохранён для записи #{booking_id}")
+                logger.info(f"💰 Купон ID {level_coupon_id} сохранён для записи #{booking_id}!")
             
             if level_discount_percent:
                 cursor.execute('UPDATE bookings SET level_discount_percent = ? WHERE id = ?', (level_discount_percent, booking_id))
-                logger.info(f"💰 level_discount_percent {level_discount_percent} сохранён для записи #{booking_id}")
+                logger.info(f"💰 level_discount_percent {level_discount_percent}% сохранён для записи #{booking_id}!")
             
             if promo_code_used:
                 cursor.execute('UPDATE bookings SET promo_code_used = ? WHERE id = ?', (promo_code_used, booking_id))
-                logger.info(f"💰 promo_code_used {promo_code_used} сохранён для записи #{booking_id}")
+                logger.info(f"💰 promo_code_used {promo_code_used} сохранён для записи #{booking_id}!")
             
             if promo_discount_percent:
                 cursor.execute('UPDATE bookings SET promo_discount_percent = ? WHERE id = ?', (promo_discount_percent, booking_id))
-                logger.info(f"💰 promo_discount_percent {promo_discount_percent} сохранён для записи #{booking_id}")
+                logger.info(f"💰 promo_discount_percent {promo_discount_percent}% сохранён для записи #{booking_id}!")
             
             # Обновляем статус промокода
             if promo_code_used:
@@ -11741,13 +14076,13 @@ async def confirm_booking(update: Update, context):
                 if existing:
                     usage_id, current_status = existing
                     if current_status == 'used':
-                        logger.warning(f"⚠️ Промокод {promo_code_used} уже использован, пропускаем")
+                        logger.warning(f"⚠️ Промокод {promo_code_used} уже использован! Пропускаю!")
                     else:
                         cursor.execute('UPDATE user_promo_usage SET status = "pending", booking_id = ? WHERE id = ?', (booking_id, usage_id))
-                        logger.info(f"💰 Промокод {promo_code_used} заморожен (pending) для записи #{booking_id}")
+                        logger.info(f"💰 Промокод {promo_code_used} заморожен (pending) для записи #{booking_id}!")
                 else:
                     cursor.execute('INSERT INTO user_promo_usage (user_id, promo_code, booking_id, status) VALUES (?, ?, ?, "pending")', (str(user_id), promo_code_used, booking_id))
-                    logger.info(f"💰 Промокод {promo_code_used} создан со статусом pending для записи #{booking_id}")
+                    logger.info(f"💰 Промокод {promo_code_used} создан со статусом pending для записи #{booking_id}!")
             
             conn.commit()
         
@@ -11778,7 +14113,7 @@ async def confirm_booking(update: Update, context):
         safe_name = SecurityUtils.safe_markdown_text(context.user_data.get('name', ''))
         safe_contact = SecurityUtils.safe_markdown_text(context.user_data.get('contact', ''))
         
-        # ===== ФОРМИРУЕМ ТЕКСТ СКИДОК ДЛЯ ПОЛЬЗОВАТЕЛЯ =====
+        # Формируем текст скидок для пользователя
         discount_lines = []
         
         if level_discount_percent and level_discount_percent > 0:
@@ -11810,20 +14145,17 @@ async def confirm_booking(update: Update, context):
         if discount_lines:
             discount_text = "\n" + "\n".join(discount_lines)
         
-        # ===== ЕДИНЫЙ ФОРМАТ СООБЩЕНИЯ ПОЛЬЗОВАТЕЛЮ =====
-        # Форматируем дату
+        # Единый формат сообщения пользователю
         clean_date_display = selected_date
         if clean_date_display and '(' in clean_date_display:
             clean_date_display = clean_date_display.split('(')[0].strip()
         if clean_date_display and clean_date_display[0] in "🟢🟡🟠🔴⚪️":
             clean_date_display = clean_date_display[2:].strip()
         
-        # Форматируем время
         display_time = time_slot
         if display_time and '-' in display_time:
             display_time = DateTimeUtils.format_time_for_display(display_time)
         
-        # Формируем цену
         if price_result['final_price'] == "Договорная" or price_result.get('is_contractual'):
             price_text = "Договорная"
         elif price_result.get('free_service_applied', False):
@@ -11844,7 +14176,6 @@ async def confirm_booking(update: Update, context):
             f"• Услуга: {service}"
         ]
         
-        # Добавляем тип услуги
         if is_track_creation and context.user_data.get('track_type'):
             user_msg_lines.append(f"• Тип: {context.user_data.get('track_type')}")
         elif is_mixing and context.user_data.get('mixing_type'):
@@ -11893,7 +14224,6 @@ async def confirm_booking(update: Update, context):
             f"🎧 Услуга: {service}"
         ]
         
-        # Добавляем тип услуги для админа
         if is_track_creation and context.user_data.get('track_type'):
             admin_msg_lines.append(f"🎵 Тип: {context.user_data.get('track_type')}")
         elif is_mixing and context.user_data.get('mixing_type'):
@@ -11917,7 +14247,6 @@ async def confirm_booking(update: Update, context):
         
         admin_msg_lines.append(f"💰 Стоимость: {price_text}")
         
-        # Добавляем скидки для админа
         admin_discount_lines = []
         if level_discount_percent and level_discount_percent > 0:
             admin_discount_lines.append(f"🎟 Скидка по уровню: {level_discount_percent}%")
@@ -11958,9 +14287,9 @@ async def confirm_booking(update: Update, context):
                     parse_mode="Markdown",
                     reply_markup=keyboard
                 )
-                logger.info(f"✅ Уведомление отправлено админу {admin_id}")
+                logger.info(f"✅ Уведомление отправлено админу {admin_id}!")
             except Exception as e:
-                logger.error(f"Ошибка отправки админу {admin_id}: {e}")
+                logger.error(f"❌ Ошибка отправки админу {admin_id}: {e}")
         
         # ===== ПРОВЕРЯЕМ РЕФЕРАЛЬНЫЙ БОНУС =====
         with db.get_connection() as conn:
@@ -12008,7 +14337,7 @@ async def confirm_booking(update: Update, context):
                         referrer_new_vinyl_row = cursor.fetchone()
                         referrer_new_vinyls = referrer_new_vinyl_row[0] if referrer_new_vinyl_row else 0
                         
-                        logger.info(f"🎉 Рефереру {referrer_id} начислено +25 пластинок за реферала {user_id}")
+                        logger.info(f"🎉 Рефереру {referrer_id} начислено +25 пластинок за реферала {user_id}!")
                         
                         try:
                             await context.bot.send_message(
@@ -12021,7 +14350,7 @@ async def confirm_booking(update: Update, context):
                                 parse_mode="Markdown"
                             )
                         except Exception as e:
-                            logger.error(f"Не удалось отправить уведомление рефереру: {e}")
+                            logger.error(f"❌ Не удалось отправить уведомление рефереру: {e}")
                         
                         await AchievementSystem.check_and_award_achievements(str(referrer_id), context, update)
                         await AchievementSystem.update_user_level(str(referrer_id), context)
@@ -12040,7 +14369,21 @@ async def confirm_booking(update: Update, context):
     context.user_data.clear()
     return ConversationHandler.END
 
+
+# ============================================================
+# ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ДЛЯ ПАРСИНГА СТРОКИ ЗАПИСИ
+# ============================================================
+
 def parse_booking_row(row):
+    """
+    Парсит строку записи из базы данных в словарь.
+    
+    Аргументы:
+        row: Кортеж с данными записи
+    
+    Возвращает:
+        dict: Структурированные данные записи
+    """
     (booking_id, service, time_slot, date_str, status, price,
      is_mixing, mixing_type, is_track_creation, track_type,
      is_12_hours, twelve_hours_type, with_engineer, name, contact,
@@ -12083,7 +14426,20 @@ def parse_booking_row(row):
     }
 
 
+# ============================================================
+# ФОРМАТИРОВАНИЕ ЗАПИСИ ДЛЯ ОТОБРАЖЕНИЯ
+# ============================================================
+
 def format_booking_display(booking):
+    """
+    Форматирует запись для отображения пользователю.
+    
+    Аргументы:
+        booking: Словарь с данными записи
+    
+    Возвращает:
+        str: Отформатированный текст записи
+    """
     response = f"{booking['status_emoji']} Запись #{booking['id']}\n"
     response += f"• Имя: {booking['name']}\n"
     response += f"• Контакт: {booking['contact']}\n"
@@ -12115,8 +14471,20 @@ def format_booking_display(booking):
     
     return response
 
+
+# ============================================================
+# ПОКАЗ ЗАПИСЕЙ В СООБЩЕНИИ (ДЛЯ РЕДАКТИРОВАНИЯ)
+# ============================================================
+
 async def show_my_bookings_in_message(message_obj, context, user_id):
-    """Показывает записи пользователя в сообщении (для редактирования)"""
+    """
+    Показывает записи пользователя в сообщении (для редактирования).
+    
+    Аргументы:
+        message_obj: Объект сообщения для редактирования
+        context: Контекст бота
+        user_id: ID пользователя
+    """
     try:
         if hasattr(message_obj, 'message'):
             message_obj = message_obj.message
@@ -12135,7 +14503,6 @@ async def show_my_bookings_in_message(message_obj, context, user_id):
             else:
                 current_user_display = f"ID: ...{str(user_id)[-4:]}"
             
-            # ===== SQL ЗАПРОС =====
             cursor.execute('''
                 SELECT id, service, time_slot, date_str, status, price,
                     is_mixing, mixing_type, is_track_creation, track_type,
@@ -12165,7 +14532,7 @@ async def show_my_bookings_in_message(message_obj, context, user_id):
             
             if not rows:
                 await message_obj.edit_text(
-                    text=f"*📭 У вас нет активных записей*\n\n"
+                    text=f"*📭 У вас нет активных записей!*\n\n"
                          f"*✨ Хотите записаться?*\n\n"
                          f"*Нажмите 🎤 \"Записаться в студию\"*",
                     parse_mode="Markdown"
@@ -12205,12 +14572,8 @@ async def show_my_bookings_in_message(message_obj, context, user_id):
                 if is_admin_booking:
                     safe_name = "Администратор"
                 
-                # ===== ИСПРАВЛЕННОЕ ФОРМИРОВАНИЕ ТЕКСТА КУПОНА / СКИДКИ ПО УРОВНЮ =====
                 coupon_text = ""
-                
-                # Сначала проверяем level_discount_percent из записи
                 if level_discount_percent and level_discount_percent > 0:
-                    # Пытаемся найти купон в user_coupons для деталей
                     if level_coupon_id:
                         cursor.execute('''
                             SELECT level, discount_percent FROM user_coupons WHERE id = ?
@@ -12220,13 +14583,10 @@ async def show_my_bookings_in_message(message_obj, context, user_id):
                             level, discount = coupon_info
                             coupon_text = f"• Купон уровня {level}: {discount}%"
                         else:
-                            # Купон удалён, но скидка была применена
                             coupon_text = f"• Скидка по уровню: {level_discount_percent}%"
                     else:
-                        # Нет ID купона, но скидка была применена
                         coupon_text = f"• Скидка по уровню: {level_discount_percent}%"
                 
-                # ===== ФОРМИРУЕМ ТЕКСТ ПРОМОКОДА =====
                 promo_text = ""
                 if promo_code_used:
                     cursor.execute('''
@@ -12279,7 +14639,6 @@ async def show_my_bookings_in_message(message_obj, context, user_id):
                     'promo_text': promo_text
                 }
                 
-                # ===== РАЗДЕЛЯЕМ ЗАПИСИ =====
                 if is_mixing == 1 or is_contractual:
                     contract_bookings.append(booking_info)
                 else:
@@ -12290,7 +14649,6 @@ async def show_my_bookings_in_message(message_obj, context, user_id):
             
             message = f"*📋 Мои записи*\n\n*👤 Профиль: {SecurityUtils.safe_markdown_text(current_user_display)}*\n\n"
             
-            # ===== ОБЫЧНЫЕ ЗАПИСИ =====
             if dated_bookings:
                 message += "*📅 Записи в студии:*\n\n"
                 for booking in dated_bookings:
@@ -12340,17 +14698,14 @@ async def show_my_bookings_in_message(message_obj, context, user_id):
                                 safe_price = SecurityUtils.safe_markdown_text(str(booking['price']))
                                 message += f"• Стоимость: {safe_price}\n"
                     
-                    # ===== ДОБАВЛЯЕМ КУПОН / СКИДКУ ПО УРОВНЮ =====
                     if booking.get('coupon_text'):
                         message += f"{booking['coupon_text']}\n"
                     
-                    # ===== ДОБАВЛЯЕМ ПРОМОКОД =====
                     if booking.get('promo_text'):
                         message += f"{booking['promo_text']}\n"
                     
                     message += f"• Статус: {booking['status_text']}\n\n"
             
-            # ===== ДОГОВОРНЫЕ ЗАПИСИ (ТОЛЬКО PENDING) =====
             if contract_bookings:
                 message += "*📝 Ожидающие договорные записи:*\n\n"
                 for booking in contract_bookings:
@@ -12378,11 +14733,9 @@ async def show_my_bookings_in_message(message_obj, context, user_id):
                                 safe_price = SecurityUtils.safe_markdown_text(str(booking['price']))
                                 message += f"• Стоимость: {safe_price}\n"
                     
-                    # ===== ДОБАВЛЯЕМ КУПОН / СКИДКУ ПО УРОВНЮ =====
                     if booking.get('coupon_text'):
                         message += f"{booking['coupon_text']}\n"
                     
-                    # ===== ДОБАВЛЯЕМ ПРОМОКОД =====
                     if booking.get('promo_text'):
                         message += f"{booking['promo_text']}\n"
                     
@@ -12390,7 +14743,6 @@ async def show_my_bookings_in_message(message_obj, context, user_id):
             
             message += "*👇 Отменить записи в студии:*"
             
-            # ===== КНОПКИ ТОЛЬКО ДЛЯ dated_bookings =====
             keyboard_buttons = []
             for booking in dated_bookings:
                 if booking['status_text'] != "Завершена":
@@ -12414,17 +14766,26 @@ async def show_my_bookings_in_message(message_obj, context, user_id):
             )
             
     except Exception as e:
-        logger.error(f"Ошибка в show_my_bookings_in_message: {e}")
+        logger.error(f"❌ Ошибка в show_my_bookings_in_message: {e}")
         try:
             await message_obj.edit_text(
-                text="*❌ Ошибка при загрузке записей*",
+                text="*❌ Ошибка при загрузке записей!*",
                 parse_mode="Markdown"
             )
         except:
             pass
 
+# ============================================================
+# АДМИНСКАЯ ОТМЕНА ЗАПИСИ - НАЧАЛО
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def handle_admin_cancel_start(update: Update, context):
+    """
+    Начало процесса админской отмены записи.
+    
+    Шаг 1/2: Ввод имени пользователя для поиска.
+    """
     user_id = update.effective_user.id
     
     if user_id not in Config.ADMIN_IDS:
@@ -12455,17 +14816,30 @@ async def handle_admin_cancel_start(update: Update, context):
     )
     return ADMIN_CANCEL_USER_ID
 
+
+# ============================================================
+# АДМИНСКАЯ ОТМЕНА ЗАПИСИ - ПОИСК ПОЛЬЗОВАТЕЛЯ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def handle_admin_cancel_user_id(update: Update, context):
+    """
+    Обрабатывает ввод имени пользователя для админской отмены.
+    
+    Ищет пользователя по:
+    1. Уникальному ID (MC...)
+    2. Username (точное совпадение)
+    3. Username (частичное совпадение)
+    """
     text = update.message.text.strip()
-    logger.info(f"🔍 handle_admin_cancel_user_id: '{text}'")
+    logger.info(f"🔍 handle_admin_cancel_user_id: '{text}'!")
     
     if text == "↩️ Главное меню":
         context.user_data.clear()
         await update.message.reply_text(
             "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс отмены записи завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*✨ Процесс отмены записи завершён!*\n"
+            "*💾 Все введённые данные очищены!*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -12480,9 +14854,9 @@ async def handle_admin_cancel_user_id(update: Update, context):
         with db.get_connection() as conn:
             cursor = conn.cursor()
             
-            # ===== 1. Поиск по уникальному ID (MC...) =====
+            # 1. Поиск по уникальному ID (MC...)
             if search_term.startswith("mc"):
-                logger.info(f"🔍 Ищем по уникальному ID: {search_term}")
+                logger.info(f"🔍 Ищу по уникальному ID: {search_term}!")
                 cursor.execute('''
                     SELECT telegram_id, username, first_name, unique_id
                     FROM users WHERE LOWER(unique_id) = ?
@@ -12491,9 +14865,9 @@ async def handle_admin_cancel_user_id(update: Update, context):
                 if found_user:
                     search_method = "уникальному ID"
 
-            # ===== 2. Поиск по username (точное) =====
+            # 2. Поиск по username (точное)
             if not found_user:
-                logger.info(f"🔍 Ищем по username (точное): {search_term}")
+                logger.info(f"🔍 Ищу по username (точное): {search_term}!")
                 cursor.execute('''
                     SELECT telegram_id, username, first_name, unique_id
                     FROM users WHERE LOWER(username) = ? OR LOWER(username) = ?
@@ -12502,9 +14876,9 @@ async def handle_admin_cancel_user_id(update: Update, context):
                 if found_user:
                     search_method = "username (точное)"
 
-            # ===== 3. Поиск по username (частичное) =====
+            # 3. Поиск по username (частичное)
             if not found_user:
-                logger.info(f"🔍 Ищем по username (частичное): {search_term}")
+                logger.info(f"🔍 Ищу по username (частичное): {search_term}!")
                 cursor.execute('''
                     SELECT telegram_id, username, first_name, unique_id
                     FROM users WHERE 
@@ -12540,7 +14914,7 @@ async def handle_admin_cancel_user_id(update: Update, context):
             context.user_data['target_username'] = username or first_name or "Неизвестный"
             context.user_data['target_display'] = user_display
 
-            logger.info(f"✅ Админ нашел пользователя по {search_method}: {unique_id} (отображается как: {user_display}")
+            logger.info(f"✅ Админ нашёл пользователя по {search_method}: {unique_id} (отображается как: {user_display})!")
 
             # Проверяем, есть ли записи у пользователя
             cursor.execute('''
@@ -12555,14 +14929,14 @@ async def handle_admin_cancel_user_id(update: Update, context):
                 await update.message.reply_text(
                     f"*📋 Записи пользователя*\n\n"
                     f"*👤 @{username or 'Неизвестный'} {unique_id}*\n\n"
-                    f"*📭 У пользователя нет записей*",
+                    f"*📭 У пользователя нет записей!*",
                     parse_mode="Markdown"
                 )
                 
                 await update.message.reply_text(
                     "*🏠 Возвращаемся в главное меню...*\n\n"
-                    "*✨ Процесс отмены записи завершён*\n"
-                    "*💾 Все введенные данные очищены*\n\n"
+                    "*✨ Процесс отмены записи завершён!*\n"
+                    "*💾 Все введённые данные очищены!*\n\n"
                     "*👇 Выберите подходящий вариант:*",
                     reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
                     parse_mode="Markdown"
@@ -12593,10 +14967,23 @@ async def handle_admin_cancel_user_id(update: Update, context):
         )
         return ADMIN_CANCEL_USER_ID
 
+
+# ============================================================
+# ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def profile_handler(update: Update, context):
-    """Показывает профиль пользователя - ИСПРАВЛЕННАЯ ВЕРСИЯ"""
+    """
+    Показывает профиль пользователя.
     
+    Отображает:
+    - Основную информацию (ID, username, уникальный ID)
+    - Реферальную программу (уровень, пластинки, скидка)
+    - Историю записей
+    - Статистику обработки записей
+    - Текущие лимиты
+    """
     if await check_user_blocked(update, context):
         return ConversationHandler.END
     
@@ -12660,7 +15047,7 @@ async def profile_handler(update: Update, context):
             level_info = AchievementSystem.get_level_info(vinyls)
             current_level_name = level_info['current_level_name']
             
-            # ===== ПОЛУЧАЕМ РЕАЛЬНУЮ ДОСТУПНУЮ СКИДКУ ИЗ КУПОНОВ =====
+            # Получаем реальную доступную скидку из купонов
             coupons_summary = AchievementSystem.get_user_coupons_summary(user_id)
             available_discount = coupons_summary['total_discount'] if coupons_summary['total_discount'] > 0 else 0
             
@@ -12685,12 +15072,12 @@ async def profile_handler(update: Update, context):
             
             all_bookings = cursor.fetchall()
             
-            # ===== СЧЁТЧИКИ =====
-            studio_count = 0          # Записи в студии (completed + админские confirmed)
-            contract_count = 0        # Договорные услуги (confirmed)
-            total_spent_calc = 0      # Общая стоимость
-            confirmed_count = 0       # Подтверждено (confirmed + completed)
-            cancelled_count = 0       # Отменено пользователем (cancelled_by_user)
+            # Счётчики
+            studio_count = 0
+            contract_count = 0
+            total_spent_calc = 0
+            confirmed_count = 0
+            cancelled_count = 0
             
             for booking in all_bookings:
                 (is_contractual, service, date_str, price, status, is_12_hours, 
@@ -12705,7 +15092,7 @@ async def profile_handler(update: Update, context):
                     'договорная' in str(date_str).lower()
                 )
                 
-                # ===== ПОДСЧЁТ СТАТИСТИКИ =====
+                # Подсчёт статистики
                 if status_lower in ['confirmed', 'подтвержден']:
                     confirmed_count += 1
                 elif status_lower == 'completed':
@@ -12713,8 +15100,7 @@ async def profile_handler(update: Update, context):
                 elif status_lower == 'cancelled_by_user':
                     cancelled_count += 1
                 
-                # ===== ИСТОРИЯ ЗАПИСЕЙ И СТОИМОСТЬ =====
-                # 1. Обычные записи: ТОЛЬКО completed
+                # История записей и стоимость
                 if status_lower == 'completed' and not is_admin:
                     studio_count += 1
                     if price and price not in ['0', 'Договорная'] and 'договорная' not in str(price).lower():
@@ -12724,7 +15110,6 @@ async def profile_handler(update: Update, context):
                         except:
                             pass
                             
-                # 2. Админские записи: confirmed
                 elif is_admin and status_lower in ['confirmed', 'подтвержден']:
                     if is_contract:
                         contract_count += 1
@@ -12738,7 +15123,6 @@ async def profile_handler(update: Update, context):
                         except:
                             pass
                             
-                # 3. Договорные записи (не админские): confirmed
                 elif is_contract and status_lower in ['confirmed', 'подтвержден'] and not is_admin:
                     contract_count += 1
                     if price and price not in ['0', 'Договорная'] and 'договорная' not in str(price).lower():
@@ -12748,7 +15132,6 @@ async def profile_handler(update: Update, context):
                         except:
                             pass
                             
-                # 4. Сведение/мастеринг: confirmed
                 elif is_mixing == 1 and status_lower in ['confirmed', 'подтвержден']:
                     contract_count += 1
                     if price and price not in ['0', 'Договорная'] and 'договорная' not in str(price).lower():
@@ -12758,7 +15141,6 @@ async def profile_handler(update: Update, context):
                         except:
                             pass
                             
-                # 5. Создание альбома: confirmed
                 elif is_track_creation == 1 and track_type and 'Альбом' in track_type and status_lower in ['confirmed', 'подтвержден']:
                     contract_count += 1
                     if price and price not in ['0', 'Договорная'] and 'договорная' not in str(price).lower():
@@ -12768,15 +15150,13 @@ async def profile_handler(update: Update, context):
                         except:
                             pass
             
-            # Обновляем total_spent если нужно
             if total_spent_calc != total_spent:
                 cursor.execute('UPDATE users SET total_spent = ? WHERE telegram_id = ?', 
                              (total_spent_calc, user_id))
                 conn.commit()
                 total_spent = total_spent_calc
             
-            # ===== ЛИМИТЫ =====
-            # Записей с датой: X/2
+            # Лимиты
             cursor.execute('''
                 SELECT COUNT(*) 
                 FROM bookings 
@@ -12792,7 +15172,6 @@ async def profile_handler(update: Update, context):
             ''', (user_id,))
             active_dated_count = cursor.fetchone()[0] or 0
             
-            # Договорных записей: X/3 (ТОЛЬКО PENDING!)
             cursor.execute('''
                 SELECT COUNT(*) 
                 FROM bookings 
@@ -12810,7 +15189,7 @@ async def profile_handler(update: Update, context):
             ''', (user_id,))
             active_contract_count = cursor.fetchone()[0] or 0
             
-            # ===== ПРОЦЕНТЫ =====
+            # Проценты
             total_processed = confirmed_count + cancelled_count
             approved_percentage = 0
             cancelled_percentage = 0
@@ -12819,7 +15198,7 @@ async def profile_handler(update: Update, context):
                 approved_percentage = int((confirmed_count / total_processed) * 100)
                 cancelled_percentage = 100 - approved_percentage
         
-        # ===== ФОРМИРУЕМ ТЕКСТ ПРОФИЛЯ =====
+        # Формируем текст профиля
         profile_text = (
             f"*👤 Ваш профиль:*\n"
             f"• Username: @{username}\n"
@@ -12854,7 +15233,7 @@ async def profile_handler(update: Update, context):
         )
         
     except Exception as e:
-        logger.error(f"Ошибка получения профиля: {e}")
+        logger.error(f"❌ Ошибка получения профиля для пользователя {user_id}: {e}")
         import traceback
         traceback.print_exc()
         
@@ -12871,10 +15250,25 @@ async def profile_handler(update: Update, context):
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
         )
 
+
+# ============================================================
+# АДМИНСКИЙ ПОКАЗ ЗАПИСЕЙ ПОЛЬЗОВАТЕЛЯ
+# ============================================================
+
 async def admin_show_user_bookings(update: Update, context, target_user_id: int, target_unique_id: str = None, target_username: str = None, edit_mode: bool = False):
-    """Показать записи пользователя для админа с информацией о промокодах и купонах"""
+    """
+    Показывает записи пользователя для админа с информацией о промокодах и купонах.
+    
+    Аргументы:
+        update: Объект Update
+        context: Контекст бота
+        target_user_id: ID пользователя
+        target_unique_id: Уникальный ID пользователя
+        target_username: Username пользователя
+        edit_mode: Режим редактирования (для callback)
+    """
     try:
-        logger.info(f"🔍 admin_show_user_bookings для пользователя: {target_user_id}, edit_mode: {edit_mode}")
+        logger.info(f"🔍 admin_show_user_bookings для пользователя: {target_user_id}, edit_mode: {edit_mode}!")
         
         if hasattr(update, 'callback_query') and update.callback_query:
             query = update.callback_query
@@ -12913,7 +15307,7 @@ async def admin_show_user_bookings(update: Update, context, target_user_id: int,
                 message_text = (
                     f"*📋 Записи пользователя*\n\n"
                     f"*👤 @{safe_target_username} {safe_target_unique_id}*\n\n"
-                    f"*📭 У пользователя нет записей*"
+                    f"*📭 У пользователя нет записей!*"
                 )
                 
                 if is_callback:
@@ -12934,8 +15328,8 @@ async def admin_show_user_bookings(update: Update, context, target_user_id: int,
                 
                 menu_message = (
                     "*🏠 Возвращаемся в главное меню...*\n\n"
-                    "*✨ Процесс отмены записи завершён*\n"
-                    "*💾 Все введенные данные очищены*\n\n"
+                    "*✨ Процесс отмены записи завершён!*\n"
+                    "*💾 Все введённые данные очищены!*\n\n"
                     "*👇 Выберите подходящий вариант:*"
                 )
                 
@@ -12947,7 +15341,7 @@ async def admin_show_user_bookings(update: Update, context, target_user_id: int,
                             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
                         )
                     except Exception as e:
-                        logger.error(f"Ошибка редактирования: {e}")
+                        logger.error(f"❌ Ошибка редактирования: {e}")
                         await context.bot.send_message(
                             chat_id=chat_id,
                             text=menu_message,
@@ -12965,7 +15359,7 @@ async def admin_show_user_bookings(update: Update, context, target_user_id: int,
                 context.user_data.clear()
                 return
             
-            # Получаем ID первой платной записи (не договорной и не альбом)
+            # Получаем ID первой платной записи
             cursor.execute('''
                 SELECT MIN(id) FROM bookings 
                 WHERE telegram_id = ? 
@@ -13015,7 +15409,7 @@ async def admin_show_user_bookings(update: Update, context, target_user_id: int,
                 if is_admin_booking:
                     safe_name = "Администратор"
                 
-                # ===== НОВАЯ ЛОГИКА ДЛЯ КУПОНА =====
+                # Новая логика для купона
                 coupon_text = ""
                 
                 # Проверяем — это первая платная запись?
@@ -13023,7 +15417,7 @@ async def admin_show_user_bookings(update: Update, context, target_user_id: int,
                 
                 if is_first_paid_booking:
                     coupon_text = "• Купон уровня 1: 50%"
-                    logger.info(f"✅ Первая платная запись пользователя #{booking_id} — купон 50%")
+                    logger.info(f"✅ Первая платная запись пользователя #{booking_id} — купон 50%!")
                 elif level_coupon_id:
                     cursor.execute('''
                         SELECT level, discount_percent FROM user_coupons WHERE id = ?
@@ -13033,10 +15427,10 @@ async def admin_show_user_bookings(update: Update, context, target_user_id: int,
                         level, discount = coupon_info
                         if not promo_code_used:
                             coupon_text = f"• Купон уровня {level}: {discount}%"
-                        logger.info(f"✅ Найден купон для записи #{booking_id}: уровень {level}, скидка {discount}%")
+                        logger.info(f"✅ Найден купон для записи #{booking_id}: уровень {level}, скидка {discount}%!")
                 elif level_discount_percent and level_discount_percent > 0 and not promo_code_used:
                     coupon_text = "• Купон уровня 1: 50%"
-                    logger.info(f"ℹ️ Старая запись #{booking_id} со скидкой 50%")
+                    logger.info(f"ℹ️ Старая запись #{booking_id} со скидкой 50%!")
                 elif price and not promo_code_used:
                     try:
                         price_str = str(price).replace('₽', '').replace(' ', '').strip()
@@ -13079,11 +15473,11 @@ async def admin_show_user_bookings(update: Update, context, target_user_id: int,
                                 discount_percent = int((base_price - current_price) / base_price * 100)
                                 if discount_percent > 0:
                                     coupon_text = "• Купон уровня 1: 50%"
-                                    logger.info(f"💡 Первая платная запись #{booking_id}: скидка 50% (база={base_price}, цена={current_price})")
+                                    logger.info(f"💡 Первая платная запись #{booking_id}: скидка 50% (база={base_price}, цена={current_price})!")
                     except Exception as e:
-                        logger.error(f"Ошибка вычисления скидки для #{booking_id}: {e}")
+                        logger.error(f"❌ Ошибка вычисления скидки для #{booking_id}: {e}")
                 
-                # ===== ФОРМИРУЕМ ТЕКСТ ПРОМОКОДА =====
+                # Формируем текст промокода
                 promo_text = ""
                 if promo_code_used:
                     cursor.execute('''
@@ -13178,7 +15572,7 @@ async def admin_show_user_bookings(update: Update, context, target_user_id: int,
             message_parts = []
             current_part = header
             
-            # ===== ОБЫЧНЫЕ ЗАПИСИ =====
+            # Обычные записи
             if dated_bookings:
                 if len(current_part + "*📅 Записи в студии:*\n\n") > 3500:
                     message_parts.append(current_part)
@@ -13212,7 +15606,6 @@ async def admin_show_user_bookings(update: Update, context, target_user_id: int,
                         else:
                             booking_text += f"• Дата: {safe_clean_date}\n"
                     
-                    # ===== ИСПРАВЛЕНО: format_time_for_display() нормализует 24→00 =====
                     if (booking['time_slot'] and 
                         booking['time_slot'] not in ['Не указано', 'Не указано (договорная)', 'Запись в студии']):
                         display_time = DateTimeUtils.format_time_for_display(booking['time_slot'])
@@ -13225,7 +15618,7 @@ async def admin_show_user_bookings(update: Update, context, target_user_id: int,
                         else:
                             booking_text += f"• Время: {safe_display_time}\n"
                     
-                    # ===== ЦЕНА ИЗ БД =====
+                    # Цена из БД
                     if booking['is_12_hours']:
                         price_from_db = booking.get('price', 0)
                         if price_from_db and price_from_db != '0':
@@ -13255,11 +15648,9 @@ async def admin_show_user_bookings(update: Update, context, target_user_id: int,
                         else:
                             booking_text += "• Стоимость: 0₽\n"
                     
-                    # ===== ДОБАВЛЯЕМ КУПОН =====
                     if booking.get('coupon_text'):
                         booking_text += f"{booking['coupon_text']}\n"
                     
-                    # ===== ДОБАВЛЯЕМ ПРОМОКОД =====
                     if booking.get('promo_text'):
                         booking_text += f"{booking['promo_text']}\n"
                     
@@ -13271,7 +15662,7 @@ async def admin_show_user_bookings(update: Update, context, target_user_id: int,
                     else:
                         current_part += booking_text
             
-            # ===== ДОГОВОРНЫЕ ЗАПИСИ =====
+            # Договорные записи
             if contract_bookings:
                 if len(current_part + "*📝 Договорные записи:*\n\n") > 3500:
                     message_parts.append(current_part)
@@ -13309,11 +15700,9 @@ async def admin_show_user_bookings(update: Update, context, target_user_id: int,
                     else:
                         booking_text += "• Стоимость: 0₽\n"
                     
-                    # ===== ДОБАВЛЯЕМ КУПОН =====
                     if booking.get('coupon_text'):
                         booking_text += f"{booking['coupon_text']}\n"
                     
-                    # ===== ДОБАВЛЯЕМ ПРОМОКОД =====
                     if booking.get('promo_text'):
                         booking_text += f"{booking['promo_text']}\n"
                     
@@ -13325,7 +15714,7 @@ async def admin_show_user_bookings(update: Update, context, target_user_id: int,
                     else:
                         current_part += booking_text
             
-            # ===== АДМИНСКИЕ ЗАПИСИ =====
+            # Админские записи
             if admin_bookings:
                 if len(current_part + "*👑 Админские записи:*\n\n") > 3500:
                     message_parts.append(current_part)
@@ -13345,7 +15734,6 @@ async def admin_show_user_bookings(update: Update, context, target_user_id: int,
                         safe_clean_date = SecurityUtils.safe_markdown_text(clean_date)
                         booking_text += f"• Дата: {safe_clean_date}\n"
                     
-                    # ===== ИСПРАВЛЕНО: format_time_for_display() нормализует 24→00 =====
                     if (booking['time_slot'] and 
                         booking['time_slot'] not in ['Не указано', 'Не указано (договорная)', 'Запись в студии']):
                         display_time = DateTimeUtils.format_time_for_display(booking['time_slot'])
@@ -13387,7 +15775,7 @@ async def admin_show_user_bookings(update: Update, context, target_user_id: int,
                         parse_mode="Markdown",
                         reply_markup=inline_keyboard
                     )
-                    logger.info(f"✅ Последнее сообщение отредактировано с кнопками")
+                    logger.info(f"✅ Последнее сообщение отредактировано с кнопками!")
                 except Exception as e:
                     logger.error(f"❌ Ошибка редактирования: {e}")
                     await context.bot.send_message(
@@ -13435,7 +15823,7 @@ async def admin_show_user_bookings(update: Update, context, target_user_id: int,
         import traceback
         traceback.print_exc()
         
-        error_message = "❌ Произошла ошибка при загрузке записей\n\nПожалуйста, попробуйте позже."
+        error_message = "❌ Произошла ошибка при загрузке записей!\n\nПожалуйста, попробуйте позже!"
         
         try:
             if is_callback:
@@ -13451,8 +15839,8 @@ async def admin_show_user_bookings(update: Update, context, target_user_id: int,
             
             menu_message = (
                 "*🏠 Возвращаемся в главное меню...*\n\n"
-                "*✨ Процесс отмены записи завершён*\n"
-                "*💾 Все введенные данные очищены*\n\n"
+                "*✨ Процесс отмены записи завершён!*\n"
+                "*💾 Все введённые данные очищены!*\n\n"
                 "*👇 Выберите подходящий вариант:*"
             )
             
@@ -13464,7 +15852,7 @@ async def admin_show_user_bookings(update: Update, context, target_user_id: int,
                         reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
                     )
                 except Exception as e:
-                    logger.error(f"Ошибка редактирования: {e}")
+                    logger.error(f"❌ Ошибка редактирования: {e}")
                     await context.bot.send_message(
                         chat_id=chat_id,
                         text=menu_message,
@@ -13483,8 +15871,16 @@ async def admin_show_user_bookings(update: Update, context, target_user_id: int,
         
         context.user_data.clear()
 
+# ============================================================
+# АДМИНСКАЯ ОТМЕНА ЗАПИСИ - ОБРАБОТЧИК CALLBACK
+# ============================================================
+
 async def admin_cancel_callback_handler(update: Update, context):
-    """Обработка нажатия на кнопку отмены записи админом"""
+    """
+    Обработка нажатия на кнопку отмены записи админом.
+    
+    Показывает подтверждение перед удалением записи.
+    """
     query = update.callback_query
     data = query.data
     
@@ -13538,7 +15934,7 @@ async def admin_cancel_callback_handler(update: Update, context):
         if time_slot and '-' in time_slot:
             display_time = DateTimeUtils.format_time_for_display(time_slot)
         
-        # Формируем отображение цены БЕЗ лишнего ₽
+        # Формируем отображение цены
         price_text = ""
         if is_12_hours:
             rent_price = 7000 if twelve_hours_type and 'День' in twelve_hours_type else 6500
@@ -13549,9 +15945,9 @@ async def admin_cancel_callback_handler(update: Update, context):
             else:
                 try:
                     price_int = int(float(price))
-                    price_text = f"{price_int:,}".replace(',', ' ')  # Без ₽
+                    price_text = f"{price_int:,}".replace(',', ' ')
                 except:
-                    price_text = str(price).replace('₽', '').strip()  # Убираем ₽ если есть
+                    price_text = str(price).replace('₽', '').strip()
         else:
             price_text = "0"
         
@@ -13632,8 +16028,15 @@ async def admin_cancel_callback_handler(update: Update, context):
             reply_markup=keyboard
         )
 
+
+# ============================================================
+# АДМИНСКАЯ ОТМЕНА ЗАПИСИ - ОСТАВИТЬ
+# ============================================================
+
 async def admin_cancel_keep_handler(update: Update, context):
-    """Отмена удаления записи (оставить) - возвращает админский список записей"""
+    """
+    Отмена удаления записи (оставить) - возвращает админский список записей.
+    """
     query = update.callback_query
     
     if query.data != "admin_cancel_keep":
@@ -13646,26 +16049,33 @@ async def admin_cancel_keep_handler(update: Update, context):
     target_username = context.user_data.get('target_username')
     
     if target_user_id:
-        # ВЫЗЫВАЕМ АДМИНСКУЮ ФУНКЦИЮ, А НЕ ПОЛЬЗОВАТЕЛЬСКУЮ
         await admin_show_user_bookings(
             update, context,
             target_user_id=target_user_id,
             target_unique_id=target_unique_id,
             target_username=target_username,
-            edit_mode=True  # Важно: передаём edit_mode=True, чтобы обновить существующее сообщение
+            edit_mode=True
         )
+
+
+# ============================================================
+# АДМИНСКАЯ ОТМЕНА ЗАПИСИ - НАЗАД
+# ============================================================
 
 @handle_errors_with_rate_limit
 async def handle_admin_cancel_back(update: Update, context):
+    """
+    Обработка кнопки 'Назад' в админской отмене записи.
+    """
     text = update.message.text.strip()
-    logger.info(f"🔍 handle_admin_cancel_back: '{text}'")
+    logger.info(f"🔍 handle_admin_cancel_back: '{text}'!")
     
     if text == "↩️ Главное меню":
         context.user_data.clear()
         await update.message.reply_text(
             "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс отмены записи завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*✨ Процесс отмены записи завершён!*\n"
+            "*💾 Все введённые данные очищены!*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -13703,8 +16113,18 @@ async def handle_admin_cancel_back(update: Update, context):
     )
     return ADMIN_CANCEL_SHOW_BOOKINGS
 
+
+# ============================================================
+# АДМИНСКАЯ ВЫДАЧА ДОСТИЖЕНИЯ - НАЧАЛО
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def handle_admin_award_achievement_start(update: Update, context):
+    """
+    Начало процесса выдачи достижения.
+    
+    Шаг 1/3: Ввод имени пользователя.
+    """
     user_id = update.effective_user.id
     
     if user_id not in Config.ADMIN_IDS:
@@ -13734,17 +16154,25 @@ async def handle_admin_award_achievement_start(update: Update, context):
     )
     return ADMIN_ACHIEVEMENT_USER_ID
 
+
+# ============================================================
+# АДМИНСКАЯ ВЫДАЧА ДОСТИЖЕНИЯ - ПОИСК ПОЛЬЗОВАТЕЛЯ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def handle_admin_achievement_user_id(update: Update, context):
+    """
+    Обрабатывает ввод имени пользователя для выдачи достижения.
+    """
     text = update.message.text.strip()
-    logger.info(f"🔍 handle_admin_achievement_user_id: '{text}'")
+    logger.info(f"🔍 handle_admin_achievement_user_id: '{text}'!")
     
     if text == "↩️ Главное меню":
         context.user_data.clear()
         await update.message.reply_text(
             "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс выдачи достижения завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*✨ Процесс выдачи достижения завершён!*\n"
+            "*💾 Все введённые данные очищены!*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -13758,27 +16186,27 @@ async def handle_admin_achievement_user_id(update: Update, context):
         with db.get_connection() as conn:
             cursor = conn.cursor()
             
-            # ===== 1. Поиск по уникальному ID (MC...) =====
+            # 1. Поиск по уникальному ID (MC...)
             if search_term.startswith("mc"):
-                logger.info(f"🔍 Ищем по уникальному ID: {search_term}")
+                logger.info(f"🔍 Ищу по уникальному ID: {search_term}!")
                 cursor.execute('''
                     SELECT telegram_id, username, first_name, unique_id
                     FROM users WHERE LOWER(unique_id) = ?
                 ''', (search_term,))
                 found_user = cursor.fetchone()
 
-            # ===== 2. Поиск по username (точное) =====
+            # 2. Поиск по username (точное)
             if not found_user:
-                logger.info(f"🔍 Ищем по username (точное): {search_term}")
+                logger.info(f"🔍 Ищу по username (точное): {search_term}!")
                 cursor.execute('''
                     SELECT telegram_id, username, first_name, unique_id
                     FROM users WHERE LOWER(username) = ? OR LOWER(username) = ?
                 ''', (search_term, f'@{search_term}'))
                 found_user = cursor.fetchone()
 
-            # ===== 3. Поиск по username (частичное) =====
+            # 3. Поиск по username (частичное)
             if not found_user:
-                logger.info(f"🔍 Ищем по username (частичное): {search_term}")
+                logger.info(f"🔍 Ищу по username (частичное): {search_term}!")
                 cursor.execute('''
                     SELECT telegram_id, username, first_name, unique_id
                     FROM users WHERE 
@@ -13812,7 +16240,7 @@ async def handle_admin_achievement_user_id(update: Update, context):
             context.user_data['target_achievement_username'] = username or first_name or "Неизвестный"
             context.user_data['target_achievement_display'] = user_display
 
-            logger.info(f"✅ Админ нашел пользователя для выдачи достижения: {unique_id} (отображается как: {user_display}")
+            logger.info(f"✅ Админ нашёл пользователя для выдачи достижения: {unique_id} (отображается как: {user_display})!")
 
     except Exception as e:
         logger.error(f"❌ Ошибка поиска пользователя: {e}")
@@ -13839,17 +16267,27 @@ async def handle_admin_achievement_user_id(update: Update, context):
     )
     return ADMIN_ACHIEVEMENT_NAME
 
+
+# ============================================================
+# АДМИНСКАЯ ВЫДАЧА ДОСТИЖЕНИЯ - ВВОД НАЗВАНИЯ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def handle_admin_achievement_name(update: Update, context):
+    """
+    Обрабатывает ввод названия достижения.
+    
+    Шаг 2/3: Выбор достижения.
+    """
     text = update.message.text.strip()
-    logger.info(f"🔍 handle_admin_achievement_name: '{text}'")
+    logger.info(f"🔍 handle_admin_achievement_name: '{text}'!")
     
     if text == "↩️ Главное меню":
         context.user_data.clear()
         await update.message.reply_text(
             "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс выдачи достижения завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*✨ Процесс выдачи достижения завершён!*\n"
+            "*💾 Все введённые данные очищены!*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -13970,7 +16408,7 @@ async def handle_admin_achievement_name(update: Update, context):
     confirmation_text = (
         f"*👑 Шаг 3/3: Подтверждение*\n\n"
         f"*✅ Проверьте данные:*\n\n"
-        f"*📋 Данные:\n*"
+        f"*📋 Данные:*\n"
         f"• Уникальный ID: {context.user_data['target_achievement_unique_id']}\n"
         f"• Достижение: {emoji} {found_name}\n"
         f"• Награда: +{vinyls_reward} пластинок 💿\n\n"
@@ -13987,10 +16425,20 @@ async def handle_admin_achievement_name(update: Update, context):
     )
     return ADMIN_ACHIEVEMENT_CONFIRM
 
+
+# ============================================================
+# АДМИНСКАЯ ВЫДАЧА ДОСТИЖЕНИЯ - ПОДТВЕРЖДЕНИЕ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def handle_admin_achievement_confirm(update: Update, context):
+    """
+    Подтверждение выдачи достижения.
+    
+    Шаг 3/3: Проверка и выдача достижения.
+    """
     text = update.message.text.strip()
-    logger.info(f"🔍 handle_admin_achievement_confirm: '{text}'")
+    logger.info(f"🔍 handle_admin_achievement_confirm: '{text}'!")
     
     target_user_id = context.user_data.get('target_achievement_user_id')
     target_unique_id = context.user_data.get('target_achievement_unique_id')
@@ -14000,7 +16448,7 @@ async def handle_admin_achievement_confirm(update: Update, context):
     admin_id = str(update.effective_user.id)
     admin_username = update.effective_user.username or "Администратор"
     
-    # ПОЛУЧАЕМ USERNAME ЕСЛИ ОН НЕ БЫЛ СОХРАНЕН
+    # Получаем username если он не был сохранён
     if not target_username and target_user_id:
         try:
             with db.get_connection() as conn:
@@ -14011,15 +16459,15 @@ async def handle_admin_achievement_confirm(update: Update, context):
                     target_username = user_data[0] or user_data[1] or str(target_user_id)
                     context.user_data['target_achievement_username'] = target_username
         except Exception as e:
-            logger.error(f"Ошибка получения username: {e}")
+            logger.error(f"❌ Ошибка получения username: {e}")
             target_username = target_unique_id or str(target_user_id)
     
     if text == "↩️ Главное меню" or text == "❌ Отменить":
         context.user_data.clear()
         await update.message.reply_text(
             "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс выдачи достижения завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*✨ Процесс выдачи достижения завершён!*\n"
+            "*💾 Все введённые данные очищены!*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -14041,7 +16489,7 @@ async def handle_admin_achievement_confirm(update: Update, context):
     
     if text != "✅ Да, выдать достижение":
         await update.message.reply_text(
-            "*❌ Пожалуйста, используйте кнопки!\n\n👇 Выберите один из вариантов:*",
+            "*❌ Пожалуйста, используйте кнопки!*\n\n*👇 Выберите один из вариантов:*",
             parse_mode="Markdown",
             reply_markup=ReplyKeyboardMarkup([
                 ["✅ Да, выдать достижение", "✏️ Исправить данные"],
@@ -14055,11 +16503,10 @@ async def handle_admin_achievement_confirm(update: Update, context):
     )
     
     if success:
-        # ИСПРАВЛЕНО - используем username или unique_id как запасной вариант
         if target_username and target_username != "None":
-            admin_message = f"*✅ Достижение создано для пользователя @{target_username}*"
+            admin_message = f"*✅ Достижение создано для пользователя @{target_username}!*"
         else:
-            admin_message = f"*✅ Достижение создано для пользователя {target_unique_id}*"
+            admin_message = f"*✅ Достижение создано для пользователя {target_unique_id}!*"
         
         await update.message.reply_text(
             admin_message,
@@ -14067,7 +16514,7 @@ async def handle_admin_achievement_confirm(update: Update, context):
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
         )
         
-        logger.info(f"✅ Админ @{admin_username} выдал достижение {achievement_name} пользователю {target_user_id}")
+        logger.info(f"✅ Админ @{admin_username} выдал достижение {achievement_name} пользователю {target_user_id}!")
         
     else:
         await update.message.reply_text(
@@ -14079,8 +16526,18 @@ async def handle_admin_achievement_confirm(update: Update, context):
     context.user_data.clear()
     return ConversationHandler.END
 
+
+# ============================================================
+# АДМИНСКОЕ УДАЛЕНИЕ ДОСТИЖЕНИЯ - НАЧАЛО
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def handle_admin_remove_achievement_start(update: Update, context):
+    """
+    Начало процесса удаления достижения.
+    
+    Шаг 1/2: Ввод имени пользователя.
+    """
     user_id = update.effective_user.id
     
     if user_id not in Config.ADMIN_IDS:
@@ -14111,17 +16568,25 @@ async def handle_admin_remove_achievement_start(update: Update, context):
     )
     return ADMIN_REMOVE_ACHIEVEMENT_USER_ID
 
+
+# ============================================================
+# АДМИНСКОЕ УДАЛЕНИЕ ДОСТИЖЕНИЯ - ПОИСК ПОЛЬЗОВАТЕЛЯ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def handle_admin_remove_achievement_user_id(update: Update, context):
+    """
+    Обрабатывает ввод имени пользователя для удаления достижения.
+    """
     text = update.message.text.strip()
-    logger.info(f"🔍 handle_admin_remove_achievement_user_id: '{text}'")
+    logger.info(f"🔍 handle_admin_remove_achievement_user_id: '{text}'!")
     
     if text == "↩️ Главное меню":
         context.user_data.clear()
         await update.message.reply_text(
             "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс выдачи достижения завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*✨ Процесс выдачи достижения завершён!*\n"
+            "*💾 Все введённые данные очищены!*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -14135,31 +16600,31 @@ async def handle_admin_remove_achievement_user_id(update: Update, context):
         with db.get_connection() as conn:
             cursor = conn.cursor()
             
-            # ===== 1. Поиск по уникальному ID (MC...) =====
+            # 1. Поиск по уникальному ID (MC...)
             if search_term.startswith("mc"):
-                logger.info(f"🔍 Ищем по уникальному ID: {search_term}")
+                logger.info(f"🔍 Ищу по уникальному ID: {search_term}!")
                 cursor.execute('''
                     SELECT telegram_id, username, first_name, unique_id
                     FROM users WHERE LOWER(unique_id) = ?
                 ''', (search_term,))
                 found_user = cursor.fetchone()
                 if found_user:
-                    logger.info(f"✅ Найден пользователь по уникальному ID: {search_term}")
+                    logger.info(f"✅ Найден пользователь по уникальному ID: {search_term}!")
 
-            # ===== 2. Поиск по username (точное) =====
+            # 2. Поиск по username (точное)
             if not found_user:
-                logger.info(f"🔍 Ищем по username (точное): {search_term}")
+                logger.info(f"🔍 Ищу по username (точное): {search_term}!")
                 cursor.execute('''
                     SELECT telegram_id, username, first_name, unique_id
                     FROM users WHERE LOWER(username) = ? OR LOWER(username) = ?
                 ''', (search_term, f'@{search_term}'))
                 found_user = cursor.fetchone()
                 if found_user:
-                    logger.info(f"✅ Найден пользователь по username (точное): {search_term}")
+                    logger.info(f"✅ Найден пользователь по username (точное): {search_term}!")
 
-            # ===== 3. Поиск по username (частичное) =====
+            # 3. Поиск по username (частичное)
             if not found_user:
-                logger.info(f"🔍 Ищем по username (частичное): {search_term}")
+                logger.info(f"🔍 Ищу по username (частичное): {search_term}!")
                 cursor.execute('''
                     SELECT telegram_id, username, first_name, unique_id
                     FROM users WHERE 
@@ -14170,7 +16635,7 @@ async def handle_admin_remove_achievement_user_id(update: Update, context):
                 ''', (f'%{search_term}%', f'%@{search_term}%', f'%{search_term}%', f'%{search_term}%'))
                 found_user = cursor.fetchone()
                 if found_user:
-                    logger.info(f"✅ Найден пользователь по частичному совпадению: {search_term}")
+                    logger.info(f"✅ Найден пользователь по частичному совпадению: {search_term}!")
 
             if not found_user:
                 await update.message.reply_text(
@@ -14187,7 +16652,7 @@ async def handle_admin_remove_achievement_user_id(update: Update, context):
             context.user_data['target_remove_achievement_unique_id'] = unique_id
             context.user_data['target_remove_achievement_username'] = username or first_name or "Неизвестный"
 
-            logger.info(f"✅ Админ нашел пользователя для удаления достижения: {unique_id} (TG: {telegram_id})")
+            logger.info(f"✅ Админ нашёл пользователя для удаления достижения: {unique_id} (TG: {telegram_id})!")
 
             await admin_show_user_achievements(
                 update, context,
@@ -14212,10 +16677,19 @@ async def handle_admin_remove_achievement_user_id(update: Update, context):
         )
         return ADMIN_REMOVE_ACHIEVEMENT_USER_ID
 
+
+# ============================================================
+# АДМИНСКИЙ ПОКАЗ ДОСТИЖЕНИЙ ПОЛЬЗОВАТЕЛЯ
+# ============================================================
+
 async def admin_show_user_achievements(update: Update, context, target_user_id: int, target_unique_id: str = None, target_username: str = None):
-    """Показать достижения пользователя для админа"""
+    """
+    Показывает достижения пользователя для админа.
+    
+    Отображает список достижений с кнопками для удаления.
+    """
     try:
-        logger.info(f"🔍 admin_show_user_achievements для пользователя: {target_user_id}")
+        logger.info(f"🔍 admin_show_user_achievements для пользователя: {target_user_id}!")
         
         if hasattr(update, 'callback_query') and update.callback_query:
             query = update.callback_query
@@ -14244,7 +16718,7 @@ async def admin_show_user_achievements(update: Update, context, target_user_id: 
                 message_text = (
                     f"*📋 Достижения пользователя*\n\n"
                     f"*👤 @{target_username if target_username else 'Неизвестный'} {target_unique_id if target_unique_id else ''}*\n\n"
-                    f"*📭 У пользователя нет достижений*"
+                    f"*📭 У пользователя нет достижений!*"
                 )
                 
                 if is_callback:
@@ -14255,7 +16729,7 @@ async def admin_show_user_achievements(update: Update, context, target_user_id: 
                             parse_mode="Markdown"
                         )
                     except Exception as e:
-                        logger.error(f"Ошибка редактирования: {e}")
+                        logger.error(f"❌ Ошибка редактирования: {e}")
                         await context.bot.send_message(
                             chat_id=chat_id,
                             text=message_text,
@@ -14269,8 +16743,8 @@ async def admin_show_user_achievements(update: Update, context, target_user_id: 
                 
                 menu_message = (
                     "*🏠 Возвращаемся в главное меню...*\n\n"
-                    "*✨ Процесс удаления достижения завершён*\n"
-                    "*💾 Все введенные данные очищены*\n\n"
+                    "*✨ Процесс удаления достижения завершён!*\n"
+                    "*💾 Все введённые данные очищены!*\n\n"
                     "*👇 Выберите подходящий вариант:*"
                 )
                 
@@ -14351,7 +16825,7 @@ async def admin_show_user_achievements(update: Update, context, target_user_id: 
         import traceback
         traceback.print_exc()
         
-        error_message = "❌ Произошла ошибка при загрузке достижений\n\nПожалуйста, попробуйте позже."
+        error_message = "❌ Произошла ошибка при загрузке достижений!\n\nПожалуйста, попробуйте позже!"
         
         try:
             if is_callback:
@@ -14370,8 +16844,18 @@ async def admin_show_user_achievements(update: Update, context, target_user_id: 
         context.user_data.clear()
         return ConversationHandler.END
 
+
+# ============================================================
+# АДМИНСКОЕ УДАЛЕНИЕ ДОСТИЖЕНИЯ - ОБРАБОТЧИК CALLBACK
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def admin_remove_achievement_callback(update: Update, context):
+    """
+    Обработка нажатия на кнопку удаления достижения.
+    
+    Показывает подтверждение перед удалением.
+    """
     query = update.callback_query
     data = query.data
     
@@ -14390,7 +16874,7 @@ async def admin_remove_achievement_callback(update: Update, context):
             break
     
     if not achievement_info:
-        await query.answer("*❌ Достижение не найдено!*", show_alert=True)
+        await query.answer("❌ Достижение не найдено!", show_alert=True)
         return
     
     context.user_data['remove_achievement_db_id'] = achievement_db_id
@@ -14429,8 +16913,15 @@ async def admin_remove_achievement_callback(update: Update, context):
         reply_markup=keyboard
     )
 
+
+# ============================================================
+# АДМИНСКОЕ УДАЛЕНИЕ ДОСТИЖЕНИЯ - ПОДТВЕРЖДЕНИЕ
+# ============================================================
+
 async def admin_remove_achievement_confirm(update: Update, context):
-    """Подтверждение удаления достижения"""
+    """
+    Подтверждение удаления достижения.
+    """
     query = update.callback_query
     data = query.data
 
@@ -14481,7 +16972,7 @@ async def admin_remove_achievement_confirm(update: Update, context):
         # Отправляем уведомление об изменении уровня (если уровень изменился)
         await AchievementSystem.notify_level_change(str(target_user_id), old_vinyls, new_vinyls, context)
         
-        # Отправляем уведомление об удалении достижения (С ЖИРНЫМ ТЕКСТОМ)
+        # Отправляем уведомление об удалении достижения
         try:
             delete_message = (
                 f"*❌ Администратор удалил достижение*\n\n"
@@ -14496,15 +16987,15 @@ async def admin_remove_achievement_confirm(update: Update, context):
                 text=delete_message,
                 parse_mode="Markdown"
             )
-            logger.info(f"✅ Уведомление об удалении достижения отправлено пользователю {target_user_id}")
+            logger.info(f"✅ Уведомление об удалении достижения отправлено пользователю {target_user_id}!")
         except Exception as e:
             logger.error(f"❌ Не удалось отправить уведомление об удалении: {e}")
         
-        # Сообщение админу (С ВОЗВРАТОМ НОМЕРА)
+        # Сообщение админу
         if achievement_number:
-            admin_success_message = f"*✅ Достижение #{achievement_number} удалено из базы пользователя*"
+            admin_success_message = f"*✅ Достижение #{achievement_number} удалено из базы пользователя!*"
         else:
-            admin_success_message = f"*✅ Достижение «{achievement_name}» удалено из базы пользователя*"
+            admin_success_message = f"*✅ Достижение «{achievement_name}» удалено из базы пользователя!*"
         
         await context.bot.send_message(
             chat_id=int(admin_id),
@@ -14529,7 +17020,7 @@ async def admin_remove_achievement_confirm(update: Update, context):
             no_achievements_text = (
                 f"*📋 Достижения пользователя*\n\n"
                 f"*👤 @{target_username if target_username else 'Неизвестный'} {target_unique_id if target_unique_id else ''}*\n\n"
-                f"*📭 У пользователя нет достижений*"
+                f"*📭 У пользователя нет достижений!*"
             )
             
             await query.edit_message_text(
@@ -14539,8 +17030,8 @@ async def admin_remove_achievement_confirm(update: Update, context):
             
             menu_message = (
                 "*🏠 Возвращаемся в главное меню...*\n\n"
-                "*✨ Процесс удаления достижения завершён*\n"
-                "*💾 Все введенные данные очищены*\n\n"
+                "*✨ Процесс удаления достижения завершён!*\n"
+                "*💾 Все введённые данные очищены!*\n\n"
                 "*👇 Выберите подходящий вариант:*"
             )
             
@@ -14567,9 +17058,25 @@ async def admin_remove_achievement_confirm(update: Update, context):
             parse_mode="Markdown"
         )
 
+
+# ============================================================
+# УДАЛЕНИЕ ДОСТИЖЕНИЯ (СТАТИЧЕСКИЙ МЕТОД)
+# ============================================================
+
 @staticmethod
 async def remove_achievement(user_id: str, achievement_id: str, admin_id: str, context=None):
-    """Удаляет достижение (БЕЗ отправки уведомлений - только удаление)"""
+    """
+    Удаляет достижение (БЕЗ отправки уведомлений - только удаление).
+    
+    Аргументы:
+        user_id: ID пользователя
+        achievement_id: ID достижения
+        admin_id: ID администратора
+        context: Контекст бота (не используется)
+    
+    Возвращает:
+        tuple: (успех, сообщение)
+    """
     try:
         with db.get_connection() as conn:
             cursor = conn.cursor()
@@ -14582,7 +17089,7 @@ async def remove_achievement(user_id: str, achievement_id: str, admin_id: str, c
             
             result = cursor.fetchone()
             if not result:
-                return False, "❌ Достижение не найдено у пользователя"
+                return False, "❌ Достижение не найдено у пользователя!"
             
             achievement_name, achievement_type = result
             
@@ -14605,23 +17112,32 @@ async def remove_achievement(user_id: str, achievement_id: str, admin_id: str, c
             # Обновляем уровень (БЕЗ отправки уведомлений)
             await AchievementSystem.update_user_level(user_id, None, send_notification=False)
             
-            return True, f"❌ Достижение «{achievement_name}» удалено"
+            return True, f"❌ Достижение «{achievement_name}» удалено!"
             
     except Exception as e:
-        logger.error(f"Ошибка удаления достижения: {e}")
+        logger.error(f"❌ Ошибка удаления достижения для пользователя {user_id}: {e}")
         import traceback
         traceback.print_exc()
         return False, str(e)
 
+
+# ============================================================
+# АДМИНСКОЕ УДАЛЕНИЕ ДОСТИЖЕНИЯ - ОТМЕНА
+# ============================================================
+
 async def admin_remove_achievement_cancel(update: Update, context):
-    """Отмена удаления достижения"""
+    """
+    Отмена удаления достижения.
+    
+    Возвращает список достижений пользователя.
+    """
     query = update.callback_query
     
     target_user_id = context.user_data.get('target_remove_user_id')
     target_unique_id = context.user_data.get('target_remove_unique_id')
     target_username = context.user_data.get('target_remove_username')
     
-    await query.answer()  # Без текста, без alert
+    await query.answer()
     
     await admin_show_user_achievements(
         update, context,
@@ -14630,17 +17146,24 @@ async def admin_remove_achievement_cancel(update: Update, context):
         target_username=target_username
     )
 
+# ============================================================
+# АДМИНСКОЕ УДАЛЕНИЕ ДОСТИЖЕНИЯ - НАЗАД
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def handle_admin_remove_achievement_back(update: Update, context):
+    """
+    Обработка кнопки 'Назад' в админском удалении достижения.
+    """
     text = update.message.text.strip()
-    logger.info(f"🔍 handle_admin_remove_achievement_back: '{text}'")
+    logger.info(f"🔍 handle_admin_remove_achievement_back: '{text}'!")
     
     if text == "↩️ Главное меню":
         context.user_data.clear()
         await update.message.reply_text(
             "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс отмены достижения завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*✨ Процесс отмены достижения завершён!*\n"
+            "*💾 Все введённые данные очищены!*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -14669,7 +17192,7 @@ async def handle_admin_remove_achievement_back(update: Update, context):
         return ADMIN_REMOVE_ACHIEVEMENT_USER_ID
     
     await update.message.reply_text(
-        "*❌ Пожалуйста, используйте кнопки!\n\n👇 Выберите подходящий вариант:*",
+        "*❌ Пожалуйста, используйте кнопки!*\n\n*👇 Выберите подходящий вариант:*",
         parse_mode="Markdown",
         reply_markup=ReplyKeyboardMarkup([
             ["↩️ Главное меню", "↩️ Назад"]
@@ -14677,8 +17200,18 @@ async def handle_admin_remove_achievement_back(update: Update, context):
     )
     return ADMIN_REMOVE_ACHIEVEMENT_SHOW
 
+
+# ============================================================
+# АДМИНСКОЕ СОЗДАНИЕ ЗАПИСИ - НАЧАЛО
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def handle_admin_create_booking(update: Update, context):
+    """
+    Начало процесса создания админской записи.
+    
+    Шаг 1/4: Ввод имени пользователя.
+    """
     user_id = update.effective_user.id
     
     if user_id not in Config.ADMIN_IDS:
@@ -14708,17 +17241,25 @@ async def handle_admin_create_booking(update: Update, context):
     )
     return ADMIN_USER_ID
 
+
+# ============================================================
+# АДМИНСКОЕ СОЗДАНИЕ ЗАПИСИ - ПОИСК ПОЛЬЗОВАТЕЛЯ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def handle_admin_user_id(update: Update, context):
+    """
+    Обрабатывает ввод имени пользователя для админской записи.
+    """
     text = update.message.text.strip()
-    logger.info(f"🔍 handle_admin_user_id: '{text}'")
+    logger.info(f"🔍 handle_admin_user_id: '{text}'!")
     
     if text == "↩️ Главное меню":
         context.user_data.clear()
         await update.message.reply_text(
             "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс записи завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*✨ Процесс записи завершён!*\n"
+            "*💾 Все введённые данные очищены!*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -14804,17 +17345,27 @@ async def handle_admin_user_id(update: Update, context):
     )
     return ADMIN_RECORD_TYPE
 
+
+# ============================================================
+# АДМИНСКОЕ СОЗДАНИЕ ЗАПИСИ - ВЫБОР ТИПА
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def handle_admin_record_type(update: Update, context):
+    """
+    Обрабатывает выбор типа записи (договорная/студийная).
+    
+    Шаг 2/4.
+    """
     text = update.message.text.strip()
-    logger.info(f"🔍 handle_admin_record_type: '{text}'")
+    logger.info(f"🔍 handle_admin_record_type: '{text}'!")
     
     if text == "↩️ Главное меню":
         context.user_data.clear()
         await update.message.reply_text(
             "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс записи завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*✨ Процесс записи завершён!*\n"
+            "*💾 Все введённые данные очищены!*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -14864,17 +17415,27 @@ async def handle_admin_record_type(update: Update, context):
     )
     return ADMIN_PRICE
 
+
+# ============================================================
+# АДМИНСКОЕ СОЗДАНИЕ ЗАПИСИ - ВВОД ЦЕНЫ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def handle_admin_price(update: Update, context):
+    """
+    Обрабатывает ввод стоимости записи.
+    
+    Шаг 3/4.
+    """
     text = update.message.text.strip()
-    logger.info(f"🔍 handle_admin_price: '{text}'")
+    logger.info(f"🔍 handle_admin_price: '{text}'!")
     
     if text == "↩️ Главное меню":
         context.user_data.clear()
         await update.message.reply_text(
             "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс записи завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*✨ Процесс записи завершён!*\n"
+            "*💾 Все введённые данные очищены!*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -14900,17 +17461,17 @@ async def handle_admin_price(update: Update, context):
     
     try:
         if not text.isdigit():
-            raise ValueError("Ввод должен содержать только цифры")
+            raise ValueError("Ввод должен содержать только цифры!")
         
         price = int(text)
         
         if price < 0 or price > 10000000:
-            raise ValueError("Стоимость должна быть от 0 до 10 000 000")
+            raise ValueError("Стоимость должна быть от 0 до 10 000 000!")
         
         context.user_data['admin_price'] = price
         context.user_data['admin_price_str'] = str(price)
         
-        logger.info(f"✅ Админ ввел стоимость: {price}₽")
+        logger.info(f"✅ Админ ввёл стоимость: {price}₽!")
         
     except ValueError as e:
         await update.message.reply_text(
@@ -14944,7 +17505,7 @@ async def handle_admin_price(update: Update, context):
             f"• Стоимость: {formatted_price}\n\n"
             "*📝 Дополнительная информация:*\n"
             "• Запись будет создана от имени администратора\n"
-            "• Пользователь увидит запись в своем профиле\n\n"
+            "• Пользователь увидит запись в своём профиле\n\n"
             "*👇 Всё верно?*"
         )
     else:
@@ -14957,7 +17518,7 @@ async def handle_admin_price(update: Update, context):
             f"• Стоимость: {formatted_price}\n\n"
             "*📝 Дополнительная информация:*\n"
             "• Запись будет создана от имени администратора\n"
-            "• Пользователь увидит запись в своем профиле\n\n"
+            "• Пользователь увидит запись в своём профиле\n\n"
             "*👇 Всё верно?*"
         )
     
@@ -14971,11 +17532,20 @@ async def handle_admin_price(update: Update, context):
     )
     return ADMIN_CONFIRM
 
+
+# ============================================================
+# АДМИНСКОЕ СОЗДАНИЕ ЗАПИСИ - ПОДТВЕРЖДЕНИЕ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def handle_admin_confirm(update: Update, context):
-    """Подтверждение создания админской записи"""
+    """
+    Подтверждение создания админской записи.
+    
+    Шаг 4/4.
+    """
     text = update.message.text.strip()
-    logger.info(f"🔍 handle_admin_confirm: '{text}'")
+    logger.info(f"🔍 handle_admin_confirm: '{text}'!")
     
     unique_id = context.user_data.get('target_unique_id', 'Неизвестно')
     record_type = context.user_data.get('admin_record_type', 'Неизвестно')
@@ -14988,8 +17558,8 @@ async def handle_admin_confirm(update: Update, context):
         context.user_data.clear()
         await update.message.reply_text(
             "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс записи завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*✨ Процесс записи завершён!*\n"
+            "*💾 Все введённые данные очищены!*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -15014,8 +17584,8 @@ async def handle_admin_confirm(update: Update, context):
         context.user_data.clear()
         await update.message.reply_text(
             "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс записи завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*✨ Процесс записи завершён!*\n"
+            "*💾 Все введённые данные очищены!*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -15048,7 +17618,7 @@ async def handle_admin_confirm(update: Update, context):
         )
         return ADMIN_CONFIRM
     
-    logger.info(f"🔍 Админ подтвердил создание записи: {unique_id}, тип: {record_type}, цена: {price}")
+    logger.info(f"🔍 Админ подтвердил создание записи: {unique_id}, тип: {record_type}, цена: {price}!")
     
     try:
         if record_type == "📝 Договорная запись":
@@ -15091,11 +17661,11 @@ async def handle_admin_confirm(update: Update, context):
         )
         
         if not success:
-            raise Exception("Не удалось сохранить запись в базу")
+            raise Exception("Не удалось сохранить запись в базу!")
         
-        logger.info(f"✅ Админская запись #{booking_id} сохранена в базу")
+        logger.info(f"✅ Админская запись #{booking_id} сохранена в базу!")
         
-        # ===== НАЧИСЛЕНИЕ ПЛАСТИНОК ДЛЯ АДМИНСКОЙ ЗАПИСИ =====
+        # Начисление пластинок для админской записи
         if target_telegram_id:
             booking_data_for_vinyls = {
                 'id': booking_id,
@@ -15111,7 +17681,7 @@ async def handle_admin_confirm(update: Update, context):
             )
             
             if vinyls_added:
-                logger.info(f"✅ Пользователю {target_telegram_id} начислено +25 пластинок за админскую запись #{booking_id}")
+                logger.info(f"✅ Пользователю {target_telegram_id} начислено +25 пластинок за админскую запись #{booking_id}!")
             
             await AchievementSystem.check_and_award_achievements(str(target_telegram_id), context, update)
         
@@ -15126,22 +17696,22 @@ async def handle_admin_confirm(update: Update, context):
                         current_total = user_data[0] or 0
                         new_total = current_total + price
                         cursor.execute('UPDATE users SET total_spent = ? WHERE telegram_id = ?', (new_total, str(target_telegram_id)))
-                        logger.info(f"💰 Обновлен total_spent для {target_telegram_id}: {current_total} -> {new_total}₽")
+                        logger.info(f"💰 Обновлён total_spent для {target_telegram_id}: {current_total} -> {new_total}₽!")
                     else:
                         registration_date = DateTimeUtils.now().strftime('%d.%m.%Y')
                         cursor.execute('''
                             INSERT INTO users (telegram_id, username, unique_id, registration_date, total_spent)
                             VALUES (?, ?, ?, ?, ?)
                         ''', (str(target_telegram_id), target_username, unique_id, registration_date, price))
-                        logger.info(f"💰 Создан новый пользователь {target_telegram_id} с total_spent: {price}₽")
+                        logger.info(f"💰 Создан новый пользователь {target_telegram_id} с total_spent: {price}₽!")
                     conn.commit()
             except Exception as e:
                 logger.error(f"❌ Ошибка обновления total_spent: {e}")
         
         if record_type == "📝 Договорная запись":
-            admin_message = f"*✅ Договорная запись создана для пользователя @{target_username}*"
+            admin_message = f"*✅ Договорная запись создана для пользователя @{target_username}!*"
         else:
-            admin_message = f"*✅ Запись создана для пользователя @{target_username}*"
+            admin_message = f"*✅ Запись создана для пользователя @{target_username}!*"
         
         await update.message.reply_text(
             admin_message,
@@ -15149,16 +17719,15 @@ async def handle_admin_confirm(update: Update, context):
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
         )
         
-        # ===== ОТПРАВКА СООБЩЕНИЯ ПОЛЬЗОВАТЕЛЮ (С АДРЕСОМ И КОНТАКТАМИ) =====
+        # Отправка сообщения пользователю
         if target_telegram_id:
             try:
-                # ПРОВЕРЯЕМ, МОЖЕТ ЛИ БОТ ОТПРАВИТЬ СООБЩЕНИЕ
                 try:
                     await context.bot.send_chat_action(
                         chat_id=int(target_telegram_id), 
                         action="typing"
                     )
-                    logger.info(f"✅ Бот может отправлять сообщения пользователю {target_telegram_id}")
+                    logger.info(f"✅ Бот может отправлять сообщения пользователю {target_telegram_id}!")
                 except Exception as e:
                     logger.error(f"❌ Бот не может отправить сообщение пользователю {target_telegram_id}: {e}")
                     await context.bot.send_message(
@@ -15166,9 +17735,8 @@ async def handle_admin_confirm(update: Update, context):
                         text=f"*⚠️ Пользователь @{target_username} заблокировал бота!\n\nЗапись #{booking_id} создана, но уведомление не отправлено.*",
                         parse_mode="Markdown"
                     )
-                    raise telegram.error.Forbidden("User blocked bot")
+                    raise telegram.error.Forbidden("User blocked bot!")
 
-                # ТОТ ЖЕ ТЕКСТ + АДРЕС И КОНТАКТЫ
                 if record_type == "📝 Договорная запись":
                     user_message = (
                         f"*🎁 Договорная запись успешно создана администратором!*\n\n"
@@ -15195,22 +17763,21 @@ async def handle_admin_confirm(update: Update, context):
                     text=user_message,
                     parse_mode="Markdown"
                 )
-                logger.info(f"✅ Сообщение пользователю {target_telegram_id} отправлено")
+                logger.info(f"✅ Сообщение пользователю {target_telegram_id} отправлено!")
                 
             except telegram.error.Forbidden:
-                logger.warning(f"⚠️ Пользователь {target_telegram_id} заблокировал бота")
+                logger.warning(f"⚠️ Пользователь {target_telegram_id} заблокировал бота!")
                 
             except Exception as user_error:
                 logger.error(f"❌ Не удалось отправить сообщение пользователю {target_telegram_id}: {user_error}")
-                # Пробуем отправить без Markdown
                 try:
                     await context.bot.send_message(
                         chat_id=int(target_telegram_id),
                         text=f"Администратор создал для вас запись #{booking_id}\n\n📍 Адрес: Садовая ул., 91\n📱 Контакты: @mothman32"
                     )
-                    logger.info(f"✅ Упрощенное сообщение отправлено пользователю {target_telegram_id}")
+                    logger.info(f"✅ Упрощённое сообщение отправлено пользователю {target_telegram_id}!")
                 except Exception as e2:
-                    logger.error(f"❌ Не удалось отправить даже упрощенное сообщение: {e2}")
+                    logger.error(f"❌ Не удалось отправить даже упрощённое сообщение: {e2}")
                     await context.bot.send_message(
                         chat_id=int(admin_telegram_id),
                         text=f"⚠️ КРИТИЧЕСКАЯ ОШИБКА: Не удалось отправить сообщение пользователю @{target_username}\n\nЗапись #{booking_id} создана, но уведомление не отправлено.",
@@ -15234,9 +17801,16 @@ async def handle_admin_confirm(update: Update, context):
     
     return ConversationHandler.END
 
+
+# ============================================================
+# КОМАНДА /PENDING (ДУБЛИРУЕТСЯ, НО ОСТАВЛЯЕМ)
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def pending_command(update: Update, context):
-    """Команда /pending - показать все ожидающие заявки (только для админов)"""
+    """
+    Команда /pending - показать все ожидающие заявки (только для админов).
+    """
     user_id = update.effective_user.id
     
     if user_id not in Config.ADMIN_IDS:
@@ -15272,7 +17846,7 @@ async def pending_command(update: Update, context):
             
             if not pending_bookings:
                 await update.message.reply_text(
-                    "*✅ Нет ожидающих подтверждения заявок*",
+                    "*✅ Нет ожидающих подтверждения заявок!*",
                     parse_mode="Markdown",
                     reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
                 )
@@ -15289,12 +17863,10 @@ async def pending_command(update: Update, context):
                 if date_str and '(' in date_str:
                     display_date = date_str.split('(')[0].strip()
                 
-                # ===== ИСПРАВЛЕНО: format_time_for_display() уже нормализует 24→00 =====
                 display_time = time_slot
                 if time_slot and '-' in time_slot:
                     display_time = DateTimeUtils.format_time_for_display(time_slot)
                 
-                # ===== ФОРМИРУЕМ ТЕКСТ СО СКИДКАМИ (БЕЗ ЛИШНИХ ПРОБЕЛОВ) =====
                 discount_lines = []
                 if level_discount_percent and level_discount_percent > 0:
                     discount_lines.append(f"🎟 Скидка по уровню: {level_discount_percent}%")
@@ -15412,7 +17984,7 @@ async def pending_command(update: Update, context):
                 sent_count += 1
             
             await update.message.reply_text(
-                f"*✅ Найдено и отправлено {sent_count} ожидающих заявок*",
+                f"*✅ Найдено и отправлено {sent_count} ожидающих заявок!*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
             )
@@ -15427,15 +17999,21 @@ async def pending_command(update: Update, context):
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
         )
 
+
+# ============================================================
+# АДМИНСКАЯ БЛОКИРОВКА - ПОКАЗ ПОДТВЕРЖДЕНИЯ
+# ============================================================
+
 async def show_block_confirmation(update: Update, context):
-    """Показать подтверждение блокировки/разблокировки"""
-    
+    """
+    Показывает подтверждение блокировки/разблокировки.
+    """
     username = context.user_data.get('target_block_username', 'Неизвестный')
     unique_id = context.user_data.get('target_block_unique_id', '')
     action = context.user_data.get('block_action')
     is_blocked = context.user_data.get('target_block_is_blocked', 0)
     
-    logger.info(f"🔍 show_block_confirmation ВЫЗВАНА: action={action}, username={username}")
+    logger.info(f"🔍 show_block_confirmation вызвана: action={action}, username={username}!")
     
     if action == 'unblock':
         confirmation_text = (
@@ -15448,7 +18026,6 @@ async def show_block_confirmation(update: Update, context):
             f"*👇 Всё верно?*"
         )
     elif action == 'block_permanent':
-        # Если пользователь уже заблокирован - шаг 3/3, иначе 4/4
         if is_blocked == 1:
             confirmation_text = (
                 f"*👑 Шаг 3/3: Подтверждение*\n\n"
@@ -15494,8 +18071,18 @@ async def show_block_confirmation(update: Update, context):
     
     return ADMIN_BLOCK_CONFIRM
 
+
+# ============================================================
+# АДМИНСКАЯ БЛОКИРОВКА - НАЧАЛО
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def handle_admin_block_start(update: Update, context):
+    """
+    Начало процесса блокировки пользователя.
+    
+    Шаг 1/4: Ввод имени пользователя.
+    """
     user_id = update.effective_user.id
     
     if user_id not in Config.ADMIN_IDS:
@@ -15525,17 +18112,25 @@ async def handle_admin_block_start(update: Update, context):
     )
     return ADMIN_BLOCK_USER_ID
 
+
+# ============================================================
+# АДМИНСКАЯ БЛОКИРОВКА - ПОИСК ПОЛЬЗОВАТЕЛЯ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def handle_admin_block_user_id(update: Update, context):
+    """
+    Обрабатывает ввод имени пользователя для блокировки.
+    """
     text = update.message.text.strip()
-    logger.info(f"🔍 handle_admin_block_user_id: '{text}'")
+    logger.info(f"🔍 handle_admin_block_user_id: '{text}'!")
     
     if text == "↩️ Главное меню":
         context.user_data.clear()
         await update.message.reply_text(
             "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс блокировки завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*✨ Процесс блокировки завершён!*\n"
+            "*💾 Все введённые данные очищены!*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -15561,9 +18156,9 @@ async def handle_admin_block_user_id(update: Update, context):
         with db.get_connection() as conn:
             cursor = conn.cursor()
             
-            # ===== 1. Поиск по уникальному ID (MC...) =====
+            # 1. Поиск по уникальному ID (MC...)
             if search_term.startswith("mc"):
-                logger.info(f"🔍 Ищем по уникальному ID: {search_term}")
+                logger.info(f"🔍 Ищу по уникальному ID: {search_term}!")
                 cursor.execute('''
                     SELECT telegram_id, username, first_name, unique_id, is_blocked, blocked_until
                     FROM users WHERE LOWER(unique_id) = ?
@@ -15572,9 +18167,9 @@ async def handle_admin_block_user_id(update: Update, context):
                 if found_user:
                     search_method = "уникальному ID"
 
-            # ===== 2. Поиск по username (точное) =====
+            # 2. Поиск по username (точное)
             if not found_user:
-                logger.info(f"🔍 Ищем по username (точное): {search_term}")
+                logger.info(f"🔍 Ищу по username (точное): {search_term}!")
                 cursor.execute('''
                     SELECT telegram_id, username, first_name, unique_id, is_blocked, blocked_until
                     FROM users WHERE LOWER(username) = ? OR LOWER(username) = ?
@@ -15583,9 +18178,9 @@ async def handle_admin_block_user_id(update: Update, context):
                 if found_user:
                     search_method = "username (точное)"
 
-            # ===== 3. Поиск по username (частичное) =====
+            # 3. Поиск по username (частичное)
             if not found_user:
-                logger.info(f"🔍 Ищем по username (частичное): {search_term}")
+                logger.info(f"🔍 Ищу по username (частичное): {search_term}!")
                 cursor.execute('''
                     SELECT telegram_id, username, first_name, unique_id, is_blocked, blocked_until
                     FROM users WHERE 
@@ -15630,7 +18225,7 @@ async def handle_admin_block_user_id(update: Update, context):
                         else:
                             current_status = "🔓 Разблокирован (блокировка истекла)"
                     except Exception as e:
-                        logger.error(f"Ошибка форматирования статуса: {e}")
+                        logger.error(f"❌ Ошибка форматирования статуса: {e}")
                         current_status = "🔒 Заблокирован перманентно"
                 else:
                     current_status = "🔒 Заблокирован перманентно"
@@ -15641,7 +18236,7 @@ async def handle_admin_block_user_id(update: Update, context):
             context.user_data['target_block_current_status'] = current_status
             context.user_data['target_block_is_blocked'] = is_blocked
 
-            logger.info(f"✅ Админ нашел пользователя по {search_method}: {unique_id} (TG: {telegram_id})")
+            logger.info(f"✅ Админ нашёл пользователя по {search_method}: {unique_id} (TG: {telegram_id})!")
 
     except Exception as e:
         logger.error(f"❌ Ошибка поиска пользователя: {e}")
@@ -15681,17 +18276,27 @@ async def handle_admin_block_user_id(update: Update, context):
     )
     return ADMIN_BLOCK_TYPE
 
+
+# ============================================================
+# АДМИНСКАЯ БЛОКИРОВКА - ВЫБОР ДЕЙСТВИЯ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def handle_admin_block_type(update: Update, context):
+    """
+    Обрабатывает выбор действия (заблокировать/разблокировать).
+    
+    Шаг 2/4.
+    """
     text = update.message.text.strip()
-    logger.info(f"🔍 handle_admin_block_type: '{text}'")
+    logger.info(f"🔍 handle_admin_block_type: '{text}'!")
     
     if text == "↩️ Главное меню":
         context.user_data.clear()
         await update.message.reply_text(
             "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс блокировки завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*✨ Процесс блокировки завершён!*\n"
+            "*💾 Все введённые данные очищены!*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -15721,7 +18326,6 @@ async def handle_admin_block_type(update: Update, context):
     current_status = context.user_data.get('target_block_current_status', '🔓 Разблокирован')
     is_blocked = context.user_data.get('target_block_is_blocked', 0)
     
-    # ОПРЕДЕЛЯЕМ НОМЕР ШАГА В ЗАВИСИМОСТИ ОТ СТАТУСА
     if is_blocked == 1:
         step_display = "2/3"
     else:
@@ -15774,17 +18378,27 @@ async def handle_admin_block_type(update: Update, context):
         )
         return ADMIN_BLOCK_DURATION
 
+
+# ============================================================
+# АДМИНСКАЯ БЛОКИРОВКА - ВВОД ДЛИТЕЛЬНОСТИ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def handle_admin_block_duration(update: Update, context):
+    """
+    Обрабатывает ввод длительности блокировки.
+    
+    Шаг 3/4.
+    """
     text = update.message.text.strip().lower()
-    logger.info(f"🔍 handle_admin_block_duration: '{text}'")
+    logger.info(f"🔍 handle_admin_block_duration: '{text}'!")
     
     if text == "↩️ главное меню":
         context.user_data.clear()
         await update.message.reply_text(
             "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс блокировки завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*✨ Процесс блокировки завершён!*\n"
+            "*💾 Все введённые данные очищены!*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -15889,10 +18503,20 @@ async def handle_admin_block_duration(update: Update, context):
     
     return await show_block_confirmation(update, context)
 
+
+# ============================================================
+# АДМИНСКАЯ БЛОКИРОВКА - ПОДТВЕРЖДЕНИЕ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def handle_admin_block_confirm(update: Update, context):
+    """
+    Подтверждение блокировки/разблокировки.
+    
+    Шаг 4/4.
+    """
     text = update.message.text.strip()
-    logger.info(f"🔍 handle_admin_block_confirm: '{text}'")
+    logger.info(f"🔍 handle_admin_block_confirm: '{text}'!")
     
     username = context.user_data.get('target_block_username')
     telegram_id = context.user_data.get('target_block_telegram_id')
@@ -15904,8 +18528,8 @@ async def handle_admin_block_confirm(update: Update, context):
         context.user_data.clear()
         await update.message.reply_text(
             "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс блокировки завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*✨ Процесс блокировки завершён!*\n"
+            "*💾 Все введённые данные очищены!*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -15942,7 +18566,7 @@ async def handle_admin_block_confirm(update: Update, context):
     
     if text != "✅ Да, подтвердить":
         await update.message.reply_text(
-            "*❌ Пожалуйста, используйте кнопки!\n\n👇 Выберите подходящий вариант:*",
+            "*❌ Пожалуйста, используйте кнопки!*\n\n*👇 Выберите подходящий вариант:*",
             parse_mode="Markdown",
             reply_markup=ReplyKeyboardMarkup([
                 ["✅ Да, подтвердить", "✏️ Исправить данные"],
@@ -16017,7 +18641,7 @@ async def handle_admin_block_confirm(update: Update, context):
             
             conn.commit()
         
-        # ОТПРАВКА СООБЩЕНИЯ ПОЛЬЗОВАТЕЛЮ
+        # Отправка сообщения пользователю
         try:
             user_message = (
                 f"{user_notification}\n\n"
@@ -16031,16 +18655,15 @@ async def handle_admin_block_confirm(update: Update, context):
                 text=user_message,
                 parse_mode="Markdown"
             )
-            logger.info(f"✅ Уведомление отправлено пользователю {telegram_id}")
+            logger.info(f"✅ Уведомление отправлено пользователю {telegram_id}!")
         except Exception as e:
             logger.error(f"❌ Не удалось отправить уведомление пользователю: {e}")
         
-        # ИЗМЕНЕННОЕ СООБЩЕНИЕ ДЛЯ АДМИНИСТРАТОРА
-        # Стало
+        # Сообщение для администратора
         if action == 'unblock':
-            admin_message = f"*✅ Пользователь @{username} разблокирован*"
+            admin_message = f"*✅ Пользователь @{username} разблокирован!*"
         else:
-            admin_message = f"*✅ Пользователь @{username} заблокирован*"
+            admin_message = f"*✅ Пользователь @{username} заблокирован!*"
         
         await update.message.reply_text(
             admin_message,
@@ -16048,7 +18671,7 @@ async def handle_admin_block_confirm(update: Update, context):
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
         )
         
-        logger.info(f"👑 Админ @{admin_username} {action_text} пользователя @{username}")
+        logger.info(f"👑 Админ @{admin_username} {action_text} пользователя @{username}!")
         
     except Exception as e:
         logger.error(f"❌ Ошибка при выполнении действия: {e}")
@@ -16057,7 +18680,7 @@ async def handle_admin_block_confirm(update: Update, context):
         
         await update.message.reply_text(
             f"❌ Ошибка при выполнении действия!\n\n"
-            f"💡 Попробуйте еще раз или свяжитесь с разработчиком",
+            f"💡 Попробуйте ещё раз или свяжитесь с разработчиком",
             parse_mode="Markdown",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
         )
@@ -16065,13 +18688,21 @@ async def handle_admin_block_confirm(update: Update, context):
     context.user_data.clear()
     return ConversationHandler.END
 
+
+# ============================================================
+# ОБРАБОТЧИК ОШИБОК
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def error_callback(update: Update, context):
+    """
+    Обрабатывает ошибки и отправляет сообщение пользователю.
+    """
     if update and update.message:
         try:
             await update.message.reply_text(
-                "⚠️ Упс! Что-то пошло не так\n\n"
-                "✨ Пожалуйста, вернитесь в главное меню и попробуйте снова",
+                "⚠️ Упс! Что-то пошло не так!\n\n"
+                "✨ Пожалуйста, вернитесь в главное меню и попробуйте снова!",
                 reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
                 parse_mode="Markdown"
             )
@@ -16079,18 +18710,25 @@ async def error_callback(update: Update, context):
             pass
 
 
+# ============================================================
+# ВОЗВРАТ К ПРЕДЫДУЩЕМУ ШАГУ
+# ============================================================
+
 async def handle_back_to_previous_step(update: Update, context):
+    """
+    Возвращает пользователя к предыдущему шагу бронирования.
+    """
     if await check_user_blocked(update, context):
         return ConversationHandler.END
     
-    logger.info(f"🔍 handle_back_to_previous_step вызван")
+    logger.info(f"🔍 handle_back_to_previous_step вызван!")
     
     service = context.user_data.get('service', '')
     is_track_creation = context.user_data.get('is_track_creation', False)
     is_12_hours = context.user_data.get('is_12_hours', False)
     is_mixing = context.user_data.get('is_mixing', False)
     
-    logger.info(f"🔍 ОБЫЧНАЯ запись: handle_back_to_previous_step")
+    logger.info(f"🔍 Обычная запись: handle_back_to_previous_step!")
     logger.info(f"   service: {service}, is_track_creation: {is_track_creation}")
     logger.info(f"   is_12_hours: {is_12_hours}, is_mixing: {is_mixing}")
     
@@ -16139,7 +18777,7 @@ async def handle_back_to_previous_step(update: Update, context):
     elif service == "🎤 Запись вокала" or service == "🎸 Запись инструментов":
         await update.message.reply_text(
             "*👨‍🔧 Шаг 4/7: Выбор формата*\n\n"
-            "*✨ Вам требуется помощь звукорежиссера?*\n\n"
+            "*✨ Вам требуется помощь звукорежиссёра?*\n\n"
             "*🎯 С инженером — рекомендуем:*\n"
             "• Профессиональная настройка оборудования\n"
             "• Помощь в процессе записи\n"
@@ -16171,7 +18809,16 @@ async def handle_back_to_previous_step(update: Update, context):
         return SERVICE
 
 
+# ============================================================
+# ИСПРАВЛЕНИЕ ДАННЫХ ПРИ БРОНИРОВАНИИ
+# ============================================================
+
 async def handle_edit_data(update: Update, context):
+    """
+    Обрабатывает кнопку 'Исправить данные'.
+    
+    Возвращает пользователя к выбору услуги с сохранением имени и контакта.
+    """
     if await check_user_blocked(update, context):
         return ConversationHandler.END
     
@@ -16205,14 +18852,23 @@ async def handle_edit_data(update: Update, context):
     return SERVICE
 
 
+# ============================================================
+# ОТМЕНА БРОНИРОВАНИЯ
+# ============================================================
+
 async def handle_cancel_booking(update: Update, context):
+    """
+    Обрабатывает кнопку 'Отменить'.
+    
+    Отменяет текущий процесс бронирования и возвращает в главное меню.
+    """
     if await check_user_blocked(update, context):
         return ConversationHandler.END
     
     await update.message.reply_text(
-        "*🏠 Возвращаемся в главное меню*\n\n"
-        "*✨ Процесс записи завершён*\n"
-        "*💾 Все введённые данные очищены*\n\n"
+        "*🏠 Возвращаемся в главное меню!*\n\n"
+        "*✨ Процесс записи завершён!*\n"
+        "*💾 Все введённые данные очищены!*\n\n"
         "*👇 Выберите подходящий вариант:*",
         reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
         parse_mode="Markdown"
@@ -16221,24 +18877,33 @@ async def handle_cancel_booking(update: Update, context):
     context.user_data.clear()
     return ConversationHandler.END
 
+
+# ============================================================
+# ПОКАЗ ДОСТУПНЫХ СЛОТОВ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def show_slots(update: Update, context):
-    """Показывает доступные слоты и применяет промокод (БЕЗ списания купона)"""
+    """
+    Показывает доступные слоты и применяет промокод (БЕЗ списания купона).
+    
+    Шаг 6/7 процесса бронирования.
+    """
     if await check_user_blocked(update, context):
         return ConversationHandler.END
     
-    logger.info(f"🔍 show_slots ВЫЗВАН!")
+    logger.info(f"🔍 show_slots вызван!")
     logger.info(f"🔍 Текст: {update.message.text}")
     
     user_input = update.message.text.strip()
     user_id = str(update.effective_user.id)
     
     logger.info("=" * 60)
-    logger.info("SHOW_SLOTS - НАЧАЛО")
+    logger.info("SHOW_SLOTS - НАЧАЛО!")
     logger.info(f"Ввод пользователя: {user_input}")
     
     if user_input == "↩️ Назад":
-        logger.info(f"Пользователь нажал 'Назад' в SHOW_SLOTS")
+        logger.info(f"Пользователь нажал 'Назад' в SHOW_SLOTS!")
         
         is_track_creation = context.user_data.get('is_track_creation', False)
         is_12_hours = context.user_data.get('is_12_hours', False)
@@ -16288,7 +18953,7 @@ async def show_slots(update: Update, context):
                     "*⏰ Правила для работы с инженером:*\n"
                     "• Запись минимально за 48 часов\n\n"
                     "*🎨 Легенда цветов:*\n"
-                    "🟢 — Свободно более 18 часов \n"
+                    "🟢 — Свободно более 18 часов\n"
                     "🟡 — Свободно более 12 часов\n"
                     "🟠 — Свободно более 6 часов\n"
                     "🔴 — Свободно менее 6 часов\n\n"
@@ -16303,7 +18968,7 @@ async def show_slots(update: Update, context):
                     "*⏰ Правила для работы без инженера:*\n"
                     "• Запись минимально за 24 часа\n\n"
                     "*🎨 Легенда цветов:*\n"
-                    "🟢 — Свободно более 18 часов \n"
+                    "🟢 — Свободно более 18 часов\n"
                     "🟡 — Свободно более 12 часов\n"
                     "🟠 — Свободно более 6 часов\n"
                     "🔴 — Свободно менее 6 часов\n\n"
@@ -16316,20 +18981,20 @@ async def show_slots(update: Update, context):
     if user_input == "↩️ Главное меню":
         return await handle_main_menu_button(update, context)
     
-    # ===== ПРОВЕРКА: ЕСЛИ УЖЕ ПОКАЗАНО ПОДТВЕРЖДЕНИЕ =====
+    # Проверка: если уже показано подтверждение
     if context.user_data.get('_conversation_state') == CONFIRM:
         keyboard = KeyboardManager.get_confirmation()
         await update.message.reply_text(
-            "*❌ Пожалуйста, используйте кнопки!\n\n👇 Выберите подходящий вариант:*",
+            "*❌ Пожалуйста, используйте кнопки!*\n\n*👇 Выберите подходящий вариант:*",
             parse_mode="Markdown",
             reply_markup=keyboard
         )
         return CONFIRM
     
-    # ===== УСТАНАВЛИВАЕМ СОСТОЯНИЕ =====
+    # Устанавливаем состояние
     context.user_data['_conversation_state'] = SHOW_SLOTS
     
-    # ===== ПРОВЕРКА НА 24 =====
+    # Проверка на 24
     if user_input.startswith('24') or '-24' in user_input:
         await update.message.reply_text(
             "*❌ Начальный час и конечный час должны быть от 0 до 23!*",
@@ -16338,11 +19003,11 @@ async def show_slots(update: Update, context):
         )
         return SHOW_SLOTS
     
-    # ===== ДЛЯ 12-ЧАСОВОЙ АРЕНДЫ (НЕ ЖДЁМ ВВОД ВРЕМЕНИ) =====
+    # Для 12-часовой аренды (не ждём ввод времени)
     is_12_hours = context.user_data.get('is_12_hours', False)
     
     if is_12_hours:
-        logger.info(f"🔍 12-часовая аренда, переходим к подтверждению")
+        logger.info(f"🔍 12-часовая аренда, перехожу к подтверждению!")
         
         selected_date = context.user_data.get('date', '')
         time_slot = context.user_data.get('time', '9-21')
@@ -16380,7 +19045,7 @@ async def show_slots(update: Update, context):
         safe_contact = context.user_data.get('safe_contact', context.user_data.get('contact', ''))
         display_date = context.user_data.get('date_with_color', context.user_data['date'])
         
-        # ===== ФОРМИРУЕМ ТЕКСТ О СКИДКАХ =====
+        # Формируем текст о скидках
         discount_text = ""
         if price_result.get('level_discount_percent', 0) > 0:
             discount_text += f"\n🎟 Скидка по уровню: {price_result['level_discount_percent']}%"
@@ -16398,7 +19063,6 @@ async def show_slots(update: Update, context):
         if price_result.get('free_service_applied', False):
             discount_text += f"\n🎟 Промокод: Бесплатная услуга"
         
-        # ===== ЕДИНЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
         confirmation_text = (
             f"*✅ Шаг 6/6: Подтверждение*\n\n"
             f"*✨ Проверьте правильность введённых данных:*\n\n"
@@ -16420,7 +19084,7 @@ async def show_slots(update: Update, context):
         )
         return CONFIRM
     
-    # ===== НОРМАЛИЗУЕМ ВВОД ВРЕМЕНИ =====
+    # Нормализуем ввод времени
     normalized_input = DateTimeUtils.normalize_time_input(user_input)
     logger.info(f"Нормализованный ввод: {normalized_input}")
     
@@ -16436,7 +19100,7 @@ async def show_slots(update: Update, context):
     logger.info(f"with_engineer: {with_engineer}")
     logger.info(f"is_mixing: {is_mixing}")
     
-    # ===== ДЛЯ ТРЕКА =====
+    # Для трека
     if is_track_creation:
         if '-' not in normalized_input:
             await update.message.reply_text(
@@ -16526,7 +19190,7 @@ async def show_slots(update: Update, context):
             )
             return SHOW_SLOTS
         
-        # ===== СОХРАНЯЕМ ДАННЫЕ И ПЕРЕХОДИМ К ПОДТВЕРЖДЕНИЮ =====
+        # Сохраняем данные и переходим к подтверждению
         context.user_data['time'] = normalized_input
         context.user_data['display_time'] = DateTimeUtils.format_time_for_display(normalized_input)
         context.user_data['start_hour'] = start_hour
@@ -16552,15 +19216,13 @@ async def show_slots(update: Update, context):
         context.user_data['price_result'] = price_result
         context.user_data['price'] = price_result['final_price']
         
-        logger.info(f"✅ Трек: время подтверждено, переходим к показу подтверждения")
+        logger.info(f"✅ Трек: время подтверждено, перехожу к показу подтверждения!")
         
-        # Переходим к подтверждению
         safe_name = context.user_data.get('safe_name', context.user_data.get('name', ''))
         safe_contact = context.user_data.get('safe_contact', context.user_data.get('contact', ''))
         display_date = context.user_data.get('date_with_color', context.user_data['date'])
         display_time = context.user_data.get('display_time', context.user_data['time'])
         
-        # ===== ФОРМИРУЕМ ТЕКСТ О СКИДКАХ =====
         discount_text = ""
         if price_result.get('level_discount_percent', 0) > 0:
             discount_text += f"\n🎟 Скидка по уровню: {price_result['level_discount_percent']}%"
@@ -16578,7 +19240,6 @@ async def show_slots(update: Update, context):
         if price_result.get('free_service_applied', False):
             discount_text += f"\n🎟 Промокод: Бесплатная услуга"
         
-        # ===== ЕДИНЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
         confirmation_text = (
             f"*✅ Шаг 7/7: Подтверждение*\n\n"
             f"*✨ Проверьте правильность введённых данных:*\n\n"
@@ -16601,7 +19262,7 @@ async def show_slots(update: Update, context):
         )
         return CONFIRM
     
-    # ===== ДЛЯ ВОКАЛА И ИНСТРУМЕНТА =====
+    # Для вокала и инструмента
     if not is_mixing:
         is_valid, error_msg = DateTimeUtils.is_valid_booking_time(
             normalized_input, with_engineer, is_12_hours=False, is_track_creation=False
@@ -16669,7 +19330,7 @@ async def show_slots(update: Update, context):
             )
             return SHOW_SLOTS
     
-    # ===== ОБЩАЯ ЧАСТЬ ДЛЯ ВОКАЛА/ИНСТРУМЕНТА (ПРОВЕРКА ДОСТУПНОСТИ) =====
+    # Общая часть для вокала/инструмента (проверка доступности)
     selected_date = context.user_data['date']
     service_type = "vocal"
     
@@ -16710,7 +19371,7 @@ async def show_slots(update: Update, context):
             )
             return SHOW_SLOTS
     
-    # ===== СОХРАНЯЕМ ДАННЫЕ ДЛЯ ВОКАЛА/ИНСТРУМЕНТА =====
+    # Сохраняем данные для вокала/инструмента
     context.user_data['time'] = normalized_input
     context.user_data['display_time'] = DateTimeUtils.format_time_for_display(normalized_input)
     context.user_data['start_hour'] = start_hour
@@ -16750,7 +19411,6 @@ async def show_slots(update: Update, context):
     display_date = context.user_data.get('date_with_color', context.user_data['date'])
     display_time = context.user_data.get('display_time', context.user_data['time'])
     
-    # ===== ФОРМИРУЕМ ТЕКСТ О СКИДКАХ =====
     discount_text = ""
     
     if price_result.get('level_discount_percent', 0) > 0:
@@ -16772,7 +19432,6 @@ async def show_slots(update: Update, context):
     if price_result.get('free_service_applied', False):
         discount_text += f"\n🎟 Промокод: Бесплатная услуга"
     
-    # ===== ЕДИНЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
     # Определяем шаг
     if is_mixing:
         step_text = "Шаг 5/5"
@@ -16810,7 +19469,6 @@ async def show_slots(update: Update, context):
         f"🎧 Услуга: {context.user_data['service']}\n"
     )
     
-    # Добавляем дополнительную информацию в зависимости от услуги
     if is_track_creation and context.user_data.get('track_type'):
         confirmation_text += f"🎵 Тип: {context.user_data.get('track_type')}\n"
     elif is_mixing and context.user_data.get('mixing_type'):
@@ -16827,7 +19485,7 @@ async def show_slots(update: Update, context):
     
     context.user_data['_conversation_state'] = CONFIRM
     
-    logger.info(f"SHOW_SLOTS - УСПЕШНО ЗАВЕРШЕНО")
+    logger.info(f"SHOW_SLOTS - УСПЕШНО ЗАВЕРШЕНО!")
     logger.info("=" * 60)
     
     await update.message.reply_text(
@@ -16837,13 +19495,22 @@ async def show_slots(update: Update, context):
     )
     return CONFIRM
 
+# ============================================================
+# ОБРАБОТЧИК КНОПКИ "НАЗАД"
+# ============================================================
+
 async def handle_back_button(update: Update, context):
-    logger.info(f"🔍 handle_back_button вызван")
+    """
+    Обрабатывает нажатие кнопки 'Назад' в процессе бронирования.
+    
+    Возвращает пользователя к предыдущему шагу в зависимости от текущего состояния.
+    """
+    logger.info(f"🔍 handle_back_button вызван!")
     
     current_state = context.user_data.get('_conversation_state', None)
     
     if current_state == SHOW_SLOTS or context.user_data.get('date'):
-        logger.info(f"🔍 Возврат из SHOW_SLOTS к DATE")
+        logger.info(f"🔍 Возврат из SHOW_SLOTS к DATE!")
         
         context.user_data.pop('time', None)
         context.user_data.pop('display_time', None)
@@ -16914,7 +19581,7 @@ async def handle_back_button(update: Update, context):
                     "*⏰ Правила для работы с инженером:*\n"
                     "• Запись минимально за 48 часов\n\n"
                     "*🎨 Легенда цветов:*\n"
-                    "🟢 — Свободно более 18 часов \n"
+                    "🟢 — Свободно более 18 часов\n"
                     "🟡 — Свободно более 12 часов\n"
                     "🟠 — Свободно более 6 часов\n"
                     "🔴 — Свободно менее 6 часов\n\n"
@@ -16929,7 +19596,7 @@ async def handle_back_button(update: Update, context):
                     "*⏰ Правила для работы без инженера:*\n"
                     "• Запись минимально за 24 часа\n\n"
                     "*🎨 Легенда цветов:*\n"
-                    "🟢 — Свободно более 18 часов \n"
+                    "🟢 — Свободно более 18 часов\n"
                     "🟡 — Свободно более 12 часов\n"
                     "🟠 — Свободно более 6 часов\n"
                     "🔴 — Свободно менее 6 часов\n\n"
@@ -16945,7 +19612,7 @@ async def handle_back_button(update: Update, context):
         if service == "🎤 Запись вокала" or service == "🎸 Запись инструментов":
             await update.message.reply_text(
                 "*👨‍🔧 Шаг 4/7: Выбор формата*\n\n"
-                "*✨ Вам требуется помощь звукорежиссера?*\n\n"
+                "*✨ Вам требуется помощь звукорежиссёра?*\n\n"
                 "*🎯 С инженером — рекомендуем:*\n"
                 "• Профессиональная настройка оборудования\n"
                 "• Помощь в процессе записи\n"
@@ -16972,7 +19639,7 @@ async def handle_back_button(update: Update, context):
                 "*🌙 Ночь — 6500₽ + залог (по договору)*\n"
                 "• Работа с 21:00 до 9:00\n"
                 "• Специальная ночная цена\n\n"
-            "*👇 Выберите подходящий вариант:*", 
+                "*👇 Выберите подходящий вариант:*", 
                 parse_mode="Markdown",
                 reply_markup=ReplyKeyboardMarkup([
                     ["☀️ День (9-21)", "🌙 Ночь (21-9)"],
@@ -17020,7 +19687,7 @@ async def handle_back_button(update: Update, context):
             return TRACK_CREATION_TYPE
         else:
             await update.message.reply_text(
-                "🎧 Шаг 3/7: Выберитее услугу\n\n"
+                "🎧 Шаг 3/7: Выберите услугу\n\n"
                 "✨ Какая услуга вас интересует:\n\n"
                 "🎤 Запись вокала — профессиональная запись\n"
                 "🎸 Запись инструментов — гитара, клавиши, ударные\n"
@@ -17039,9 +19706,19 @@ async def handle_back_button(update: Update, context):
             )
             return SERVICE
 
+
+# ============================================================
+# ТЕСТОВАЯ ДИАГНОСТИКА ЗАПИСИ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def test_award(update: Update, context):
-    """Полная диагностика записи (время, статус, сравнение)"""
+    """
+    Полная диагностика записи (время, статус, сравнение).
+    
+    Используется для отладки начисления пластинок.
+    Только для администраторов.
+    """
     user_id = update.effective_user.id
     
     if user_id not in Config.ADMIN_IDS:
@@ -17069,7 +19746,6 @@ async def test_award(update: Update, context):
         conn = sqlite3.connect(db.db_path, timeout=10.0)
         cursor = conn.cursor()
         
-        # Получаем ВСЕ данные записи
         cursor.execute('SELECT * FROM bookings WHERE id = ?', (booking_id,))
         row = cursor.fetchone()
         
@@ -17081,7 +19757,6 @@ async def test_award(update: Update, context):
         columns = [description[0] for description in cursor.description]
         conn.close()
         
-        # ===== ОСНОВНЫЕ ДАННЫЕ =====
         data = dict(zip(columns, row))
         
         date_str = data.get('date_str', '')
@@ -17091,13 +19766,11 @@ async def test_award(update: Update, context):
         telegram_id = data.get('telegram_id', '')
         service = data.get('service', '')
         
-        # ===== ТЕКУЩЕЕ ВРЕМЯ =====
         now = DateTimeUtils.now()
         now_utc = now.astimezone(pytz.UTC)
         
-        # ===== ПАРСИМ ДАТУ И ВРЕМЯ ОКОНЧАНИЯ =====
         clean_date = date_str
-        if '(' in clean_date:
+        if '(' in clean_date):
             clean_date = clean_date.split('(')[0].strip()
         if clean_date and clean_date[0] in "🟢🟡🟠🔴⚪️":
             clean_date = clean_date[2:].strip()
@@ -17127,7 +19800,6 @@ async def test_award(update: Update, context):
             time_passed = False
             minutes_passed = 0
         
-        # ===== ФОРМИРУЕМ СООБЩЕНИЕ =====
         message = f"📋 *ДИАГНОСТИКА ЗАПИСИ #{booking_id}*\n\n"
         
         message += "*📌 ОСНОВНЫЕ ДАННЫЕ:*\n"
@@ -17156,7 +19828,6 @@ async def test_award(update: Update, context):
         else:
             message += "• Окончание: НЕ ОПРЕДЕЛЕНО\n"
         
-        # ===== ЕСЛИ ВРЕМЯ ПРОШЛО, НО ПЛАСТИНКИ НЕ НАЧИСЛЕНЫ =====
         if time_passed and vinyls_awarded == 0 and status in ['confirmed', 'подтвержден']:
             message += "\n*⚠️ ВРЕМЯ ПРОШЛО, НО ПЛАСТИНКИ НЕ НАЧИСЛЕНЫ!*\n"
             message += "Проверь функцию update_completed_bookings\n"
@@ -17166,9 +19837,18 @@ async def test_award(update: Update, context):
     except Exception as e:
         await update.message.reply_text(f"❌ *Ошибка:* {str(e)[:300]}", parse_mode="Markdown")
 
+
+# ============================================================
+# ПРИНУДИТЕЛЬНОЕ ЗАВЕРШЕНИЕ ЗАПИСИ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def force_complete(update: Update, context):
-    """Принудительно завершить запись и начислить пластинки"""
+    """
+    Принудительно завершить запись и начислить пластинки.
+    
+    Только для администраторов.
+    """
     user_id = update.effective_user.id
     
     if user_id not in Config.ADMIN_IDS:
@@ -17188,7 +19868,6 @@ async def force_complete(update: Update, context):
         with db.get_connection() as conn:
             cursor = conn.cursor()
             
-            # Получаем данные записи
             cursor.execute('''
                 SELECT id, telegram_id, status, service, date_str, time_slot, name, contact, price,
                        duration, is_mixing, is_admin_booking, is_contractual, is_12_hours, is_track_creation
@@ -17204,7 +19883,6 @@ async def force_complete(update: Update, context):
             (b_id, telegram_id, status, service, date_str, time_slot, name, contact, price,
              duration, is_mixing, is_admin_booking, is_contractual, is_12_hours, is_track_creation) = booking
             
-            # Проверяем дубль
             cursor.execute('SELECT vinyls_awarded FROM bookings WHERE id = ?', (booking_id,))
             result = cursor.fetchone()
             if result and result[0] == 1:
@@ -17249,11 +19927,19 @@ async def force_complete(update: Update, context):
     except Exception as e:
         await update.message.reply_text(f"❌ *Ошибка:* {str(e)[:200]}", parse_mode="Markdown")
 
+
+# ============================================================
+# ВОЗВРАТ НА ШАГ ВЫБОРА ДАТЫ
+# ============================================================
+
 async def handle_back_in_date(update: Update, context):
+    """
+    Обрабатывает возврат к выбору даты из других шагов.
+    """
     if await check_user_blocked(update, context):
         return ConversationHandler.END
     
-    logger.info(f"🔍 handle_back_in_date вызван")
+    logger.info(f"🔍 handle_back_in_date вызван!")
     
     keys_to_remove = [
         'free_intervals', 'free_interval', 'time', 'display_time',
@@ -17272,20 +19958,20 @@ async def handle_back_in_date(update: Update, context):
         track_type = context.user_data.get('track_type', '')
         if "Альбом" in track_type or "Договорная" in str(track_type):
             await update.message.reply_text(
-            "*🎵 Шаг 4/7: Выбор формата*\n\n"
-            "*✨ Что Вы хотите создать?*\n\n"
-            "*🎵 Трек — 9000₽:*\n"
-            "• Работа с инженером звукозаписи\n"
-            "• Создание трека с нуля\n"
-            "• Профессиональный подход\n\n"
-            "*💿 Альбом — договорная:*\n"
-            "• Обсуждение работы\n"
-            "• Индивидуальный подход\n"
-            "• Специальные условия\n\n"
-            "*👇 Выберите подходящий вариант:*",
-            parse_mode="Markdown",
-            reply_markup=KeyboardManager.get_track_creation_options()
-        )
+                "*🎵 Шаг 4/7: Выбор формата*\n\n"
+                "*✨ Что Вы хотите создать?*\n\n"
+                "*🎵 Трек — 9000₽:*\n"
+                "• Работа с инженером звукозаписи\n"
+                "• Создание трека с нуля\n"
+                "• Профессиональный подход\n\n"
+                "*💿 Альбом — договорная:*\n"
+                "• Обсуждение работы\n"
+                "• Индивидуальный подход\n"
+                "• Специальные условия\n\n"
+                "*👇 Выберите подходящий вариант:*",
+                parse_mode="Markdown",
+                reply_markup=KeyboardManager.get_track_creation_options()
+            )
             return TRACK_CREATION_TYPE
         else:
             await update.message.reply_text(
@@ -17348,7 +20034,7 @@ async def handle_back_in_date(update: Update, context):
                 "*⏰ Правила для работы с инженером:*\n"
                 "• Запись минимально за 48 часов\n\n"
                 "*🎨 Легенда цветов:*\n"
-                "🟢 — Свободно более 18 часов \n"
+                "🟢 — Свободно более 18 часов\n"
                 "🟡 — Свободно более 12 часов\n"
                 "🟠 — Свободно более 6 часов\n"
                 "🔴 — Свободно менее 6 часов\n\n"
@@ -17363,7 +20049,7 @@ async def handle_back_in_date(update: Update, context):
                 "⏰ Правила для работы без инженера:\n"
                 "• Запись минимально за 24 часа\n\n"
                 "*🎨 Легенда цветов:*\n"
-                "🟢 — Свободно более 18 часов \n"
+                "🟢 — Свободно более 18 часов\n"
                 "🟡 — Свободно более 12 часов\n"
                 "🟠 — Свободно более 6 часов\n"
                 "🔴 — Свободно менее 6 часов\n\n"
@@ -17374,16 +20060,33 @@ async def handle_back_in_date(update: Update, context):
         return DATE
 
 
+# ============================================================
+# ОБРАБОТКА ВВОДА ВРЕМЕНИ
+# ============================================================
+
 async def handle_time_input_format(update: Update, context, text: str):
+    """
+    Обрабатывает ввод времени в формате "час-час".
+    
+    Нормализует ввод и переходит к показу слотов.
+    """
     normalized_input = DateTimeUtils.normalize_time_input(text)
     context.user_data['time'] = normalized_input
     context.user_data['display_time'] = DateTimeUtils.format_time_for_display(normalized_input)
     return await show_slots(update, context)
 
 
+# ============================================================
+# АДМИНСКОЕ СОЗДАНИЕ ПРОМОКОДА - НАЧАЛО
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def admin_promo_start(update: Update, context):
-    """Начало создания промокода - выбор типа (общий или персональный)"""
+    """
+    Начало создания промокода - выбор типа (общий или персональный).
+    
+    Шаг 1/8.
+    """
     user_id = update.effective_user.id
     
     if user_id not in Config.ADMIN_IDS:
@@ -17415,17 +20118,25 @@ async def admin_promo_start(update: Update, context):
     return ADMIN_PROMO_START
 
 
+# ============================================================
+# АДМИНСКОЕ СОЗДАНИЕ ПРОМОКОДА - ВЫБОР ТИПА
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def admin_promo_select_type(update: Update, context):
-    """Обработка выбора типа промокода (общий/персональный)"""
+    """
+    Обработка выбора типа промокода (общий/персональный).
+    
+    Шаг 1/8.
+    """
     text = update.message.text.strip()
     
     if text == "↩️ Главное меню":
         context.user_data.clear()
         await update.message.reply_text(
             "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс создания промокода завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*✨ Процесс создания промокода завершён!*\n"
+            "*💾 Все введённые данные очищены!*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -17473,7 +20184,7 @@ async def admin_promo_select_type(update: Update, context):
         return ADMIN_PROMO_USER_ID
     
     await update.message.reply_text(
-        "*❌ Пожалуйста, используйте кнопки!\n\n👇 Выберите подходящий вариант:*",
+        "*❌ Пожалуйста, используйте кнопки!*\n\n*👇 Выберите подходящий вариант:*",
         parse_mode="Markdown",
         reply_markup=ReplyKeyboardMarkup([
             ["🌍 Общий промокод", "👤 Персональный промокод"],
@@ -17482,17 +20193,26 @@ async def admin_promo_select_type(update: Update, context):
     )
     return ADMIN_PROMO_START
 
+
+# ============================================================
+# АДМИНСКОЕ СОЗДАНИЕ ПРОМОКОДА - ПОИСК ПОЛЬЗОВАТЕЛЯ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def admin_promo_find_user(update: Update, context):
-    """Поиск пользователя для персонального промокода"""
+    """
+    Поиск пользователя для персонального промокода.
+    
+    Шаг 2/8.
+    """
     text = update.message.text.strip()
     
     if text == "↩️ Главное меню":
         context.user_data.clear()
         await update.message.reply_text(
             "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс создания промокода завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*✨ Процесс создания промокода завершён!*\n"
+            "*💾 Все введённые данные очищены!*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -17524,7 +20244,6 @@ async def admin_promo_find_user(update: Update, context):
         with db.get_connection() as conn:
             cursor = conn.cursor()
             
-            # ===== 1. Поиск по уникальному ID =====
             if search_term.startswith("mc"):
                 cursor.execute('''
                     SELECT telegram_id, username, first_name, unique_id 
@@ -17532,7 +20251,6 @@ async def admin_promo_find_user(update: Update, context):
                 ''', (search_term,))
                 found_user = cursor.fetchone()
             
-            # ===== 2. Поиск по username =====
             if not found_user:
                 cursor.execute('''
                     SELECT telegram_id, username, first_name, unique_id 
@@ -17540,7 +20258,6 @@ async def admin_promo_find_user(update: Update, context):
                 ''', (search_term, f'@{search_term}'))
                 found_user = cursor.fetchone()
             
-            # ===== 3. Поиск по частичному совпадению =====
             if not found_user:
                 cursor.execute('''
                     SELECT telegram_id, username, first_name, unique_id 
@@ -17571,7 +20288,7 @@ async def admin_promo_find_user(update: Update, context):
                 'telegram_id': telegram_id
             })
             
-            logger.info(f"✅ Найден пользователь: {unique_id}")
+            logger.info(f"✅ Найден пользователь: {unique_id}!")
             
     except Exception as e:
         logger.error(f"❌ Ошибка поиска: {e}")
@@ -17602,9 +20319,18 @@ async def admin_promo_find_user(update: Update, context):
     )
     return ADMIN_PROMO_DURATION
 
+
+# ============================================================
+# АДМИНСКОЕ СОЗДАНИЕ ПРОМОКОДА - ВЫБОР ДЛИТЕЛЬНОСТИ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def admin_promo_duration(update: Update, context):
-    """Выбор срока действия промокода"""
+    """
+    Выбор срока действия промокода.
+    
+    Шаг 3/8 (для персонального) или 2/7 (для общего).
+    """
     text = update.message.text.strip()
     promo_target_type = context.user_data.get('promo_target_type')
     
@@ -17612,8 +20338,8 @@ async def admin_promo_duration(update: Update, context):
         context.user_data.clear()
         await update.message.reply_text(
             "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс создания промокода завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*✨ Процесс создания промокода завершён!*\n"
+            "*💾 Все введённые данные очищены!*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -17768,7 +20494,7 @@ async def admin_promo_duration(update: Update, context):
         return ADMIN_PROMO_DURATION_INPUT
     
     await update.message.reply_text(
-        "*❌ Пожалуйста, используйте кнопки!\n\n👇 Выберите подходящий вариант:*",
+        "*❌ Пожалуйста, используйте кнопки!*\n\n*👇 Выберите подходящий вариант:*",
         parse_mode="Markdown",
         reply_markup=ReplyKeyboardMarkup([
             ["♾️ Бессрочный", "⏱️ Временный"],
@@ -17778,9 +20504,17 @@ async def admin_promo_duration(update: Update, context):
     return ADMIN_PROMO_DURATION
 
 
+# ============================================================
+# АДМИНСКОЕ СОЗДАНИЕ ПРОМОКОДА - ВВОД ДЛИТЕЛЬНОСТИ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def admin_promo_duration_input(update: Update, context):
-    """Ввод срока действия для временного промокода"""
+    """
+    Ввод срока действия для временного промокода.
+    
+    Шаг 4/8 (для персонального) или 3/7 (для общего).
+    """
     text = update.message.text.strip().lower()
     promo_target_type = context.user_data.get('promo_target_type')
     
@@ -17788,8 +20522,8 @@ async def admin_promo_duration_input(update: Update, context):
         context.user_data.clear()
         await update.message.reply_text(
             "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс создания промокода завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*✨ Процесс создания промокода завершён!*\n"
+            "*💾 Все введённые данные очищены!*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -17909,9 +20643,17 @@ async def admin_promo_duration_input(update: Update, context):
     return ADMIN_PROMO_TYPE
 
 
+# ============================================================
+# АДМИНСКОЕ СОЗДАНИЕ ПРОМОКОДА - ВЫБОР ТИПА СКИДКИ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def admin_promo_type(update: Update, context):
-    """Выбор типа скидки"""
+    """
+    Выбор типа скидки для промокода.
+    
+    Шаг 5/8 (для персонального) или 4/7 (для общего).
+    """
     text = update.message.text.strip()
     promo_target_type = context.user_data.get('promo_target_type')
     discount_type_map = {
@@ -17925,8 +20667,8 @@ async def admin_promo_type(update: Update, context):
         context.user_data.clear()
         await update.message.reply_text(
             "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс создания промокода завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*✨ Процесс создания промокода завершён!*\n"
+            "*💾 Все введённые данные очищены!*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -18003,7 +20745,7 @@ async def admin_promo_type(update: Update, context):
     
     if text not in discount_type_map:
         await update.message.reply_text(
-            "*❌ Пожалуйста, используйте кнопки!\n\n👇 Выберите подходящий вариант:*",
+            "*❌ Пожалуйста, используйте кнопки!*\n\n*👇 Выберите подходящий вариант:*",
             parse_mode="Markdown",
             reply_markup=ReplyKeyboardMarkup([
                 ["💰 % на все", "🎯 % на услугу"],
@@ -18221,9 +20963,17 @@ async def admin_promo_type(update: Update, context):
     return ADMIN_PROMO_VALUE
 
 
+# ============================================================
+# АДМИНСКОЕ СОЗДАНИЕ ПРОМОКОДА - ВЫБОР УСЛУГИ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def admin_promo_service(update: Update, context):
-    """Выбор услуги для промокода"""
+    """
+    Выбор услуги для промокода.
+    
+    Шаг 6/8 (для персонального) или 5/7 (для общего).
+    """
     text = update.message.text.strip()
     promo_target_type = context.user_data.get('promo_target_type')
     discount_type = context.user_data.get('discount_type')
@@ -18239,8 +20989,8 @@ async def admin_promo_service(update: Update, context):
         context.user_data.clear()
         await update.message.reply_text(
             "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс создания промокода завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*✨ Процесс создания промокода завершён!*\n"
+            "*💾 Все введённые данные очищены!*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -18332,7 +21082,7 @@ async def admin_promo_service(update: Update, context):
     
     if text not in service_map:
         await update.message.reply_text(
-            "*❌ Пожалуйста, используйте кнопки!\n\n👇 Выберите подходящий вариант:*",
+            "*❌ Пожалуйста, используйте кнопки!*\n\n*👇 Выберите подходящий вариант:*",
             parse_mode="Markdown",
             reply_markup=ReplyKeyboardMarkup([
                 ["🎤 Вокал", "🎸 Инструмент", "⏰ Аренда"],
@@ -18467,10 +21217,17 @@ async def admin_promo_service(update: Update, context):
             )
     return ADMIN_PROMO_VALUE
 
+# ============================================================
+# АДМИНСКОЕ СОЗДАНИЕ ПРОМОКОДА - ВВОД ЗНАЧЕНИЯ
+# ============================================================
 
 @handle_errors_with_rate_limit
 async def admin_promo_value(update: Update, context):
-    """Ввод значения скидки"""
+    """
+    Ввод значения скидки для промокода.
+    
+    Шаг 7/8 (для персонального) или 6/7 (для общего).
+    """
     text = update.message.text.strip()
     promo_target_type = context.user_data.get('promo_target_type')
     discount_type = context.user_data.get('discount_type')
@@ -18479,8 +21236,8 @@ async def admin_promo_value(update: Update, context):
         context.user_data.clear()
         await update.message.reply_text(
             "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс создания промокода завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*✨ Процесс создания промокода завершён!*\n"
+            "*💾 Все введённые данные очищены!*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -18644,8 +21401,17 @@ async def admin_promo_value(update: Update, context):
     
     return await admin_promo_confirm_show(update, context)
 
+
+# ============================================================
+# АДМИНСКОЕ СОЗДАНИЕ ПРОМОКОДА - ПОКАЗ ПОДТВЕРЖДЕНИЯ
+# ============================================================
+
 async def admin_promo_confirm_show(update: Update, context):
-    """Показать подтверждение создания промокода"""
+    """
+    Показывает подтверждение создания промокода.
+    
+    Шаг 8/8 (для персонального) или 7/7 (для общего).
+    """
     promo_target_type = context.user_data.get('promo_target_type')
     promo_code = context.user_data.get('promo_code')
     discount_type = context.user_data.get('discount_type')
@@ -18673,10 +21439,9 @@ async def admin_promo_confirm_show(update: Update, context):
     else:
         try:
             expiry_date_obj = datetime.strptime(expiry, '%Y-%m-%d %H:%M:%S')
-            # Форматируем с временем до часов и минут
             expiry_text = f"⏱️ Действует до: {expiry_date_obj.strftime('%d.%m.%Y %H:%M')}"
         except Exception as e:
-            logger.error(f"Ошибка форматирования даты: {e}")
+            logger.error(f"❌ Ошибка форматирования даты: {e}")
             expiry_text = f"⏱️ Действует до: {expiry[:10]}"
     
     # Определяем номер шага для отображения
@@ -18754,17 +21519,26 @@ async def admin_promo_confirm_show(update: Update, context):
         )
     return ADMIN_PROMO_CONFIRM
 
+
+# ============================================================
+# АДМИНСКОЕ СОЗДАНИЕ ПРОМОКОДА - ПОДТВЕРЖДЕНИЕ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def admin_promo_confirm(update: Update, context):
-    """Подтверждение создания промокода с рассылкой пользователям"""
+    """
+    Подтверждение создания промокода с рассылкой пользователям.
+    
+    Шаг 8/8 (для персонального) или 7/7 (для общего).
+    """
     text = update.message.text.strip()
     
     if text == "↩️ Главное меню" or text == "❌ Отменить":
         context.user_data.clear()
         await update.message.reply_text(
             "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс создания промокода завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*✨ Процесс создания промокода завершён!*\n"
+            "*💾 Все введённые данные очищены!*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -18791,7 +21565,7 @@ async def admin_promo_confirm(update: Update, context):
     
     if text != "✅ Да, создать промокод":
         await update.message.reply_text(
-            "*❌ Пожалуйста, используйте кнопки!\n\n👇 Выберите подходящий вариант:*",
+            "*❌ Пожалуйста, используйте кнопки!*\n\n*👇 Выберите подходящий вариант:*",
             parse_mode="Markdown",
             reply_markup=ReplyKeyboardMarkup([
                 ["✅ Да, создать промокод", "✏️ Исправить данные"],
@@ -18812,7 +21586,7 @@ async def admin_promo_confirm(update: Update, context):
         'expiry_date': context.user_data.get('expiry_date')
     }
     
-    # ПОЛУЧАЕМ USERNAME ДЛЯ ПЕРСОНАЛЬНОГО ПРОМОКОДА
+    # Получаем username для персонального промокода
     target_username = None
     if promo_data['target_user_id']:
         target_username = context.user_data.get('target_username')
@@ -18826,7 +21600,7 @@ async def admin_promo_confirm(update: Update, context):
                         target_username = user_data[0] or user_data[1] or str(promo_data['target_user_id'])
                         context.user_data['target_username'] = target_username
             except Exception as e:
-                logger.error(f"Ошибка получения username: {e}")
+                logger.error(f"❌ Ошибка получения username: {e}")
                 target_username = str(promo_data['target_user_id'])
     
     success, message, promo_info = await PromoCodeManager.create_promo_code(admin_id, promo_data)
@@ -18851,9 +21625,9 @@ async def admin_promo_confirm(update: Update, context):
                     ),
                     parse_mode="Markdown"
                 )
-                logger.info(f"✅ Уведомление отправлено пользователю {promo_data['target_user_id']}")
+                logger.info(f"✅ Уведомление отправлено пользователю {promo_data['target_user_id']}!")
             except Exception as e:
-                logger.error(f"❌ Не удалось отправить уведомление: {e}")
+                logger.error(f"❌ Не удалось отправить уведомление пользователю {promo_data['target_user_id']}: {e}")
         else:
             target_line = ""
             
@@ -18895,20 +21669,20 @@ async def admin_promo_confirm(update: Update, context):
                     fail_count += 1
                     logger.error(f"❌ Не удалось отправить уведомление пользователю {user_telegram_id}: {e}")
             
-            logger.info(f"✅ Рассылка промокода {promo_data['code']}: отправлено {success_count} пользователям, ошибок: {fail_count}")
+            logger.info(f"✅ Рассылка промокода {promo_data['code']}: отправлено {success_count} пользователям, ошибок: {fail_count}!")
             
             broadcast_info = f"\n📊 Рассылка: отправлено {success_count} пользователям"
             if fail_count > 0:
                 broadcast_info += f"\n⚠️ Ошибок: {fail_count}"
         
-        # ИСПРАВЛЕННОЕ СООБЩЕНИЕ ДЛЯ АДМИНИСТРАТОРА
+        # Сообщение для администратора
         if promo_data['target_user_id']:
             if target_username and target_username != "Неизвестный":
-                admin_message = f"*✅ Создан промокод для пользваотеля @{target_username}*"
+                admin_message = f"*✅ Создан промокод для пользователя @{target_username}!*"
             else:
-                admin_message = f"*✅ Создан промокод для пользователя {promo_data['target_user_id']}*"
+                admin_message = f"*✅ Создан промокод для пользователя {promo_data['target_user_id']}!*"
         else:
-            admin_message = "*✅ Создан общий промокод*"
+            admin_message = "*✅ Создан общий промокод!*"
         
         await update.message.reply_text(
             admin_message,
@@ -18916,7 +21690,7 @@ async def admin_promo_confirm(update: Update, context):
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
         )
         
-        logger.info(f"✅ Админ @{admin_username} создал промокод {promo_data['code']}")
+        logger.info(f"✅ Админ @{admin_username} создал промокод {promo_data['code']}!")
         
     else:
         await update.message.reply_text(
@@ -18928,12 +21702,19 @@ async def admin_promo_confirm(update: Update, context):
     context.user_data.clear()
     return ConversationHandler.END
 
+
+# ============================================================
+# АДМИНСКОЕ УДАЛЕНИЕ ПРОМОКОДА - НАЧАЛО
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def admin_promo_delete_start(update: Update, context):
-    """Начало удаления промокода - показываем все промокоды"""
+    """
+    Начало удаления промокода - показываем все промокоды.
+    """
     user_id = update.effective_user.id
     
-    logger.info(f"🔍 admin_promo_delete_start вызвана пользователем {user_id}")
+    logger.info(f"🔍 admin_promo_delete_start вызвана пользователем {user_id}!")
     
     if user_id not in Config.ADMIN_IDS:
         await update.message.reply_text(
@@ -18947,10 +21728,16 @@ async def admin_promo_delete_start(update: Update, context):
     
     await show_promo_list(update, context)
 
+
+# ============================================================
+# ПОКАЗ СПИСКА ПРОМОКОДОВ
+# ============================================================
+
 async def show_promo_list(update: Update, context, edit_mode: bool = False, message_obj=None):
-    """Показать список промокодов с кнопками по реальному ID и статусом использования"""
-    
-    logger.info("🔍 show_promo_list вызвана")
+    """
+    Показывает список промокодов с кнопками по реальному ID и статусом использования.
+    """
+    logger.info("🔍 show_promo_list вызвана!")
     
     with db.get_connection() as conn:
         cursor = conn.cursor()
@@ -18962,12 +21749,12 @@ async def show_promo_list(update: Update, context, edit_mode: bool = False, mess
         ''')
         promos = cursor.fetchall()
     
-    logger.info(f"🔍 Найдено активных промокодов: {len(promos)}")
+    logger.info(f"🔍 Найдено активных промокодов: {len(promos)}!")
     
     now = DateTimeUtils.now().replace(tzinfo=None)
     
     if not promos:
-        message = "*📭 В системе нет активных промокодов*"
+        message = "*📭 В системе нет активных промокодов!*"
         
         if edit_mode and message_obj:
             await message_obj.edit_text(text=message, parse_mode="Markdown")
@@ -19089,7 +21876,7 @@ async def show_promo_list(update: Update, context, edit_mode: bool = False, mess
     for promo in general_promos + personal_promos:
         keyboard.append([InlineKeyboardButton(f"❌ Удалить #{promo['id']}", callback_data=f"admin_del_promo_{promo['id']}")])
     
-    logger.info(f"🔍 Создано {len(keyboard)} кнопок удаления")
+    logger.info(f"🔍 Создано {len(keyboard)} кнопок удаления!")
     
     if edit_mode and message_obj:
         await message_obj.edit_text(
@@ -19104,26 +21891,35 @@ async def show_promo_list(update: Update, context, edit_mode: bool = False, mess
             reply_markup=InlineKeyboardMarkup(keyboard) if keyboard else None
         )
 
+
+# ============================================================
+# АДМИНСКОЕ УДАЛЕНИЕ ПРОМОКОДА - ОБРАБОТЧИК CALLBACK
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def admin_promo_delete_callback_handler(update: Update, context):
-    """Обработчик нажатия на кнопку удаления промокода"""
+    """
+    Обработчик нажатия на кнопку удаления промокода.
+    
+    Показывает подтверждение перед удалением.
+    """
     query = update.callback_query
     await query.answer()
     
     data = query.data
     
-    logger.info(f"🔍 admin_promo_delete_callback_handler: data={data}")
+    logger.info(f"🔍 admin_promo_delete_callback_handler: data={data}!")
     
     if not data.startswith('admin_del_promo_'):
-        logger.warning(f"❌ Неизвестный callback: {data}")
+        logger.warning(f"❌ Неизвестный callback: {data}!")
         return
     
     # Получаем реальный ID промокода
     try:
         promo_id = int(data.replace('admin_del_promo_', ''))
-        logger.info(f"🔍 Удаление промокода с ID: {promo_id}")
+        logger.info(f"🔍 Удаление промокода с ID: {promo_id}!")
     except ValueError:
-        logger.error(f"❌ Ошибка: не удалось получить ID из {data}")
+        logger.error(f"❌ Ошибка: не удалось получить ID из {data}!")
         await query.answer("❌ Ошибка формата данных!", show_alert=True)
         return
     
@@ -19138,7 +21934,7 @@ async def admin_promo_delete_callback_handler(update: Update, context):
         promo = cursor.fetchone()
     
     if not promo:
-        logger.warning(f"❌ Промокод с ID {promo_id} не найден или уже удалён")
+        logger.warning(f"❌ Промокод с ID {promo_id} не найден или уже удалён!")
         await query.answer("❌ Промокод не найден!", show_alert=True)
         await show_promo_list(update, context, edit_mode=True, message_obj=query.message)
         return
@@ -19203,27 +21999,34 @@ async def admin_promo_delete_callback_handler(update: Update, context):
         reply_markup=keyboard
     )
 
+
+# ============================================================
+# АДМИНСКОЕ УДАЛЕНИЕ ПРОМОКОДА - ПОДТВЕРЖДЕНИЕ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def admin_promo_delete_confirm_handler(update: Update, context):
-    """Подтверждение удаления промокода"""
+    """
+    Подтверждение удаления промокода.
+    """
     query = update.callback_query
     data = query.data
     
-    logger.info(f"🔍 admin_promo_delete_confirm_handler: data={data}")
+    logger.info(f"🔍 admin_promo_delete_confirm_handler: data={data}!")
     
     await query.answer()
     
     if data == "admin_cancel_del":
-        logger.info("🔍 Пользователь отменил удаление")
+        logger.info("🔍 Пользователь отменил удаление!")
         await show_promo_list(update, context, edit_mode=True, message_obj=query.message)
         return
     
     if data.startswith('admin_confirm_del_'):
         try:
             promo_id = int(data.replace('admin_confirm_del_', ''))
-            logger.info(f"🔍 Подтверждение удаления промокода с ID: {promo_id}")
+            logger.info(f"🔍 Подтверждение удаления промокода с ID: {promo_id}!")
         except ValueError:
-            logger.error(f"❌ Ошибка: не удалось получить ID из {data}")
+            logger.error(f"❌ Ошибка: не удалось получить ID из {data}!")
             await query.edit_message_text(
                 text="❌ Ошибка: неверный формат данных",
                 parse_mode="Markdown"
@@ -19240,7 +22043,7 @@ async def admin_promo_delete_confirm_handler(update: Update, context):
             promo = cursor.fetchone()
         
         if not promo:
-            logger.warning(f"❌ Промокод с ID {promo_id} уже удалён")
+            logger.warning(f"❌ Промокод с ID {promo_id} уже удалён!")
             await query.answer("❌ Промокод уже удалён!", show_alert=True)
             await show_promo_list(update, context, edit_mode=True, message_obj=query.message)
             return
@@ -19248,7 +22051,7 @@ async def admin_promo_delete_confirm_handler(update: Update, context):
         promo_id_db, promo_code, target_user_id, discount_type, discount_value, target_service, expiry_date = promo
         admin_username = update.effective_user.username or "администратор"
         
-        # ===== ПРОВЕРЯЕМ СТАТУС ПРОМОКОДА ДЛЯ ПОЛЬЗОВАТЕЛЯ =====
+        # Проверяем статус промокода для пользователя
         should_notify_user = True
         user_status = None
         
@@ -19264,29 +22067,25 @@ async def admin_promo_delete_confirm_handler(update: Update, context):
                 
                 if usage:
                     user_status = usage[0]
-                    # Если промокод использован или ожидает прохождения - НЕ отправляем уведомление
                     if user_status in ['used', 'pending']:
                         should_notify_user = False
-                        logger.info(f"ℹ️ Промокод {promo_code} в статусе {user_status}, уведомление пользователю НЕ отправляется")
+                        logger.info(f"ℹ️ Промокод {promo_code} в статусе {user_status}, уведомление пользователю НЕ отправляется!")
         
-        # ===== УДАЛЯЕМ ПРОМОКОД =====
+        # Удаляем промокод
         with db.get_connection() as conn:
             cursor = conn.cursor()
             
-            # Удаляем записи об использовании промокода у пользователей
             cursor.execute('DELETE FROM user_promo_usage WHERE promo_code = ?', (promo_code,))
             deleted_usage = cursor.rowcount
-            logger.info(f"🗑️ Удалено {deleted_usage} записей об использовании промокода {promo_code}")
+            logger.info(f"🗑️ Удалено {deleted_usage} записей об использовании промокода {promo_code}!")
             
-            # Деактивируем сам промокод
             cursor.execute('UPDATE promo_codes SET is_active = 0 WHERE id = ?', (promo_id_db,))
             conn.commit()
         
-        logger.info(f"✅ Промокод #{promo_id} {promo_code} удалён админом {admin_username}")
+        logger.info(f"✅ Промокод #{promo_id} {promo_code} удалён админом {admin_username}!")
         
-        # ===== ОТПРАВЛЯЕМ УВЕДОМЛЕНИЕ ПОЛЬЗОВАТЕЛЮ ТОЛЬКО ЕСЛИ ПРОМОКОД БЫЛ В СТАТУСЕ 'active' =====
+        # Отправляем уведомление пользователю только если промокод был в статусе 'active'
         if target_user_id and should_notify_user:
-            # Формируем бонус для отображения
             if discount_type == "percent_all":
                 bonus_text = f"{discount_value}% на всё"
             elif discount_type == "percent_service":
@@ -19311,22 +22110,22 @@ async def admin_promo_delete_confirm_handler(update: Update, context):
                 await context.bot.send_message(
                     chat_id=int(target_user_id),
                     text=(
-                        f"*❌ Промокод деактивирован администратором*\n\n"
+                        f"*❌ Промокод деактивирован администратором!*\n\n"
                         f"*🎟️ Промокод:* `{promo_code}`\n"
                         f"*🎁 Бонус:* {bonus_text}\n\n"
                         f"*📞 По вопросам обращайтесь к администратору @mothman32*"
                     ),
                     parse_mode="Markdown"
                 )
-                logger.info(f"✅ Уведомление об удалении промокода отправлено пользователю {target_user_id} (статус был active)")
+                logger.info(f"✅ Уведомление об удалении промокода отправлено пользователю {target_user_id} (статус был active)!")
             except Exception as e:
-                logger.error(f"❌ Не удалось отправить уведомление пользователю: {e}")
+                logger.error(f"❌ Не удалось отправить уведомление пользователю {target_user_id}: {e}")
         else:
             if target_user_id and not should_notify_user:
-                logger.info(f"ℹ️ Уведомление НЕ отправлено пользователю {target_user_id}, так как промокод был в статусе {user_status}")
+                logger.info(f"ℹ️ Уведомление НЕ отправлено пользователю {target_user_id}, так как промокод был в статусе {user_status}!")
         
         # Сообщение админу
-        admin_message = f"*✅ Промокод #{promo_id}* `{promo_code}` *удалён из базы*"
+        admin_message = f"*✅ Промокод #{promo_id}* `{promo_code}` *удалён из базы!*"
         
         await context.bot.send_message(
             chat_id=update.effective_user.id,
@@ -19341,18 +22140,18 @@ async def admin_promo_delete_confirm_handler(update: Update, context):
             remaining_count = cursor.fetchone()[0]
         
         if remaining_count == 0:
-            logger.info("📭 Активных промокодов не осталось")
+            logger.info("📭 Активных промокодов не осталось!")
             
             await query.edit_message_text(
-                text="*📭 В системе нет активных промокодов*",
+                text="*📭 В системе нет активных промокодов!*",
                 parse_mode="Markdown"
             )
             
             await context.bot.send_message(
                 chat_id=update.effective_user.id,
                 text=("*🏠 Возвращаемся в главное меню...*\n\n"
-                      "*✨ Процесс удаления промокода завершён*\n"
-                      "*💾 Все введенные данные очищены*\n\n"
+                      "*✨ Процесс удаления промокода завершён!*\n"
+                      "*💾 Все введённые данные очищены!*\n\n"
                       "*👇 Выберите подходящий вариант:*"),
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
@@ -19365,12 +22164,25 @@ async def admin_promo_delete_confirm_handler(update: Update, context):
         await show_promo_list(update, context, edit_mode=True, message_obj=query.message)
         return
     
-    logger.warning(f"❌ Неизвестный callback в confirm_handler: {data}")
+    logger.warning(f"❌ Неизвестный callback в confirm_handler: {data}!")
     await query.answer("❌ Неизвестная команда!", show_alert=True)
+
+
+# ============================================================
+# АДМИНСКОЕ УПРАВЛЕНИЕ ПЛАСТИНКАМИ - НАЧАЛО
+# ============================================================
+
+# ============================================================
+# АДМИНСКОЕ УПРАВЛЕНИЕ ПЛАСТИНКАМИ - НАЧАЛО
+# ============================================================
 
 @handle_errors_with_rate_limit
 async def handle_admin_vinyl_start(update: Update, context):
-    """Начало процесса управления пластинками"""
+    """
+    Начало процесса управления пластинками.
+    
+    Шаг 1/4: Ввод имени пользователя.
+    """
     user_id = update.effective_user.id
     
     if user_id not in Config.ADMIN_IDS:
@@ -19400,17 +22212,31 @@ async def handle_admin_vinyl_start(update: Update, context):
     )
     return ADMIN_VINYL_USER_ID
 
+
+# ============================================================
+# АДМИНСКОЕ УПРАВЛЕНИЕ ПЛАСТИНКАМИ - ПОИСК ПОЛЬЗОВАТЕЛЯ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def handle_admin_vinyl_user_id(update: Update, context):
+    """
+    Обрабатывает ввод имени пользователя для управления пластинками.
+    
+    Ищет пользователя по:
+    1. Уникальному ID (MC...)
+    2. Username (точное совпадение)
+    3. Username (частичное совпадение)
+    4. First name
+    """
     text = update.message.text.strip()
-    logger.info(f"🔍 handle_admin_vinyl_user_id: '{text}'")
+    logger.info(f"🔍 handle_admin_vinyl_user_id: '{text}'!")
     
     if text == "↩️ Главное меню":
         context.user_data.clear()
         await update.message.reply_text(
             "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс управления пластинками завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*✨ Процесс управления пластинками завершён!*\n"
+            "*💾 Все введённые данные очищены!*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -19435,31 +22261,31 @@ async def handle_admin_vinyl_user_id(update: Update, context):
         with db.get_connection() as conn:
             cursor = conn.cursor()
             
-            # ===== 1. Поиск по уникальному ID (MC...) =====
+            # 1. Поиск по уникальному ID (MC...)
             if search_term.startswith("mc"):
-                logger.info(f"🔍 Ищем по уникальному ID: {search_term}")
+                logger.info(f"🔍 Ищу по уникальному ID: {search_term}!")
                 cursor.execute('''
                     SELECT telegram_id, username, first_name, unique_id, vinyls
                     FROM users WHERE LOWER(unique_id) = ?
                 ''', (search_term,))
                 found_user = cursor.fetchone()
                 if found_user:
-                    logger.info(f"✅ Найден по уникальному ID: {search_term}")
+                    logger.info(f"✅ Найден по уникальному ID: {search_term}!")
 
-            # ===== 2. Поиск по username (точное совпадение) =====
+            # 2. Поиск по username (точное совпадение)
             if not found_user:
-                logger.info(f"🔍 Ищем по username (точное): {search_term}")
+                logger.info(f"🔍 Ищу по username (точное): {search_term}!")
                 cursor.execute('''
                     SELECT telegram_id, username, first_name, unique_id, vinyls
                     FROM users WHERE LOWER(username) = ? OR LOWER(username) = ?
                 ''', (search_term, f'@{search_term}'))
                 found_user = cursor.fetchone()
                 if found_user:
-                    logger.info(f"✅ Найден по username (точное): {search_term}")
+                    logger.info(f"✅ Найден по username (точное): {search_term}!")
 
-            # ===== 3. Поиск по username (частичное совпадение) =====
+            # 3. Поиск по username (частичное совпадение)
             if not found_user:
-                logger.info(f"🔍 Ищем по username (частичное): {search_term}")
+                logger.info(f"🔍 Ищу по username (частичное): {search_term}!")
                 cursor.execute('''
                     SELECT telegram_id, username, first_name, unique_id, vinyls
                     FROM users WHERE 
@@ -19470,18 +22296,18 @@ async def handle_admin_vinyl_user_id(update: Update, context):
                 ''', (f'%{search_term}%', f'%@{search_term}%', f'%{search_term}%', f'%{search_term}%'))
                 found_user = cursor.fetchone()
                 if found_user:
-                    logger.info(f"✅ Найден по частичному совпадению: {search_term}")
+                    logger.info(f"✅ Найден по частичному совпадению: {search_term}!")
 
-            # ===== 4. Поиск по first_name =====
+            # 4. Поиск по first_name
             if not found_user:
-                logger.info(f"🔍 Ищем по имени: {search_term}")
+                logger.info(f"🔍 Ищу по имени: {search_term}!")
                 cursor.execute('''
                     SELECT telegram_id, username, first_name, unique_id, vinyls
                     FROM users WHERE LOWER(first_name) LIKE ?
                 ''', (f'%{search_term}%',))
                 found_user = cursor.fetchone()
                 if found_user:
-                    logger.info(f"✅ Найден по имени: {search_term}")
+                    logger.info(f"✅ Найден по имени: {search_term}!")
 
             if not found_user:
                 await update.message.reply_text(
@@ -19502,7 +22328,7 @@ async def handle_admin_vinyl_user_id(update: Update, context):
             context.user_data['target_vinyl_unique_id'] = unique_id
             context.user_data['target_vinyl_current'] = vinyls or 0
 
-            logger.info(f"✅ Админ нашел пользователя: {unique_id} (TG: {telegram_id}), пластинок: {vinyls}")
+            logger.info(f"✅ Админ нашёл пользователя: {unique_id} (TG: {telegram_id}), пластинок: {vinyls}!")
 
     except Exception as e:
         logger.error(f"❌ Ошибка поиска пользователя: {e}")
@@ -19532,18 +22358,27 @@ async def handle_admin_vinyl_user_id(update: Update, context):
     )
     return ADMIN_VINYL_ACTION
 
+
+# ============================================================
+# АДМИНСКОЕ УПРАВЛЕНИЕ ПЛАСТИНКАМИ - ВЫБОР ДЕЙСТВИЯ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def handle_admin_vinyl_action(update: Update, context):
-    """Выбор действия: начислить или удалить"""
+    """
+    Выбор действия: начислить или удалить пластинки.
+    
+    Шаг 2/4.
+    """
     text = update.message.text.strip()
-    logger.info(f"🔍 handle_admin_vinyl_action: '{text}'")
+    logger.info(f"🔍 handle_admin_vinyl_action: '{text}'!")
     
     if text == "↩️ Главное меню":
         context.user_data.clear()
         await update.message.reply_text(
             "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс управления пластинками завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*✨ Процесс управления пластинками завершён!*\n"
+            "*💾 Все введённые данные очищены!*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -19568,7 +22403,7 @@ async def handle_admin_vinyl_action(update: Update, context):
     
     if text not in ["➕ Начислить", "➖ Удалить"]:
         await update.message.reply_text(
-            "*❌ Пожалуйста, используйте кнопки!\n\n👇 Выберите подходящий вариант:*",
+            "*❌ Пожалуйста, используйте кнопки!*\n\n*👇 Выберите подходящий вариант:*",
             parse_mode="Markdown",
             reply_markup=ReplyKeyboardMarkup([
                 ["➕ Начислить", "➖ Удалить"],
@@ -19594,18 +22429,26 @@ async def handle_admin_vinyl_action(update: Update, context):
     return ADMIN_VINYL_AMOUNT
 
 
+# ============================================================
+# АДМИНСКОЕ УПРАВЛЕНИЕ ПЛАСТИНКАМИ - ВВОД КОЛИЧЕСТВА
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def handle_admin_vinyl_amount(update: Update, context):
-    """Ввод количества пластинок"""
+    """
+    Ввод количества пластинок.
+    
+    Шаг 3/4.
+    """
     text = update.message.text.strip()
-    logger.info(f"🔍 handle_admin_vinyl_amount: '{text}'")
+    logger.info(f"🔍 handle_admin_vinyl_amount: '{text}'!")
     
     if text == "↩️ Главное меню":
         context.user_data.clear()
         await update.message.reply_text(
             "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс управления пластинками завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*✨ Процесс управления пластинками завершён!*\n"
+            "*💾 Все введённые данные очищены!*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -19635,15 +22478,15 @@ async def handle_admin_vinyl_amount(update: Update, context):
         amount = int(text)
         
         if amount <= 0:
-            raise ValueError("Количество должно быть положительным")
+            raise ValueError("Количество должно быть положительным!")
         
         if amount > 1000000:
-            raise ValueError("Слишком большое количество (макс. 1 000 000)")
+            raise ValueError("Слишком большое количество (макс. 1 000 000)!")
         
         context.user_data['vinyl_amount'] = amount
         
     except ValueError as e:
-        error_text = "Введите целое число"
+        error_text = "Введите целое число!"
         
         action_text = "добавить" if context.user_data.get('vinyl_action') == 'add' else "удалить"
         
@@ -19659,9 +22502,16 @@ async def handle_admin_vinyl_amount(update: Update, context):
     return await show_vinyl_confirmation(update, context)
 
 
+# ============================================================
+# АДМИНСКОЕ УПРАВЛЕНИЕ ПЛАСТИНКАМИ - ПОКАЗ ПОДТВЕРЖДЕНИЯ
+# ============================================================
+
 async def show_vinyl_confirmation(update: Update, context):
-    """Показать подтверждение операции с пластинками"""
+    """
+    Показывает подтверждение операции с пластинками.
     
+    Шаг 4/4.
+    """
     username = context.user_data.get('target_vinyl_username')
     unique_id = context.user_data.get('target_vinyl_unique_id')
     current = context.user_data.get('target_vinyl_current', 0)
@@ -19693,11 +22543,20 @@ async def show_vinyl_confirmation(update: Update, context):
     )
     return ADMIN_VINYL_CONFIRM
 
+
+# ============================================================
+# АДМИНСКОЕ УПРАВЛЕНИЕ ПЛАСТИНКАМИ - ПОДТВЕРЖДЕНИЕ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def handle_admin_vinyl_confirm(update: Update, context):
-    """Подтверждение операции с пластинками"""
+    """
+    Подтверждение операции с пластинками.
+    
+    Шаг 4/4.
+    """
     text = update.message.text.strip()
-    logger.info(f"🔍 handle_admin_vinyl_confirm: '{text}'")
+    logger.info(f"🔍 handle_admin_vinyl_confirm: '{text}'!")
     
     target_user_id = context.user_data.get('target_vinyl_user_id')
     target_username = context.user_data.get('target_vinyl_username')
@@ -19712,8 +22571,8 @@ async def handle_admin_vinyl_confirm(update: Update, context):
         context.user_data.clear()
         await update.message.reply_text(
             "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс управления пластинками завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*✨ Процесс управления пластинками завершён!*\n"
+            "*💾 Все введённые данные очищены!*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -19741,7 +22600,7 @@ async def handle_admin_vinyl_confirm(update: Update, context):
     
     if text != "✅ Да, подтвердить":
         await update.message.reply_text(
-            "*❌ Пожалуйста, используйте кнопки!\n\n👇 Выберите подходящий вариант:*",
+            "*❌ Пожалуйста, используйте кнопки!*\n\n*👇 Выберите подходящий вариант:*",
             parse_mode="Markdown",
             reply_markup=ReplyKeyboardMarkup([
                 ["✅ Да, подтвердить", "✏️ Исправить данные"],
@@ -19772,10 +22631,9 @@ async def handle_admin_vinyl_confirm(update: Update, context):
             conn.commit()
         
         await AchievementSystem.notify_level_change(str(target_user_id), current, new_total, context)
-        
         await AchievementSystem.update_user_level(str(target_user_id), context)
         
-        logger.info(f"✅ Админ @{admin_username} {action_text} {amount} пластинок пользователю {target_user_id} (было {current}, стало {new_total})")
+        logger.info(f"✅ Админ @{admin_username} {action_text} {amount} пластинок пользователю {target_user_id} (было {current}, стало {new_total})!")
         
         try:
             if action == 'add':
@@ -19800,12 +22658,11 @@ async def handle_admin_vinyl_confirm(update: Update, context):
                 text=user_message,
                 parse_mode="Markdown"
             )
-            logger.info(f"✅ Уведомление о пластинках отправлено пользователю {target_user_id}")
+            logger.info(f"✅ Уведомление о пластинках отправлено пользователю {target_user_id}!")
         except Exception as e:
-            logger.error(f"❌ Не удалось отправить уведомление о пластинках: {e}")
+            logger.error(f"❌ Не удалось отправить уведомление о пластинках пользователю {target_user_id}: {e}")
         
-        # ИЗМЕНЕННОЕ СООБЩЕНИЕ ДЛЯ АДМИНИСТРАТОРА
-        admin_message = f"*✅ Пластинки изменены для пользователя @{target_username}*"
+        admin_message = f"*✅ Пластинки изменены для пользователя @{target_username}!*"
         
         await update.message.reply_text(
             admin_message,
@@ -19820,7 +22677,7 @@ async def handle_admin_vinyl_confirm(update: Update, context):
         
         await update.message.reply_text(
             f"❌ Ошибка при выполнении операции!\n\n"
-            f"💡 Попробуйте еще раз или свяжитесь с разработчиком",
+            f"💡 Попробуйте ещё раз или свяжитесь с разработчиком",
             parse_mode="Markdown",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
         )
@@ -19828,9 +22685,18 @@ async def handle_admin_vinyl_confirm(update: Update, context):
     context.user_data.clear()
     return ConversationHandler.END
 
+
+# ============================================================
+# АДМИНСКИЙ ПРОСМОТР ПРОФИЛЯ - НАЧАЛО
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def handle_admin_profile_start(update: Update, context):
-    """Начало процесса просмотра профиля пользователя"""
+    """
+    Начало процесса просмотра профиля пользователя.
+    
+    Шаг 1/2: Ввод имени пользователя.
+    """
     user_id = update.effective_user.id
     
     if user_id not in Config.ADMIN_IDS:
@@ -19860,18 +22726,25 @@ async def handle_admin_profile_start(update: Update, context):
     )
     return ADMIN_PROFILE_USER_ID
 
+
+# ============================================================
+# АДМИНСКИЙ ПРОСМОТР ПРОФИЛЯ - ПОИСК ПОЛЬЗОВАТЕЛЯ
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def handle_admin_profile_user_id(update: Update, context):
-    """Админ смотрит профиль пользователя (поиск только по @username и MC...)"""
+    """
+    Админ смотрит профиль пользователя (поиск только по @username и MC...).
+    """
     text = update.message.text.strip()
-    logger.info(f"🔍 handle_admin_profile_user_id: '{text}'")
+    logger.info(f"🔍 handle_admin_profile_user_id: '{text}'!")
     
     if text == "↩️ Главное меню":
         context.user_data.clear()
         await update.message.reply_text(
             "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс просмотра профиля завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*✨ Процесс просмотра профиля завершён!*\n"
+            "*💾 Все введённые данные очищены!*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -19900,9 +22773,9 @@ async def handle_admin_profile_user_id(update: Update, context):
         with db.get_connection() as conn:
             cursor = conn.cursor()
             
-            # ===== 1. Поиск по уникальному ID (MC...) =====
+            # 1. Поиск по уникальному ID (MC...)
             if search_term.startswith("mc"):
-                logger.info(f"🔍 Ищем по уникальному ID: {search_term}")
+                logger.info(f"🔍 Ищу по уникальному ID: {search_term}!")
                 cursor.execute('''
                     SELECT telegram_id, username, first_name, unique_id, vinyls, level, 
                            permanent_discount, temporary_discount, discount_expiry,
@@ -19913,9 +22786,9 @@ async def handle_admin_profile_user_id(update: Update, context):
                 if found_user:
                     search_method = "уникальному ID"
 
-            # ===== 2. Поиск по username (точное совпадение) =====
+            # 2. Поиск по username (точное совпадение)
             if not found_user:
-                logger.info(f"🔍 Ищем по username (точное): {search_term}")
+                logger.info(f"🔍 Ищу по username (точное): {search_term}!")
                 cursor.execute('''
                     SELECT telegram_id, username, first_name, unique_id, vinyls, level,
                            permanent_discount, temporary_discount, discount_expiry,
@@ -19926,9 +22799,9 @@ async def handle_admin_profile_user_id(update: Update, context):
                 if found_user:
                     search_method = "username (точное)"
 
-            # ===== 3. Поиск по частичному совпадению =====
+            # 3. Поиск по частичному совпадению
             if not found_user:
-                logger.info(f"🔍 Ищем по частичному совпадению: {search_term}")
+                logger.info(f"🔍 Ищу по частичному совпадению: {search_term}!")
                 cursor.execute('''
                     SELECT telegram_id, username, first_name, unique_id, vinyls, level,
                            permanent_discount, temporary_discount, discount_expiry,
@@ -19961,7 +22834,7 @@ async def handle_admin_profile_user_id(update: Update, context):
             level = level or 1
             total_spent = total_spent or 0
             
-            logger.info(f"✅ Админ нашел пользователя по {search_method}: {unique_id} (TG: {telegram_id})")
+            logger.info(f"✅ Админ нашёл пользователя по {search_method}: {unique_id} (TG: {telegram_id})!")
             
             # Получаем информацию об уровне
             level_info = AchievementSystem.get_level_info(vinyls)
@@ -19989,12 +22862,12 @@ async def handle_admin_profile_user_id(update: Update, context):
             
             all_bookings = cursor.fetchall()
             
-            # ===== СЧЁТЧИКИ =====
-            studio_count = 0          # Записи в студии (completed + админские confirmed)
-            contract_count = 0        # Договорные услуги (confirmed)
-            total_spent_calc = 0      # Общая стоимость
-            confirmed_count = 0       # Подтверждено (confirmed + completed)
-            cancelled_count = 0       # Отменено пользователем (cancelled_by_user)
+            # Счётчики
+            studio_count = 0
+            contract_count = 0
+            total_spent_calc = 0
+            confirmed_count = 0
+            cancelled_count = 0
             
             for booking in all_bookings:
                 (is_contractual, service, date_str, price, status, is_12_hours, 
@@ -20009,7 +22882,7 @@ async def handle_admin_profile_user_id(update: Update, context):
                     'договорная' in str(date_str).lower()
                 )
                 
-                # ===== ПОДСЧЁТ СТАТИСТИКИ =====
+                # Подсчёт статистики
                 if status_lower in ['confirmed', 'подтвержден']:
                     confirmed_count += 1
                 elif status_lower == 'completed':
@@ -20017,8 +22890,7 @@ async def handle_admin_profile_user_id(update: Update, context):
                 elif status_lower == 'cancelled_by_user':
                     cancelled_count += 1
                 
-                # ===== ИСТОРИЯ ЗАПИСЕЙ И СТОИМОСТЬ =====
-                # 1. Обычные записи: ТОЛЬКО completed
+                # История записей и стоимость
                 if status_lower == 'completed' and not is_admin:
                     studio_count += 1
                     if price and price not in ['0', 'Договорная'] and 'договорная' not in str(price).lower():
@@ -20028,7 +22900,6 @@ async def handle_admin_profile_user_id(update: Update, context):
                         except:
                             pass
                             
-                # 2. Админские записи: confirmed
                 elif is_admin and status_lower in ['confirmed', 'подтвержден']:
                     if is_contract:
                         contract_count += 1
@@ -20042,7 +22913,6 @@ async def handle_admin_profile_user_id(update: Update, context):
                         except:
                             pass
                             
-                # 3. Договорные записи (не админские): confirmed
                 elif is_contract and status_lower in ['confirmed', 'подтвержден'] and not is_admin:
                     contract_count += 1
                     if price and price not in ['0', 'Договорная'] and 'договорная' not in str(price).lower():
@@ -20052,7 +22922,6 @@ async def handle_admin_profile_user_id(update: Update, context):
                         except:
                             pass
                             
-                # 4. Сведение/мастеринг: confirmed
                 elif is_mixing == 1 and status_lower in ['confirmed', 'подтвержден']:
                     contract_count += 1
                     if price and price not in ['0', 'Договорная'] and 'договорная' not in str(price).lower():
@@ -20062,7 +22931,6 @@ async def handle_admin_profile_user_id(update: Update, context):
                         except:
                             pass
                             
-                # 5. Создание альбома: confirmed
                 elif is_track_creation == 1 and track_type and 'Альбом' in track_type and status_lower in ['confirmed', 'подтвержден']:
                     contract_count += 1
                     if price and price not in ['0', 'Договорная'] and 'договорная' not in str(price).lower():
@@ -20072,15 +22940,13 @@ async def handle_admin_profile_user_id(update: Update, context):
                         except:
                             pass
             
-            # Обновляем total_spent если нужно
             if total_spent_calc != total_spent:
                 cursor.execute('UPDATE users SET total_spent = ? WHERE telegram_id = ?', 
                              (total_spent_calc, str(telegram_id)))
                 conn.commit()
                 total_spent = total_spent_calc
             
-            # ===== ЛИМИТЫ =====
-            # Записей с датой: X/2
+            # Лимиты
             cursor.execute('''
                 SELECT COUNT(*) 
                 FROM bookings 
@@ -20096,7 +22962,6 @@ async def handle_admin_profile_user_id(update: Update, context):
             ''', (str(telegram_id),))
             active_dated_count = cursor.fetchone()[0] or 0
             
-            # Договорных записей: X/3 (ТОЛЬКО PENDING!)
             cursor.execute('''
                 SELECT COUNT(*) 
                 FROM bookings 
@@ -20114,7 +22979,7 @@ async def handle_admin_profile_user_id(update: Update, context):
             ''', (str(telegram_id),))
             active_contract_count = cursor.fetchone()[0] or 0
             
-            # ===== ПРОЦЕНТЫ =====
+            # Проценты
             total_processed = confirmed_count + cancelled_count
             approved_percentage = 0
             cancelled_percentage = 0
@@ -20133,7 +22998,7 @@ async def handle_admin_profile_user_id(update: Update, context):
             else:
                 formatted_reg_date = "Не указана"
         
-        # ===== ФОРМИРУЕМ ТЕКСТ ПРОФИЛЯ ДЛЯ АДМИНА =====
+        # Формируем текст профиля для админа
         profile_text = (
             f"*👤 Профиль пользователя:*\n"
             f"• Username: @{username}\n"
@@ -20167,7 +23032,7 @@ async def handle_admin_profile_user_id(update: Update, context):
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
         )
         
-        logger.info(f"✅ Админ @{update.effective_user.username} просмотрел профиль пользователя @{username}")
+        logger.info(f"✅ Админ @{update.effective_user.username} просмотрел профиль пользователя @{username}!")
         
     except Exception as e:
         logger.error(f"❌ Ошибка получения профиля пользователя: {e}")
@@ -20184,9 +23049,18 @@ async def handle_admin_profile_user_id(update: Update, context):
     context.user_data.clear()
     return ConversationHandler.END
 
+
+# ============================================================
+# ОБРАБОТЧИК НЕИЗВЕСТНЫХ КОМАНД
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def handle_unknown(update: Update, context):
-    """Обработчик для неизвестных команд/сообщений - ПРОСТО ИГНОРИРУЕТ"""
+    """
+    Обработчик для неизвестных команд/сообщений - ПРОСТО ИГНОРИРУЕТ.
+    
+    Проверяет только промокоды и реферальные коды.
+    """
     text = update.message.text.strip()
     
     # Проверяем, не является ли сообщение промокодом
@@ -20197,13 +23071,19 @@ async def handle_unknown(update: Update, context):
     if len(text) >= 6 and text.isalnum() and not text.startswith(('🎤', '📅', '💰', '👥', '📍', '🔔', '❓', '🏆', '🎁', '👑', '↩️', '✅', '✏️', '❌', '👨‍🔧', '💪', '☀️', '🌙', '🎵', '💿', '🎚️', '⏰', '🎸', '➕', '➖', '📅')):
         return await process_referral_code_message(update, context)
     
-    # ===== УБРАНО СООБЩЕНИЕ О НЕИЗВЕСТНОЙ КОМАНДЕ =====
     # Просто игнорируем любое другое сообщение
     return
 
+
+# ============================================================
+# ПРОВЕРКА КУПОНОВ (АДМИНСКАЯ КОМАНДА)
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def check_coupons_command(update: Update, context):
-    """Проверяет купоны пользователя (только для админа)"""
+    """
+    Проверяет купоны пользователя (только для админа).
+    """
     user_id = str(update.effective_user.id)
     
     if user_id not in [str(admin_id) for admin_id in Config.ADMIN_IDS]:
@@ -20231,20 +23111,29 @@ async def check_coupons_command(update: Update, context):
             else:
                 await update.message.reply_text(f"❌ У пользователя {target_id} нет купонов!")
     except Exception as e:
-        logger.error(f"Ошибка проверки купонов: {e}")
+        logger.error(f"❌ Ошибка проверки купонов: {e}")
         await update.message.reply_text(f"❌ Ошибка: {e}")
 
+
+# ============================================================
+# ОБРАБОТЧИК INLINE-КНОПОК
+# ============================================================
+
 async def button_callback_handler(update: Update, context):
-    """Обработчик всех inline-кнопок"""
+    """
+    Обработчик всех inline-кнопок.
+    
+    Маршрутизирует callback-запросы к соответствующим обработчикам.
+    """
     query = update.callback_query
     
     try:
         data = query.data
         user_id = update.effective_user.id
         
-        logger.info(f"🔍 button_callback_handler: data={data}, user_id={user_id}")
+        logger.info(f"🔍 button_callback_handler: data={data}, user_id={user_id}!")
         
-        # ===== ВАЖНО: ОТВЕЧАЕМ НА ВСЕ CALLBACK СРАЗУ (УБИРАЕТ ПЕСОЧНЫЕ ЧАСЫ) =====
+        # Отвечаем на все callback сразу (убирает песочные часы)
         await query.answer()
         
         # Проверка блокировки для не-админов
@@ -20265,81 +23154,107 @@ async def button_callback_handler(update: Update, context):
                                     hours = time_left.seconds // 3600
                                     minutes = (time_left.seconds % 3600) // 60
                                     time_text = f"{hours} ч. {minutes} мин." if hours > 0 and minutes > 0 else f"{hours} ч." if hours > 0 else f"{minutes} мин."
-                                    await query.edit_message_text(text=f"🔒 Вы заблокированы!\n\n⏳ До разблокировки осталось: {time_text}\n\n📞 По вопросам обращайтесь к администратору: @mothman32", parse_mode="Markdown")
+                                    await query.edit_message_text(
+                                        text=f"🔒 Вы заблокированы!\n\n⏳ До разблокировки осталось: {time_text}\n\n📞 По вопросам обращайтесь к администратору: @mothman32",
+                                        parse_mode="Markdown"
+                                    )
                                     return
                                 else:
                                     cursor.execute('UPDATE users SET is_blocked = 0, blocked_until = NULL WHERE telegram_id = ?', (str(user_id),))
                                     conn.commit()
-                            except:
-                                await query.edit_message_text(text=f"🔒 Вы заблокированы!\n\n⏳ Тип блокировки: Навсегда\n\n📞 По вопросам обращайтесь к администратору: @mothman32", parse_mode="Markdown")
+                                    logger.info(f"✅ Пользователь {user_id} автоматически разблокирован при попытке действия!")
+                            except Exception as e:
+                                logger.error(f"❌ Ошибка проверки блокировки для пользователя {user_id}: {e}")
+                                await query.edit_message_text(
+                                    text=f"🔒 Вы заблокированы!\n\n⏳ Тип блокировки: Навсегда\n\n📞 По вопросам обращайтесь к администратору: @mothman32",
+                                    parse_mode="Markdown"
+                                )
                                 return
                         else:
-                            await query.edit_message_text(text=f"🔒 Вы заблокированы!\n\n⏳ Тип блокировки: Навсегда\n\n📞 По вопросам обращайтесь к администратору: @mothman32", parse_mode="Markdown")
+                            await query.edit_message_text(
+                                text=f"🔒 Вы заблокированы!\n\n⏳ Тип блокировки: Навсегда\n\n📞 По вопросам обращайтесь к администратору: @mothman32",
+                                parse_mode="Markdown"
+                            )
                             return
         
         # ========== РЕФЕРАЛЫ ==========
         if data == "enter_referral_code":
+            logger.info(f"🔍 Пользователь {user_id} запросил ввод реферального кода!")
             await enter_referral_code_callback(update, context)
             return
         
         if data == "show_my_referrals":
+            logger.info(f"🔍 Пользователь {user_id} запросил список своих рефералов!")
             await show_my_referrals_callback(update, context)
             return
         
         if data == "back_to_referral":
+            logger.info(f"🔍 Пользователь {user_id} возвращается в меню рефералов!")
             await back_to_referral_callback(update, context)
             return
         
         # ========== ОТМЕНА ЗАПИСИ (ПОЛЬЗОВАТЕЛЬ) ==========
         if data == "keep_booking":
+            logger.info(f"🔍 Пользователь {user_id} отменил удаление записи (оставляет)!")
             await show_my_bookings_in_message(query.message, context, update.effective_user.id)
             return
         
         if data == "back_to_bookings":
+            logger.info(f"🔍 Пользователь {user_id} возвращается к списку записей!")
             await show_my_bookings_in_message(query.message, context, update.effective_user.id)
             return
         
         # ========== ВЫРУЧКА ==========
         if data.startswith('revenue_'):
+            logger.info(f"🔍 Пользователь {user_id} выбрал период для выручки: {data}!")
             await handle_revenue_period_selection(update, context)
             return
         
         # ========== ПРОМОКОДЫ ==========
         if data.startswith('promo_'):
+            logger.info(f"🔍 Пользователь {user_id} взаимодействует с промокодами: {data}!")
             await promo_callback_handler(update, context)
             return
         
         if data.startswith('admin_del_promo_'):
+            logger.info(f"🔍 Админ {user_id} запросил удаление промокода: {data}!")
             await admin_promo_delete_callback_handler(update, context)
             return
         
         if data.startswith('admin_confirm_del_') or data == "admin_cancel_del":
+            logger.info(f"🔍 Админ {user_id} подтверждает/отменяет удаление промокода: {data}!")
             await admin_promo_delete_confirm_handler(update, context)
             return
         
         # ========== АДМИНСКАЯ ОТМЕНА ==========
         if data.startswith('admin_cancel_confirm_'):
+            logger.info(f"🔍 Админ {user_id} подтверждает отмену записи: {data}!")
             await admin_cancel_confirm_handler(update, context)
             return
         
         if data == "admin_cancel_keep":
+            logger.info(f"🔍 Админ {user_id} отменил удаление записи (оставляет)!")
             target_user_id = context.user_data.get('target_user_id')
             if target_user_id:
                 await show_my_bookings_in_message(query.message, context, target_user_id)
             return
         
         if data.startswith('admin_cancel_') and data != "admin_cancel_keep":
+            logger.info(f"🔍 Админ {user_id} взаимодействует с отменой записи: {data}!")
             await admin_cancel_callback_handler(update, context)
             return
         
         # ========== УДАЛЕНИЕ ДОСТИЖЕНИЙ ==========
         if data.startswith('admin_remove_achievement_'):
             if data.startswith('admin_remove_achievement_confirm_'):
+                logger.info(f"🔍 Админ {user_id} подтверждает удаление достижения: {data}!")
                 await admin_remove_achievement_confirm(update, context)
                 return
             if data.startswith('admin_remove_achievement_cancel'):
+                logger.info(f"🔍 Админ {user_id} отменяет удаление достижения: {data}!")
                 await admin_remove_achievement_cancel(update, context)
                 return
+            logger.info(f"🔍 Админ {user_id} запросил удаление достижения: {data}!")
             await admin_remove_achievement_callback(update, context)
             return
         
@@ -20349,10 +23264,12 @@ async def button_callback_handler(update: Update, context):
             chat_id = query.message.chat_id
             message_id = query.message.message_id
             
+            logger.info(f"🔍 Админ {user_id} подтверждает запись #{booking_id}!")
+            
             try:
                 await query.edit_message_reply_markup(reply_markup=None)
             except Exception as e:
-                logger.error(f"Ошибка при ответе на callback: {e}")
+                logger.error(f"❌ Ошибка при удалении клавиатуры для записи #{booking_id}: {e}")
             
             asyncio.create_task(process_booking_confirmation(
                 booking_id=booking_id,
@@ -20369,10 +23286,12 @@ async def button_callback_handler(update: Update, context):
             chat_id = query.message.chat_id
             message_id = query.message.message_id
             
+            logger.info(f"🔍 Админ {user_id} отклоняет запись #{booking_id}!")
+            
             try:
                 await query.edit_message_reply_markup(reply_markup=None)
             except Exception as e:
-                logger.error(f"Ошибка при ответе на callback: {e}")
+                logger.error(f"❌ Ошибка при удалении клавиатуры для записи #{booking_id}: {e}")
             
             asyncio.create_task(process_booking_rejection(
                 booking_id=booking_id,
@@ -20388,14 +23307,17 @@ async def button_callback_handler(update: Update, context):
             try:
                 parts = data.split('_')
                 if len(parts) < 2 or parts[1] == 'cancel':
+                    logger.warning(f"⚠️ Неверный формат callback для отмены: {data}!")
                     await query.edit_message_text(
                         text="*❌ Ошибка формата!*",
                         parse_mode="Markdown"
                     )
                     return
-                booking_id = int(parts[1])
                 
-                # ===== ПОЛУЧАЕМ ПОЛНЫЕ ДАННЫЕ ДЛЯ ПОДТВЕРЖДЕНИЯ =====
+                booking_id = int(parts[1])
+                logger.info(f"🔍 Пользователь {user_id} запросил отмену записи #{booking_id}!")
+                
+                # Получаем полные данные для подтверждения
                 with db.get_connection() as conn:
                     cursor = conn.cursor()
                     cursor.execute('''
@@ -20408,6 +23330,7 @@ async def button_callback_handler(update: Update, context):
                     booking = cursor.fetchone()
                     
                     if not booking:
+                        logger.warning(f"⚠️ Запись #{booking_id} не найдена для пользователя {user_id}!")
                         await query.edit_message_text(
                             text="*❌ Запись не найдена!*",
                             parse_mode="Markdown"
@@ -20416,6 +23339,7 @@ async def button_callback_handler(update: Update, context):
                     
                     current_status = booking[4]
                     if current_status in ['cancelled', 'cancelled_by_user', 'completed', 'rejected']:
+                        logger.info(f"ℹ️ Запись #{booking_id} уже в статусе {current_status}, отмена невозможна!")
                         await query.edit_message_text(
                             text="*❌ Эту запись уже нельзя отменить!*",
                             parse_mode="Markdown"
@@ -20442,6 +23366,7 @@ async def button_callback_handler(update: Update, context):
                     track_type = booking[19] if len(booking) > 19 else None
                     
                     if is_contractual:
+                        logger.info(f"ℹ️ Запись #{booking_id} договорная, отмена невозможна!")
                         await query.edit_message_text(
                             text="*❌ Договорные записи нельзя отменить!*",
                             parse_mode="Markdown"
@@ -20449,6 +23374,7 @@ async def button_callback_handler(update: Update, context):
                         return
                     
                     if is_mixing:
+                        logger.info(f"ℹ️ Запись #{booking_id} сведение/мастеринг, отмена невозможна!")
                         await query.edit_message_text(
                             text="*❌ Сведение/мастеринг нельзя отменить!*",
                             parse_mode="Markdown"
@@ -20457,8 +23383,9 @@ async def button_callback_handler(update: Update, context):
                     
                     hours_until = DateTimeUtils.get_hours_until_booking(date_str, time_slot)
                     
-                    # ===== ПРОВЕРКА НА 12 ЧАСОВ =====
+                    # Проверка на 12 часов
                     if hours_until < 12 and hours_until != -1 and not is_12_hours and not is_track_creation:
+                        logger.info(f"ℹ️ Отмена записи #{booking_id} недоступна: до начала {hours_until:.1f} часов!")
                         error_text = (
                             f"*❌ Отмена записи недоступна!*\n\n"
                             f"*⏰ До начала менее 12 часов*\n\n"
@@ -20485,7 +23412,7 @@ async def button_callback_handler(update: Update, context):
                     safe_name = SecurityUtils.safe_markdown_text(name)
                     safe_contact = SecurityUtils.safe_markdown_text(contact)
                     
-                    # ===== ФОРМИРУЕМ ТЕКСТ СКИДКИ ПО УРОВНЮ =====
+                    # Формируем текст скидки по уровню
                     coupon_text = ""
                     if level_discount_percent and level_discount_percent > 0:
                         if level_coupon_id:
@@ -20501,7 +23428,7 @@ async def button_callback_handler(update: Update, context):
                         else:
                             coupon_text = f"• Скидка по уровню: {level_discount_percent}%"
                     
-                    # ===== ФОРМИРУЕМ ТЕКСТ ПРОМОКОДА =====
+                    # Формируем текст промокода
                     promo_text = ""
                     if promo_code_used:
                         cursor.execute('''
@@ -20528,7 +23455,7 @@ async def button_callback_handler(update: Update, context):
                                 service_names = {"вокал": "вокал", "инструмент": "инструмент", "аренда": "аренду", "сведение": "сведение", "трек": "трек"}
                                 promo_text = f"• Промокод: бесплатно: {service_names.get(target_service, target_service)} (код: {promo_code_used})"
                     
-                    # ===== ФОРМАТИРУЕМ ДАТУ И ВРЕМЯ =====
+                    # Форматируем дату и время
                     clean_date_display = date_str
                     if clean_date_display and '(' in clean_date_display:
                         clean_date_display = clean_date_display.split('(')[0].strip()
@@ -20539,7 +23466,7 @@ async def button_callback_handler(update: Update, context):
                     if time_display and '-' in time_display:
                         time_display = DateTimeUtils.format_time_for_display(time_display)
                     
-                    # ===== ФОРМИРУЕМ СТАТУС ДЛЯ ОТОБРАЖЕНИЯ =====
+                    # Формируем статус для отображения
                     status_lower = current_status.lower() if current_status else ""
                     if 'pending' in status_lower or 'ожидает' in status_lower:
                         status_display = "Ожидает подтверждения"
@@ -20554,7 +23481,7 @@ async def button_callback_handler(update: Update, context):
                     else:
                         status_display = current_status or "Неизвестен"
                     
-                    # ===== ФОРМИРУЕМ ТЕКСТ ПОДТВЕРЖДЕНИЯ =====
+                    # Формируем текст подтверждения
                     confirm_text = f"*⚠️ Вы уверены, что хотите отменить запись?*\n\n"
                     confirm_text += f"*📋 Детали записи #{booking_id}:*\n"
                     confirm_text += f"• Имя: {safe_name}\n"
@@ -20611,7 +23538,7 @@ async def button_callback_handler(update: Update, context):
                     await query.edit_message_text(text=confirm_text, parse_mode="Markdown", reply_markup=keyboard)
                     
             except Exception as e:
-                logger.error(f"❌ Ошибка при запросе отмены: {e}")
+                logger.error(f"❌ Ошибка при запросе отмены записи для пользователя {user_id}: {e}")
                 await query.edit_message_text(
                     text="*❌ Ошибка при отмене!*",
                     parse_mode="Markdown"
@@ -20623,14 +23550,17 @@ async def button_callback_handler(update: Update, context):
             try:
                 parts = data.split('_')
                 if len(parts) < 3:
+                    logger.warning(f"⚠️ Неверный формат callback для подтверждения отмены: {data}!")
                     await query.edit_message_text(
                         text="*❌ Ошибка формата!*",
                         parse_mode="Markdown"
                     )
                     return
-                booking_id = int(parts[2])
                 
-                # ===== ПОКАЗЫВАЕМ ПРОЦЕСС ОТМЕНЫ =====
+                booking_id = int(parts[2])
+                logger.info(f"🔍 Пользователь {user_id} подтвердил отмену записи #{booking_id}!")
+                
+                # Показываем процесс отмены
                 await query.edit_message_text(
                     text=f"⏳ Отмена записи #{booking_id}...",
                     parse_mode="Markdown"
@@ -20647,6 +23577,7 @@ async def button_callback_handler(update: Update, context):
                     booking = cursor.fetchone()
                     
                     if not booking:
+                        logger.warning(f"⚠️ Запись #{booking_id} не найдена для пользователя {user_id}!")
                         await query.edit_message_text(
                             text="*❌ Запись не найдена!*",
                             parse_mode="Markdown"
@@ -20673,6 +23604,7 @@ async def button_callback_handler(update: Update, context):
                     track_type = booking[17] if len(booking) > 17 else None
                     
                     if current_status in ['cancelled', 'cancelled_by_user', 'completed', 'rejected']:
+                        logger.info(f"ℹ️ Запись #{booking_id} уже в статусе {current_status}, отмена невозможна!")
                         await query.edit_message_text(
                             text="*❌ Эту запись уже нельзя отменить!*",
                             parse_mode="Markdown"
@@ -20680,6 +23612,7 @@ async def button_callback_handler(update: Update, context):
                         return
                     
                     if is_mixing:
+                        logger.info(f"ℹ️ Запись #{booking_id} сведение/мастеринг, отмена невозможна!")
                         await query.edit_message_text(
                             text="*❌ Сведение/мастеринг нельзя отменить!*",
                             parse_mode="Markdown"
@@ -20687,6 +23620,7 @@ async def button_callback_handler(update: Update, context):
                         return
                     
                     if is_contractual:
+                        logger.info(f"ℹ️ Запись #{booking_id} договорная, отмена невозможна!")
                         await query.edit_message_text(
                             text="*❌ Договорные записи нельзя отменить!*",
                             parse_mode="Markdown"
@@ -20696,6 +23630,7 @@ async def button_callback_handler(update: Update, context):
                     hours_until = DateTimeUtils.get_hours_until_booking(date_str, time_slot)
                     
                     if hours_until < 12 and hours_until != -1 and not is_12_hours and not is_track_creation:
+                        logger.info(f"ℹ️ Отмена записи #{booking_id} недоступна: до начала {hours_until:.1f} часов!")
                         await query.edit_message_text(
                             text=(
                                 f"*❌ Отмена записи недоступна!*\n\n"
@@ -20706,7 +23641,7 @@ async def button_callback_handler(update: Update, context):
                         )
                         return
                     
-                    # ===== ФОРМИРУЕМ ТЕКСТ КУПОНА =====
+                    # Формируем текст купона
                     coupon_text = ""
                     if level_coupon_id:
                         cursor.execute('''
@@ -20717,7 +23652,7 @@ async def button_callback_handler(update: Update, context):
                             level, discount = coupon_info
                             coupon_text = f"• Купон уровня {level}: {discount}%"
                     
-                    # ===== ФОРМИРУЕМ ТЕКСТ ПРОМОКОДА =====
+                    # Формируем текст промокода
                     promo_text = ""
                     if promo_code_used:
                         cursor.execute('''
@@ -20746,7 +23681,7 @@ async def button_callback_handler(update: Update, context):
                                 service_names = {"вокал": "вокал", "инструмент": "инструмент", "аренда": "аренду", "сведение": "сведение", "трек": "трек"}
                                 promo_text = f"• Промокод: бесплатно: {service_names.get(target_service, target_service)} (код: {promo_code_used})"
                     
-                    # ===== ЛОГИКА КУПОНА ПРИ ОТМЕНЕ =====
+                    # Логика купона при отмене
                     if level_coupon_id:
                         cursor.execute('SELECT remaining_uses, is_permanent FROM user_coupons WHERE id = ?', (level_coupon_id,))
                         coupon_check = cursor.fetchone()
@@ -20755,14 +23690,14 @@ async def button_callback_handler(update: Update, context):
                             remaining_uses, is_permanent = coupon_check
                             
                             if remaining_uses == 0 and not is_permanent:
-                                logger.info(f"ℹ️ Купон {level_coupon_id} уже использован, не возвращаем при отмене")
+                                logger.info(f"ℹ️ Купон {level_coupon_id} уже использован, не возвращаем при отмене!")
                             else:
                                 if hours_until >= 12 or hours_until == -1:
                                     cursor.execute('UPDATE user_coupons SET remaining_uses = remaining_uses + 1 WHERE id = ? AND is_permanent = 0', (level_coupon_id,))
-                                    logger.info(f"🔄 Купон {level_coupon_id} ВОЗВРАЩЁН при отмене пользователем (> 12ч) #{booking_id}")
+                                    logger.info(f"🔄 Купон {level_coupon_id} ВОЗВРАЩЁН при отмене пользователем (> 12ч) для записи #{booking_id}!")
                                 else:
                                     cursor.execute('DELETE FROM user_coupons WHERE id = ?', (level_coupon_id,))
-                                    logger.info(f"🔥 Купон {level_coupon_id} СГОРЕЛ при отмене пользователем (< 12ч) #{booking_id}")
+                                    logger.info(f"🔥 Купон {level_coupon_id} СГОРЕЛ при отмене пользователем (< 12ч) для записи #{booking_id}!")
                     
                     # Обработка промокода
                     handle_promo_code_on_cancellation(booking_id, str(user_id), hours_until, context)
@@ -20787,7 +23722,7 @@ async def button_callback_handler(update: Update, context):
                     if was_awarded and not is_mixing:
                         cursor.execute('UPDATE users SET vinyls = vinyls - 25 WHERE telegram_id = ? AND vinyls >= 25', (str(user_id),))
                         cursor.execute('UPDATE bookings SET vinyls_awarded = 0 WHERE id = ?', (booking_id,))
-                        logger.info(f"💰 Списано 25 пластинок у {user_id} за отмену записи #{booking_id}")
+                        logger.info(f"💰 Списано 25 пластинок у пользователя {user_id} за отмену записи #{booking_id}!")
                         
                         cursor.execute('SELECT vinyls FROM users WHERE telegram_id = ?', (str(user_id),))
                         new_vinyl_row = cursor.fetchone()
@@ -20809,7 +23744,7 @@ async def button_callback_handler(update: Update, context):
                     await AchievementSystem.check_and_award_achievements(str(user_id), context, None)
                     await AchievementSystem.update_user_level(str(user_id), context)
                 
-                # ===== ФОРМАТИРУЕМ ДАННЫЕ ДЛЯ СООБЩЕНИЯ =====
+                # Форматируем данные для сообщения
                 safe_name = SecurityUtils.safe_markdown_text(name)
                 safe_contact = SecurityUtils.safe_markdown_text(contact)
                 
@@ -20823,7 +23758,7 @@ async def button_callback_handler(update: Update, context):
                 if time_display and '-' in time_display:
                     time_display = DateTimeUtils.format_time_for_display(time_display)
                 
-                # ===== ОТПРАВКА ОТДЕЛЬНОГО СООБЩЕНИЯ ПОЛЬЗОВАТЕЛЮ =====
+                # Отправка отдельного сообщения пользователю
                 try:
                     user_message = f"*✅ Запись #{booking_id} успешно отменена!*\n\n"
                     user_message += f"*✨ Благодарим вас, {safe_name}!*\n\n"
@@ -20875,11 +23810,11 @@ async def button_callback_handler(update: Update, context):
                         text=user_message,
                         parse_mode="Markdown"
                     )
-                    logger.info(f"✅ Сообщение об отмене отправлено пользователю {user_id}")
+                    logger.info(f"✅ Сообщение об отмене отправлено пользователю {user_id}!")
                 except Exception as e:
-                    logger.error(f"❌ Ошибка отправки сообщения об отмене: {e}")
+                    logger.error(f"❌ Ошибка отправки сообщения об отмене пользователю {user_id}: {e}")
                 
-                # ===== ОТПРАВКА УВЕДОМЛЕНИЯ АДМИНАМ =====
+                # Отправка уведомления админам
                 clean_date_for_admin = date_str
                 if clean_date_for_admin and '(' in clean_date_for_admin:
                     clean_date_for_admin = clean_date_for_admin.split('(')[0].strip()
@@ -20925,7 +23860,7 @@ async def button_callback_handler(update: Update, context):
                             text=admin_message, 
                             parse_mode="Markdown"
                         )
-                        logger.info(f"✅ Уведомление об отмене отправлено админу {admin_id}")
+                        logger.info(f"✅ Уведомление об отмене отправлено админу {admin_id}!")
                     except Exception as e:
                         logger.error(f"❌ Ошибка отправки админу {admin_id}: {e}")
                 
@@ -20939,7 +23874,7 @@ async def button_callback_handler(update: Update, context):
                 await show_my_bookings_in_message(query.message, context, update.effective_user.id)
                 
             except Exception as e:
-                logger.error(f"❌ Ошибка выполнения отмены: {e}")
+                logger.error(f"❌ Ошибка выполнения отмены записи для пользователя {user_id}: {e}")
                 import traceback
                 traceback.print_exc()
                 await query.edit_message_text(
@@ -20948,10 +23883,11 @@ async def button_callback_handler(update: Update, context):
                 )
             return
         
-        logger.warning(f"⚠️ Неизвестный callback: {data}")
+        # ========== НЕИЗВЕСТНЫЙ CALLBACK ==========
+        logger.warning(f"⚠️ Неизвестный callback: {data} от пользователя {user_id}!")
     
     except Exception as e:
-        logger.error(f"❌ Ошибка callback: {e}")
+        logger.error(f"❌ Критическая ошибка в button_callback_handler для пользователя {user_id}: {e}")
         import traceback
         traceback.print_exc()
         try:
@@ -20962,21 +23898,41 @@ async def button_callback_handler(update: Update, context):
         except:
             pass
 
+# ============================================================
+# ОТЛАДКА НАЧИСЛЕНИЯ ПЛАСТИНОК
+# ============================================================
+
+# ============================================================
+# ОТЛАДКА НАЧИСЛЕНИЯ ПЛАСТИНОК
+# ============================================================
+
 @handle_errors_with_rate_limit
 async def debug_add_vinyls(update: Update, context):
-    """Прямой вызов add_vinyls_for_booking с диагностикой"""
+    """
+    Прямой вызов add_vinyls_for_booking с диагностикой.
+    
+    Только для администраторов.
+    """
     user_id = update.effective_user.id
     
     if user_id not in Config.ADMIN_IDS:
+        logger.warning(f"⚠️ Пользователь {user_id} попытался вызвать debug_add_vinyls без прав!")
         await update.message.reply_text("❌ Нет прав!")
         return
     
     args = context.args
     if not args:
+        logger.info(f"ℹ️ Админ {user_id} вызвал debug_add_vinyls без аргументов!")
         await update.message.reply_text("❌ /debugadd 1")
         return
     
-    booking_id = int(args[0])
+    try:
+        booking_id = int(args[0])
+        logger.info(f"🔍 Админ {user_id} запускает отладку для записи #{booking_id}!")
+    except ValueError:
+        logger.warning(f"⚠️ Админ {user_id} ввёл неверный ID: {args[0]}!")
+        await update.message.reply_text("❌ ID должен быть числом!")
+        return
     
     await update.message.reply_text(f"🔍 Прямой вызов add_vinyls_for_booking для #{booking_id}...")
     
@@ -20985,10 +23941,13 @@ async def debug_add_vinyls(update: Update, context):
         conn = sqlite3.connect(db.db_path, timeout=10.0)
         cursor = conn.cursor()
         
+        logger.info(f"🔍 Получаю данные записи #{booking_id} из БД!")
+        
         cursor.execute('SELECT * FROM bookings WHERE id = ?', (booking_id,))
         row = cursor.fetchone()
         
         if not row:
+            logger.error(f"❌ Запись #{booking_id} не найдена в БД!")
             await update.message.reply_text(f"❌ Запись #{booking_id} не найдена!")
             conn.close()
             return
@@ -21017,7 +23976,8 @@ async def debug_add_vinyls(update: Update, context):
             'track_type': data.get('track_type')
         }
         
-        # Отправляем сообщение БЕЗ маркдауна
+        logger.info(f"📋 Данные записи #{booking_id}: status={booking_data['status']}, service={booking_data['service']}")
+        
         msg = f"📋 Данные для начисления:\n\n"
         msg += f"id: {booking_data['id']}\n"
         msg += f"telegram_id: {booking_data['telegram_id']}\n"
@@ -21034,7 +23994,8 @@ async def debug_add_vinyls(update: Update, context):
         
         await update.message.reply_text(msg)
         
-        # ПРЯМОЙ ВЫЗОВ
+        # Прямой вызов
+        logger.info(f"💰 Вызываю add_vinyls_for_booking для записи #{booking_id}!")
         result, new_vinyls = await AchievementSystem.add_vinyls_for_booking(
             str(booking_data['telegram_id']), 
             context, 
@@ -21042,12 +24003,14 @@ async def debug_add_vinyls(update: Update, context):
         )
         
         if result:
+            logger.info(f"✅ УСПЕШНО начислены пластинки для записи #{booking_id}! Всего: {new_vinyls}!")
             await update.message.reply_text(
                 f"✅ УСПЕШНО!\n\n"
                 f"💰 Всего пластинок: {new_vinyls} 💿",
                 parse_mode="Markdown"
             )
         else:
+            logger.warning(f"⚠️ Не удалось начислить пластинки для записи #{booking_id}!")
             await update.message.reply_text(
                 f"❌ НЕ УДАЛОСЬ!\n\n"
                 f"add_vinyls_for_booking вернула False\n"
@@ -21055,14 +24018,22 @@ async def debug_add_vinyls(update: Update, context):
             )
             
     except Exception as e:
+        logger.error(f"❌ Ошибка в debug_add_vinyls для записи #{booking_id}: {e}")
         await update.message.reply_text(f"❌ ОШИБКА:\n\n{str(e)[:300]}")
         import traceback
         traceback.print_exc()
 
+
+# ============================================================
+# ПОДТВЕРЖДЕНИЕ ЗАПИСИ АДМИНОМ (ФОНОВОЕ)
+# ============================================================
+
 async def process_booking_confirmation(booking_id: int, admin_id: int, context: ContextTypes.DEFAULT_TYPE, chat_id: int, message_id: int):
-    """Фоновая обработка подтверждения записи с созданием уведомлений и начислением пластинок"""
+    """
+    Фоновая обработка подтверждения записи с созданием уведомлений и начислением пластинок.
+    """
     try:
-        logger.info(f"🔄 Начинаем обработку подтверждения записи #{booking_id}")
+        logger.info(f"🔄 Начинаю обработку подтверждения записи #{booking_id} администратором {admin_id}!")
         
         with db.get_connection(timeout=30.0) as conn:
             cursor = conn.cursor()
@@ -21078,7 +24049,7 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
             result = cursor.fetchone()
             
             if not result:
-                logger.error(f"❌ Запись #{booking_id} не найдена")
+                logger.error(f"❌ Запись #{booking_id} не найдена в БД!")
                 await context.bot.edit_message_text(
                     chat_id=chat_id, message_id=message_id,
                     text="❌ Запись не найдена!", parse_mode="Markdown"
@@ -21092,7 +24063,10 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
              is_track_creation, track_type, mixing_type, free_service_applied,
              level_coupon_id) = result
             
+            logger.info(f"📋 Данные записи #{booking_id}: статус={current_status}, услуга={service}, пользователь={telegram_id}!")
+            
             if current_status in ['confirmed', 'подтвержден']:
+                logger.info(f"ℹ️ Запись #{booking_id} уже подтверждена!")
                 await context.bot.edit_message_text(
                     chat_id=chat_id, message_id=message_id,
                     text="✅ Запись уже подтверждена!", parse_mode="Markdown"
@@ -21100,6 +24074,7 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
                 return
             
             if current_status in ['rejected', 'отклонен']:
+                logger.info(f"ℹ️ Запись #{booking_id} уже отклонена!")
                 await context.bot.edit_message_text(
                     chat_id=chat_id, message_id=message_id,
                     text="❌ Запись уже отклонена!", parse_mode="Markdown"
@@ -21108,14 +24083,14 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
             
             cursor.execute('UPDATE bookings SET status = "confirmed" WHERE id = ?', (booking_id,))
             
-            # ===== СЖИГАЕМ КУПОН ДЛЯ СВЕДЕНИЯ (трек 2500₽) =====
+            # Сжигаем купон для сведения (трек 2500₽)
             if is_mixing == 1 and not is_contractual and level_coupon_id:
                 cursor.execute('DELETE FROM user_coupons WHERE id = ?', (level_coupon_id,))
-                logger.info(f"🔥 Купон {level_coupon_id} сгорел при подтверждении сведения #{booking_id}")
+                logger.info(f"🔥 Купон {level_coupon_id} сгорел при подтверждении сведения для записи #{booking_id}!")
             
             conn.commit()
             
-            # ===== НАЧИСЛЯЕМ ПЛАСТИНКИ ДЛЯ ДОГОВОРНЫХ ЗАПИСЕЙ И СВЕДЕНИЯ/МАСТЕРИНГА =====
+            # Начисляем пластинки для договорных записей и сведения/мастеринга
             if is_contractual == 1 or is_mixing == 1 or is_admin_booking == 1:
                 booking_data_for_vinyls = {
                     'id': booking_id,
@@ -21128,14 +24103,15 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
                     'date_str': date_str
                 }
                 
+                logger.info(f"💰 Начисляю пластинки для пользователя {telegram_id} за запись #{booking_id}!")
                 vinyls_added, new_vinyls = await AchievementSystem.add_vinyls_for_booking(
                     str(telegram_id), context, booking_data_for_vinyls
                 )
                 
                 if vinyls_added:
-                    logger.info(f"✅ Пользователю {telegram_id} начислено +25 пластинок за {service} #{booking_id}")
+                    logger.info(f"✅ Пользователю {telegram_id} начислено +25 пластинок за {service} (запись #{booking_id})!")
             
-            # ===== ПРОВЕРЯЕМ РЕФЕРАЛЬНЫЙ БОНУС =====
+            # Проверяем реферальный бонус
             if not is_admin_booking:
                 try:
                     with db.get_connection() as conn_ref:
@@ -21183,7 +24159,7 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
                                     referrer_new_vinyl_row = cursor_ref.fetchone()
                                     referrer_new_vinyls = referrer_new_vinyl_row[0] if referrer_new_vinyl_row else 0
                                     
-                                    logger.info(f"🎉 Рефереру {referrer_id} начислено +25 пластинок за реферала {telegram_id}")
+                                    logger.info(f"🎉 Рефереру {referrer_id} начислено +25 пластинок за реферала {telegram_id}!")
                                     
                                     try:
                                         await context.bot.send_message(
@@ -21195,22 +24171,22 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
                                             ),
                                             parse_mode="Markdown"
                                         )
+                                        logger.info(f"✅ Уведомление рефереру {referrer_id} отправлено!")
                                     except Exception as e:
-                                        logger.error(f"Не удалось отправить уведомление рефереру: {e}")
+                                        logger.error(f"❌ Не удалось отправить уведомление рефереру {referrer_id}: {e}")
                                     
                                     await AchievementSystem.check_and_award_achievements(str(referrer_id), context, None)
                                     await AchievementSystem.update_user_level(str(referrer_id), context)
                 except Exception as e:
-                    logger.error(f"❌ Ошибка проверки реферального бонуса: {e}")
+                    logger.error(f"❌ Ошибка проверки реферального бонуса для пользователя {telegram_id}: {e}")
         
-        # ===== ОТПРАВКА СООБЩЕНИЯ ПОЛЬЗОВАТЕЛЮ =====
+        # Отправка сообщения пользователю
         clean_date = date_str
         if date_str and '(' in date_str:
             clean_date = date_str.split('(')[0].strip()
         if clean_date and clean_date[0] in "🟢🟡🟠🔴⚪️":
             clean_date = clean_date[2:].strip()
         
-        # ===== ИСПРАВЛЕНО: format_time_for_display() нормализует 24→00 =====
         display_time = time_slot
         if time_slot and '-' in time_slot:
             display_time = DateTimeUtils.format_time_for_display(time_slot)
@@ -21243,7 +24219,7 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
             else:
                 user_message_lines.append(f"⏰ Время: {display_time}")
         
-        # ===== ЦЕНА (С УЧЁТОМ АЛЬБОМА И БЕСПЛАТНОГО ЧАСА) =====
+        # Цена (с учётом альбома и бесплатного часа)
         if (is_mixing == 1 and mixing_type and "Альбом" in mixing_type) or \
            (is_track_creation == 1 and track_type and "Альбом" in track_type):
             user_message_lines.append(f"💰 Стоимость: Договорная")
@@ -21280,9 +24256,9 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
             text=user_message,
             parse_mode="Markdown"
         )
-        logger.info(f"✅ Сообщение пользователю {telegram_id} отправлено")
+        logger.info(f"✅ Сообщение пользователю {telegram_id} отправлено!")
         
-        # ===== СОЗДАНИЕ УВЕДОМЛЕНИЙ =====
+        # Создание уведомлений
         if (clean_date and 'Не указана' not in clean_date and 
             display_time and display_time not in ['Не указано', 'Не указано (договорная)']):
             
@@ -21327,18 +24303,18 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
                         hours_before=hours_before
                     )
                     if success:
-                        logger.info(f"✅ Создано уведомление за {hours_before} часов для записи #{booking_id}")
+                        logger.info(f"✅ Создано уведомление за {hours_before} часов для записи #{booking_id}!")
         
-        # ===== ОБНОВЛЯЕМ СООБЩЕНИЕ АДМИНА =====
+        # Обновляем сообщение админа
         await context.bot.edit_message_text(
             chat_id=chat_id, message_id=message_id,
             text="*✅ Запись подтверждена!*", parse_mode="Markdown"
         )
         
-        logger.info(f"✅ Запись #{booking_id} успешно подтверждена")
+        logger.info(f"✅ Запись #{booking_id} успешно подтверждена администратором {admin_id}!")
         
     except Exception as e:
-        logger.error(f"❌ Ошибка в process_booking_confirmation: {e}")
+        logger.error(f"❌ Ошибка в process_booking_confirmation для записи #{booking_id}: {e}")
         import traceback
         traceback.print_exc()
         try:
@@ -21348,11 +24324,18 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
             )
         except:
             pass
-            
+
+
+# ============================================================
+# ОТКЛОНЕНИЕ ЗАПИСИ АДМИНОМ (ФОНОВОЕ)
+# ============================================================
+
 async def process_booking_rejection(booking_id: int, admin_id: int, context: ContextTypes.DEFAULT_TYPE, chat_id: int, message_id: int):
-    """Фоновая обработка отклонения записи - ВОЗВРАЩАЕМ ПРОМОКОД И КУПОН"""
+    """
+    Фоновая обработка отклонения записи - ВОЗВРАЩАЕМ ПРОМОКОД И КУПОН.
+    """
     try:
-        logger.info(f"🔄 Начинаем обработку отклонения записи #{booking_id}")
+        logger.info(f"🔄 Начинаю обработку отклонения записи #{booking_id} администратором {admin_id}!")
         
         with db.get_connection(timeout=30.0) as conn:
             cursor = conn.cursor()
@@ -21367,7 +24350,7 @@ async def process_booking_rejection(booking_id: int, admin_id: int, context: Con
             result = cursor.fetchone()
             
             if not result:
-                logger.error(f"❌ Запись #{booking_id} не найдена")
+                logger.error(f"❌ Запись #{booking_id} не найдена в БД!")
                 await context.bot.edit_message_text(
                     chat_id=chat_id, message_id=message_id,
                     text="❌ Запись не найдена!", parse_mode="Markdown"
@@ -21380,7 +24363,10 @@ async def process_booking_rejection(booking_id: int, admin_id: int, context: Con
              with_engineer, mixing_type, is_track_creation, track_type, is_contractual,
              start_hour, end_hour, free_service_applied, level_coupon_id) = result
             
+            logger.info(f"📋 Данные записи #{booking_id}: статус={current_status}, услуга={service}, пользователь={telegram_id}!")
+            
             if current_status in ['confirmed', 'подтвержден']:
+                logger.info(f"ℹ️ Запись #{booking_id} уже подтверждена!")
                 await context.bot.edit_message_text(
                     chat_id=chat_id, message_id=message_id,
                     text="✅ Запись уже подтверждена!", parse_mode="Markdown"
@@ -21388,55 +24374,51 @@ async def process_booking_rejection(booking_id: int, admin_id: int, context: Con
                 return
             
             if current_status in ['rejected', 'отклонен']:
+                logger.info(f"ℹ️ Запись #{booking_id} уже отклонена!")
                 await context.bot.edit_message_text(
                     chat_id=chat_id, message_id=message_id,
                     text="❌ Запись уже отклонена!", parse_mode="Markdown"
                 )
                 return
             
-            # ===== ВОЗВРАЩАЕМ ПРОМОКОД (ЕСЛИ БЫЛ) =====
+            # Возвращаем промокод (если был)
             if promo_code_used:
                 cursor.execute('''
                     UPDATE user_promo_usage 
                     SET status = 'active', booking_id = NULL 
                     WHERE promo_code = ? AND user_id = ?
                 ''', (promo_code_used, str(telegram_id)))
-                logger.info(f"🔄 Промокод {promo_code_used} ВОЗВРАЩЁН пользователю {telegram_id} при отклонении записи #{booking_id}")
+                logger.info(f"🔄 Промокод {promo_code_used} ВОЗВРАЩЁН пользователю {telegram_id} при отклонении записи #{booking_id}!")
             
-            # ===== ВОЗВРАЩАЕМ КУПОН (ЕСЛИ БЫЛ) - С ПРОВЕРКОЙ =====
+            # Возвращаем купон (если был) - с проверкой
             if level_coupon_id:
-                # Проверяем, существует ли купон в user_coupons
                 cursor.execute('SELECT id FROM user_coupons WHERE id = ?', (level_coupon_id,))
                 exists = cursor.fetchone()
                 
                 if exists:
-                    # Купон существует - увеличиваем remaining_uses
                     cursor.execute('''
                         UPDATE user_coupons SET remaining_uses = remaining_uses + 1 
                         WHERE id = ? AND is_permanent = 0
                     ''', (level_coupon_id,))
-                    logger.info(f"🔄 Купон {level_coupon_id} ВОЗВРАЩЁН (обновлён) при отклонении записи #{booking_id}")
+                    logger.info(f"🔄 Купон {level_coupon_id} ВОЗВРАЩЁН (обновлён) при отклонении записи #{booking_id}!")
                 else:
-                    # Купон был удалён - создаём новый
                     cursor.execute('''
                         INSERT INTO user_coupons (user_id, level, discount_percent, remaining_uses, is_permanent)
                         VALUES (?, 1, 50, 1, 0)
                     ''', (str(telegram_id),))
-                    logger.info(f"🔄 Создан НОВЫЙ купон 50% для пользователя {telegram_id} при отклонении записи #{booking_id}")
+                    logger.info(f"🔄 Создан НОВЫЙ купон 50% для пользователя {telegram_id} при отклонении записи #{booking_id}!")
             
-            # Обновляем статус записи
             cursor.execute('UPDATE bookings SET status = "rejected" WHERE id = ?', (booking_id,))
             cursor.execute('DELETE FROM notifications WHERE booking_id = ?', (booking_id,))
             conn.commit()
         
-        # ===== ОТПРАВЛЯЕМ СООБЩЕНИЕ ПОЛЬЗОВАТЕЛЮ =====
+        # Отправляем сообщение пользователю
         clean_date = date_str
         if date_str and '(' in date_str:
             clean_date = date_str.split('(')[0].strip()
         if clean_date and clean_date[0] in "🟢🟡🟠🔴⚪️":
             clean_date = clean_date[2:].strip()
         
-        # ===== ИСПРАВЛЕНО: format_time_for_display() нормализует 24→00 =====
         display_time = time_slot
         if time_slot and '-' in time_slot:
             display_time = DateTimeUtils.format_time_for_display(time_slot)
@@ -21469,7 +24451,7 @@ async def process_booking_rejection(booking_id: int, admin_id: int, context: Con
             else:
                 user_message_lines.append(f"⏰ Время: {display_time}")
         
-        # ===== ЦЕНА - ИСПРАВЛЕНО =====
+        # Цена - исправлено
         if (is_mixing == 1 and mixing_type and "Альбом" in mixing_type) or \
            (is_track_creation == 1 and track_type and "Альбом" in track_type):
             user_message_lines.append(f"💰 Стоимость: Договорная")
@@ -21505,7 +24487,7 @@ async def process_booking_rejection(booking_id: int, admin_id: int, context: Con
             text=user_message,
             parse_mode="Markdown"
         )
-        logger.info(f"✅ Сообщение об отклонении отправлено пользователю {telegram_id}")
+        logger.info(f"✅ Сообщение об отклонении отправлено пользователю {telegram_id}!")
         
         # Обновляем сообщение админа
         await context.bot.edit_message_text(
@@ -21513,10 +24495,10 @@ async def process_booking_rejection(booking_id: int, admin_id: int, context: Con
             text="*❌ Запись отклонена!*", parse_mode="Markdown"
         )
         
-        logger.info(f"❌ Запись #{booking_id} отклонена, промокод и купон возвращены")
+        logger.info(f"❌ Запись #{booking_id} отклонена администратором {admin_id}, промокод и купон возвращены!")
         
     except Exception as e:
-        logger.error(f"❌ Ошибка в process_booking_rejection: {e}")
+        logger.error(f"❌ Ошибка в process_booking_rejection для записи #{booking_id}: {e}")
         import traceback
         traceback.print_exc()
         try:
@@ -21527,14 +24509,23 @@ async def process_booking_rejection(booking_id: int, admin_id: int, context: Con
         except:
             pass
 
+
+# ============================================================
+# АДМИНСКАЯ ОТМЕНА ЗАПИСИ - ПОДТВЕРЖДЕНИЕ
+# ============================================================
+
 async def admin_cancel_confirm_handler(update: Update, context):
-    """Подтверждение отмены записи админом с правильной логикой купона"""
+    """
+    Подтверждение отмены записи админом с правильной логикой купона.
+    """
     query = update.callback_query
     data = query.data
     
     try:
         booking_id = int(data.split('_')[3])
+        logger.info(f"🔍 Админ {update.effective_user.id} подтверждает отмену записи #{booking_id}!")
     except (IndexError, ValueError):
+        logger.warning(f"⚠️ Неверный формат callback для admin_cancel_confirm: {data}!")
         await query.answer("❌ Неверный формат данных!", show_alert=True)
         return
     
@@ -21546,12 +24537,14 @@ async def admin_cancel_confirm_handler(update: Update, context):
     time_slot = booking_data.get('time_slot', '')
     
     hours_until = DateTimeUtils.get_hours_until_booking(date_str, time_slot)
+    logger.info(f"🔍 До начала записи {booking_id}: {hours_until:.1f} часов!")
     
     telegram_id = booking_data.get('telegram_id')
     target_user_id = context.user_data.get('target_user_id')
     target_unique_id = context.user_data.get('target_unique_id')
     target_username = context.user_data.get('target_username')
     admin_id = update.effective_user.id
+    admin_username = update.effective_user.username or "Администратор"
     
     client_name = booking_data.get('name', 'Не указан')
     client_contact = booking_data.get('contact', 'Не указан')
@@ -21586,6 +24579,7 @@ async def admin_cancel_confirm_handler(update: Update, context):
         
         if result:
             level_coupon_id, promo_code_used, current_status, service_db, is_mixing_db, is_track_creation_db = result
+            logger.info(f"📋 Данные записи #{booking_id}: статус={current_status}, купон={level_coupon_id}, промокод={promo_code_used}!")
             
             try:
                 cursor.execute('ALTER TABLE bookings ADD COLUMN vinyls_awarded INTEGER DEFAULT 0')
@@ -21596,67 +24590,63 @@ async def admin_cancel_confirm_handler(update: Update, context):
             cursor.execute('SELECT vinyls_awarded FROM bookings WHERE id = ?', (booking_id,))
             award_row = cursor.fetchone()
             was_awarded = award_row[0] == 1 if award_row else False
+            logger.info(f"💰 Пластинки уже начислены: {was_awarded}!")
             
             cursor.execute('SELECT vinyls FROM users WHERE telegram_id = ?', (str(telegram_id),))
             user_row = cursor.fetchone()
             current_vinyls_before = user_row[0] if user_row else 0
+            logger.info(f"💰 Пластинок до отмены: {current_vinyls_before}!")
             
             if was_awarded:
                 vinyls_deducted = 25
                 cursor.execute('UPDATE users SET vinyls = vinyls - 25 WHERE telegram_id = ? AND vinyls >= 25', (str(telegram_id),))
-                logger.info(f"💰 Списано 25 пластинок у пользователя {telegram_id} за отмену записи #{booking_id}")
+                logger.info(f"💰 Списано 25 пластинок у пользователя {telegram_id} за отмену записи #{booking_id}!")
                 cursor.execute('UPDATE bookings SET vinyls_awarded = 0 WHERE id = ?', (booking_id,))
             
-            # ===== ЛОГИКА КУПОНА ПРИ ОТМЕНЕ АДМИНОМ =====
+            # Логика купона при отмене админом
             if level_coupon_id:
-                # Определяем, нужно ли сжечь или вернуть купон
                 should_burn = False
                 
-                # Для сведения/мастеринга
                 if is_mixing_db:
                     if current_status in ['confirmed', 'подтвержден']:
                         should_burn = True
-                        logger.info(f"🔥 Купон {level_coupon_id} сгорает: сведение, статус confirmed")
+                        logger.info(f"🔥 Купон {level_coupon_id} сгорает: сведение, статус confirmed!")
                     else:
                         should_burn = False
-                        logger.info(f"🔄 Купон {level_coupon_id} возвращается: сведение, статус {current_status}")
+                        logger.info(f"🔄 Купон {level_coupon_id} возвращается: сведение, статус {current_status}!")
                 else:
-                    # Для услуг с датой (вокал, инструменты, трек, аренда)
                     if current_status in ['confirmed', 'подтвержден'] and hours_until < 12:
                         should_burn = True
-                        logger.info(f"🔥 Купон {level_coupon_id} сгорает: confirmed, < 12ч до начала")
+                        logger.info(f"🔥 Купон {level_coupon_id} сгорает: confirmed, < 12ч до начала!")
                     elif current_status in ['pending', 'ожидает'] and hours_until < 12:
                         should_burn = False
-                        logger.info(f"🔄 Купон {level_coupon_id} возвращается: pending, < 12ч до начала")
+                        logger.info(f"🔄 Купон {level_coupon_id} возвращается: pending, < 12ч до начала!")
                     elif hours_until >= 12:
                         should_burn = False
-                        logger.info(f"🔄 Купон {level_coupon_id} возвращается: > 12ч до начала")
+                        logger.info(f"🔄 Купон {level_coupon_id} возвращается: > 12ч до начала!")
                     else:
                         should_burn = False
-                        logger.info(f"🔄 Купон {level_coupon_id} возвращается (по умолчанию)")
+                        logger.info(f"🔄 Купон {level_coupon_id} возвращается (по умолчанию)!")
                 
                 if should_burn:
                     cursor.execute('DELETE FROM user_coupons WHERE id = ?', (level_coupon_id,))
-                    logger.info(f"🔥 Купон {level_coupon_id} СГОРЕЛ при отмене записи #{booking_id}")
+                    logger.info(f"🔥 Купон {level_coupon_id} СГОРЕЛ при отмене записи #{booking_id}!")
                 else:
-                    # Проверяем, существует ли купон в user_coupons
                     cursor.execute('SELECT id FROM user_coupons WHERE id = ?', (level_coupon_id,))
                     exists = cursor.fetchone()
                     
                     if exists:
-                        # Купон существует - увеличиваем remaining_uses
                         cursor.execute('''
                             UPDATE user_coupons SET remaining_uses = remaining_uses + 1 
                             WHERE id = ? AND is_permanent = 0
                         ''', (level_coupon_id,))
-                        logger.info(f"🔄 Купон {level_coupon_id} ВОЗВРАЩЁН (обновлён) при отмене записи #{booking_id}")
+                        logger.info(f"🔄 Купон {level_coupon_id} ВОЗВРАЩЁН (обновлён) при отмене записи #{booking_id}!")
                     else:
-                        # Купон был удалён - создаём новый
                         cursor.execute('''
                             INSERT INTO user_coupons (user_id, level, discount_percent, remaining_uses, is_permanent)
                             VALUES (?, 1, 50, 1, 0)
                         ''', (str(telegram_id),))
-                        logger.info(f"🔄 Создан НОВЫЙ купон 50% для пользователя {telegram_id} при отмене записи #{booking_id}")
+                        logger.info(f"🔄 Создан НОВЫЙ купон 50% для пользователя {telegram_id} при отмене записи #{booking_id}!")
             
             if telegram_id:
                 handle_promo_code_on_cancellation(booking_id, str(telegram_id), hours_until, context)
@@ -21664,14 +24654,16 @@ async def admin_cancel_confirm_handler(update: Update, context):
         cursor.execute('SELECT vinyls FROM users WHERE telegram_id = ?', (str(telegram_id),))
         new_row = cursor.fetchone()
         current_vinyls_after = new_row[0] if new_row else 0
+        logger.info(f"💰 Пластинок после отмены: {current_vinyls_after}!")
         
         cursor.execute('DELETE FROM notifications WHERE booking_id = ?', (booking_id,))
         cursor.execute('DELETE FROM cache_slots WHERE booking_id = ?', (booking_id,))
         cursor.execute('DELETE FROM bookings WHERE id = ?', (booking_id,))
+        logger.info(f"🗑️ Запись #{booking_id} удалена из БД!")
         
         conn.commit()
     
-    # ===== ОЧИЩАЕМ КЭШ ДАТЫ =====
+    # Очищаем кэш даты
     if date_str and 'Не указана' not in date_str:
         clean_date = date_str
         if '(' in clean_date:
@@ -21680,7 +24672,7 @@ async def admin_cancel_confirm_handler(update: Update, context):
             clean_date = clean_date[2:].strip()
         
         MemoryCache.invalidate_date(clean_date)
-        logger.info(f"🗑️ Кэш очищен для даты: {clean_date}")
+        logger.info(f"🗑️ Кэш очищен для даты: {clean_date}!")
     
     if vinyls_deducted > 0:
         await AchievementSystem.check_and_award_achievements(str(telegram_id), context, None)
@@ -21713,16 +24705,16 @@ async def admin_cancel_confirm_handler(update: Update, context):
 *📞 По вопросам: @mothman32*"""
             
             await context.bot.send_message(chat_id=int(telegram_id), text=user_message, parse_mode="Markdown")
-            logger.info(f"✅ Уведомление об отмене отправлено пользователю {telegram_id}")
+            logger.info(f"✅ Уведомление об отмене отправлено пользователю {telegram_id}!")
         except Exception as e:
-            logger.error(f"❌ Ошибка отправки уведомления пользователю: {e}")
+            logger.error(f"❌ Ошибка отправки уведомления пользователю {telegram_id}: {e}")
     
     # Отправляем сообщение админу об успешном удалении
-    admin_message = f"*✅ Запись #{booking_id} удалена из базы*"
+    admin_message = f"*✅ Запись #{booking_id} удалена из базы!*"
     await context.bot.send_message(chat_id=admin_id, text=admin_message, parse_mode="Markdown")
-    logger.info(f"✅ Уведомление админу отправлено")
+    logger.info(f"✅ Уведомление админу {admin_id} отправлено!")
     
-    # ===== ОБНОВЛЯЕМ СПИСОК ЗАПИСЕЙ (АДМИНСКИЙ) =====
+    # Обновляем список записей (админский)
     if target_user_id:
         await asyncio.sleep(0.5)
         with db.get_connection() as conn:
@@ -21744,7 +24736,7 @@ async def admin_cancel_confirm_handler(update: Update, context):
                     parse_mode="Markdown"
                 )
             except Exception as e:
-                logger.error(f"Ошибка при редактировании сообщения: {e}")
+                logger.error(f"❌ Ошибка при редактировании сообщения: {e}")
                 await context.bot.send_message(
                     chat_id=admin_id,
                     text=f"*📋 Записи пользователя*\n\n"
@@ -21755,8 +24747,8 @@ async def admin_cancel_confirm_handler(update: Update, context):
             
             menu_message = (
                 "*🏠 Возвращаемся в главное меню...*\n\n"
-                "*✨ Процесс отмены записи завершён*\n"
-                "*💾 Все введенные данные очищены*\n\n"
+                "*✨ Процесс отмены записи завершён!*\n"
+                "*💾 Все введённые данные очищены!*\n\n"
                 "*👇 Выберите подходящий вариант:*"
             )
             
@@ -21777,10 +24769,17 @@ async def admin_cancel_confirm_handler(update: Update, context):
                 edit_mode=True
             )
 
-# ===== ОТЛАДОЧНЫЕ КОМАНДЫ ДЛЯ ПРОВЕРКИ КУПОНОВ =====
+
+# ============================================================
+# ОТЛАДОЧНЫЕ КОМАНДЫ ДЛЯ ПРОВЕРКИ КУПОНОВ
+# ============================================================
+
 async def check_coupons_debug(update: Update, context):
-    """Проверяет купоны пользователя в БД"""
+    """
+    Проверяет купоны пользователя в БД.
+    """
     user_id = str(update.effective_user.id)
+    logger.info(f"🔍 Пользователь {user_id} проверяет свои купоны!")
     
     with db.get_connection() as conn:
         cursor = conn.cursor()
@@ -21800,51 +24799,75 @@ async def check_coupons_debug(update: Update, context):
                 message += f"• Уровень {row[1]}: {row[2]}% ({perm})\n"
             await update.message.reply_text(message, parse_mode="Markdown")
         else:
+            logger.info(f"ℹ️ У пользователя {user_id} нет купонов в БД!")
             await update.message.reply_text("❌ Нет купонов в БД!", parse_mode="Markdown")
 
+
 async def reset_my_coupons(update: Update, context):
-    """Сбрасывает купоны текущего пользователя"""
+    """
+    Сбрасывает купоны текущего пользователя.
+    """
     user_id = str(update.effective_user.id)
+    logger.info(f"🔄 Пользователь {user_id} сбрасывает свои купоны!")
     
     with db.get_connection() as conn:
         cursor = conn.cursor()
         cursor.execute('DELETE FROM user_coupons WHERE user_id = ?', (user_id,))
         conn.commit()
     
-    # Заново добавляем купон уровня 1
     CouponManager.add_level_coupons(user_id, 1)
+    logger.info(f"✅ Купоны пользователя {user_id} сброшены и выдан новый купон уровня 1!")
     
     await update.message.reply_text("✅ Твои купоны сброшены! Теперь у тебя снова есть скидка 50% 1 раз.", parse_mode="Markdown")
 
+
 async def manual_check(update: Update, context):
+    """
+    Ручной запуск проверки завершённых записей (только для админов).
+    """
     user_id = update.effective_user.id
+    logger.info(f"🔍 Админ {user_id} запускает ручную проверку завершённых записей!")
+    
     if user_id not in Config.ADMIN_IDS:
+        logger.warning(f"⚠️ Пользователь {user_id} попытался вызвать manual_check без прав!")
         await update.message.reply_text("❌ Нет прав!")
         return
     
     await update.message.reply_text("🔄 Запускаю проверку...")
     await update_completed_bookings(context)
     await update.message.reply_text("✅ Проверка выполнена!")
+    logger.info(f"✅ Админ {user_id} завершил ручную проверку!")
+
 
 @handle_errors_with_rate_limit
 async def manual_check_completed(update: Update, context):
-    """Ручная проверка завершенных записей (только для админов)"""
+    """
+    Ручная проверка завершённых записей (только для админов).
+    """
     user_id = update.effective_user.id
+    logger.info(f"🔍 Админ {user_id} запускает ручную проверку завершённых записей!")
     
     if user_id not in Config.ADMIN_IDS:
+        logger.warning(f"⚠️ Пользователь {user_id} попытался вызвать manual_check_completed без прав!")
         await update.message.reply_text("❌ Нет прав!")
         return
     
-    await update.message.reply_text("🔄 Запускаю проверку завершенных записей...")
+    await update.message.reply_text("🔄 Запускаю проверку завершённых записей...")
     await update_completed_bookings(context)
     await update.message.reply_text("✅ Проверка выполнена!")
+    logger.info(f"✅ Админ {user_id} завершил ручную проверку завершённых записей!")
+
 
 @handle_errors_with_rate_limit
 async def check_pending_status(update: Update, context):
-    """Проверка статуса pending записей (только для админов)"""
+    """
+    Проверка статуса pending записей (только для админов).
+    """
     user_id = update.effective_user.id
+    logger.info(f"🔍 Админ {user_id} проверяет статус pending записей!")
     
     if user_id not in Config.ADMIN_IDS:
+        logger.warning(f"⚠️ Пользователь {user_id} попытался вызвать check_pending_status без прав!")
         await update.message.reply_text("❌ Нет прав!")
         return
     
@@ -21859,6 +24882,7 @@ async def check_pending_status(update: Update, context):
         pending = cursor.fetchall()
         
         if not pending:
+            logger.info(f"ℹ️ Нет pending записей!")
             await update.message.reply_text("✅ Нет pending записей!")
             return
         
@@ -21866,26 +24890,34 @@ async def check_pending_status(update: Update, context):
         for b in pending:
             message += f"#{b[0]} | {b[1]} | {b[2]} | {b[3]} | {b[4]}\n"
         
+        logger.info(f"📊 Найдено {len(pending)} pending записей!")
         await update.message.reply_text(message, parse_mode="Markdown")
+
 
 @handle_errors_with_rate_limit
 async def check_time(update: Update, context):
-    """Проверка времени для записи"""
+    """
+    Проверка времени для записи (только для админов).
+    """
     user_id = update.effective_user.id
+    logger.info(f"🔍 Админ {user_id} проверяет время для записи!")
     
     if user_id not in Config.ADMIN_IDS:
+        logger.warning(f"⚠️ Пользователь {user_id} попытался вызвать check_time без прав!")
         await update.message.reply_text("❌ Нет прав!")
         return
     
-    # Получаем аргументы
     args = context.args
     if not args:
+        logger.info(f"ℹ️ Админ {user_id} вызвал check_time без аргументов!")
         await update.message.reply_text("❌ /checktime 1")
         return
     
     try:
         booking_id = int(args[0])
+        logger.info(f"🔍 Админ {user_id} проверяет время для записи #{booking_id}!")
     except ValueError:
+        logger.warning(f"⚠️ Админ {user_id} ввёл неверный ID: {args[0]}!")
         await update.message.reply_text("❌ ID должен быть числом!")
         return
     
@@ -21905,15 +24937,16 @@ async def check_time(update: Update, context):
     conn.close()
     
     if not row:
+        logger.warning(f"⚠️ Запись #{booking_id} не найдена в БД!")
         await update.message.reply_text(f"❌ Запись #{booking_id} не найдена!")
         return
     
     b_id, date_str, time_slot, status, awarded = row
+    logger.info(f"📋 Данные записи #{booking_id}: статус={status}, awarded={awarded}!")
     
     now = DateTimeUtils.now()
     now_utc = now.astimezone(pytz.UTC)
     
-    # Парсим дату и время
     clean_date = date_str.split('(')[0].strip()
     day, month, year = map(int, clean_date.split('.'))
     
@@ -21940,14 +24973,27 @@ async def check_time(update: Update, context):
     message += f"• Окончание (UTC): {end_utc.strftime('%H:%M:%S')}\n"
     message += f"• Прошло? {now_utc >= end_utc}\n"
     
+    logger.info(f"✅ Админ {user_id} получил данные о времени для записи #{booking_id}!")
     await update.message.reply_text(message, parse_mode="Markdown")
 
+# ============================================================
+# НАСТРОЙКА ОБРАБОТЧИКОВ
+# ============================================================
+
 def setup_handlers(application):
-    """Настройка всех обработчиков бота"""
+    """
+    Настройка всех обработчиков бота.
+    
+    Порядок добавления обработчиков определяет их приоритет.
+    Чем раньше добавлен обработчик, тем выше его приоритет.
+    """
+    logger.info("🔧 Начинаю настройку обработчиков!")
     
     # ============================================================
     # 1. КОМАНДЫ (САМЫЙ ВЫСОКИЙ ПРИОРИТЕТ)
     # ============================================================
+    logger.info("📋 Добавляю команды...")
+    
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("pending", pending_command))
     application.add_handler(CommandHandler("fixcoupons", fix_my_coupons))
@@ -21962,9 +25008,13 @@ def setup_handlers(application):
     application.add_handler(CommandHandler("forcecomplete", force_complete))
     application.add_handler(CommandHandler("debugadd", debug_add_vinyls))
     
+    logger.info("✅ Команды добавлены!")
+    
     # ============================================================
     # 2. НОВЫЕ КНОПКИ (ВЫСОКИЙ ПРИОРИТЕТ)
     # ============================================================
+    logger.info("📋 Добавляю новые кнопки...")
+    
     application.add_handler(
         MessageHandler(filters.Regex('^(❓ Помощь)$'), help_handler)
     )
@@ -21972,41 +25022,56 @@ def setup_handlers(application):
         MessageHandler(filters.Regex('^(❗️ Полезная информация)$'), useful_info_handler)
     )
     
+    logger.info("✅ Новые кнопки добавлены!")
+    
     # ============================================================
     # 3. CALLBACK QUERY HANDLERS (ДЛЯ INLINE КНОПОК)
     # ============================================================
+    logger.info("📋 Добавляю callback обработчики...")
+    
     # Выручка
     application.add_handler(CallbackQueryHandler(handle_revenue_period_selection, pattern="^revenue_"))
+    logger.info("  ✅ Выручка")
     
     # Промокоды (пользовательские)
     application.add_handler(CallbackQueryHandler(promo_callback_handler, pattern="^promo_"))
+    logger.info("  ✅ Промокоды (пользовательские)")
     
     # Промокоды (админские - УДАЛЕНИЕ)
     application.add_handler(CallbackQueryHandler(admin_promo_delete_callback_handler, pattern="^admin_del_promo_"))
     application.add_handler(CallbackQueryHandler(admin_promo_delete_confirm_handler, pattern="^admin_confirm_del_"))
     application.add_handler(CallbackQueryHandler(admin_promo_delete_confirm_handler, pattern="^admin_cancel_del$"))
+    logger.info("  ✅ Промокоды (админские)")
     
     # Рефералы
     application.add_handler(CallbackQueryHandler(enter_referral_code_callback, pattern="^enter_referral_code$"))
     application.add_handler(CallbackQueryHandler(show_my_referrals_callback, pattern="^show_my_referrals$"))
     application.add_handler(CallbackQueryHandler(back_to_referral_callback, pattern="^back_to_referral$"))
+    logger.info("  ✅ Рефералы")
     
     # Админская отмена (конкретные callback)
     application.add_handler(CallbackQueryHandler(admin_cancel_confirm_handler, pattern="^admin_cancel_confirm_"))
     application.add_handler(CallbackQueryHandler(admin_cancel_keep_handler, pattern="^admin_cancel_keep$"))
     application.add_handler(CallbackQueryHandler(admin_cancel_callback_handler, pattern="^admin_cancel_\\d+$"))
+    logger.info("  ✅ Админская отмена")
     
     # Админское удаление достижений
     application.add_handler(CallbackQueryHandler(admin_remove_achievement_callback, pattern="^admin_remove_achievement_\\d+$"))
     application.add_handler(CallbackQueryHandler(admin_remove_achievement_confirm, pattern="^admin_remove_achievement_confirm_"))
     application.add_handler(CallbackQueryHandler(admin_remove_achievement_cancel, pattern="^admin_remove_achievement_cancel$"))
+    logger.info("  ✅ Админское удаление достижений")
     
     # Основной callback (отмена записей пользователем, подтверждение и т.д.)
     application.add_handler(CallbackQueryHandler(button_callback_handler))
+    logger.info("  ✅ Основной callback")
+    
+    logger.info("✅ Все callback обработчики добавлены!")
     
     # ============================================================
     # 4. ПРОМОКОДЫ (ВВОД) - САМЫЙ ВЫСОКИЙ ПРИОРИТЕТ СРЕДИ MessageHandler
     # ============================================================
+    logger.info("📋 Добавляю обработчик ввода промокодов...")
+    
     application.add_handler(
         MessageHandler(
             filters.Regex(r'^promo\s+\w+') | filters.Regex(r'^PROMO\s+\w+'),
@@ -22015,9 +25080,13 @@ def setup_handlers(application):
         group=0
     )
     
+    logger.info("✅ Обработчик ввода промокодов добавлен!")
+    
     # ============================================================
     # 5. РЕФЕРАЛЬНЫЕ КОДЫ - ВТОРОЙ ПРИОРИТЕТ
     # ============================================================
+    logger.info("📋 Добавляю обработчик ввода реферальных кодов...")
+    
     application.add_handler(
         MessageHandler(
             filters.TEXT & ~filters.COMMAND & 
@@ -22030,9 +25099,12 @@ def setup_handlers(application):
         group=1
     )
     
+    logger.info("✅ Обработчик ввода реферальных кодов добавлен!")
+    
     # ============================================================
     # 6. CONVERSATION HANDLERS (ДЛЯ МНОГОШАГОВЫХ ПРОЦЕССОВ)
     # ============================================================
+    logger.info("📋 Добавляю ConversationHandler'ы...")
     
     # 6.1 Бронирование (основной процесс записи)
     booking_conv_handler = ConversationHandler(
@@ -22066,6 +25138,7 @@ def setup_handlers(application):
         name="booking_conversation"
     )
     application.add_handler(booking_conv_handler)
+    logger.info("  ✅ Бронирование")
     
     # 6.2 Админская запись
     admin_booking_conv_handler = ConversationHandler(
@@ -22086,6 +25159,7 @@ def setup_handlers(application):
         name="admin_booking_conversation"
     )
     application.add_handler(admin_booking_conv_handler)
+    logger.info("  ✅ Админская запись")
     
     # 6.3 Админская отмена записи
     admin_cancel_conv_handler = ConversationHandler(
@@ -22107,6 +25181,7 @@ def setup_handlers(application):
         name="admin_cancel_conversation"
     )
     application.add_handler(admin_cancel_conv_handler)
+    logger.info("  ✅ Админская отмена")
     
     # 6.4 Админская блокировка
     admin_block_conv_handler = ConversationHandler(
@@ -22127,6 +25202,7 @@ def setup_handlers(application):
         name="admin_block_conversation"
     )
     application.add_handler(admin_block_conv_handler)
+    logger.info("  ✅ Админская блокировка")
     
     # 6.5 Админская выдача достижения
     admin_achievement_conv_handler = ConversationHandler(
@@ -22146,6 +25222,7 @@ def setup_handlers(application):
         name="admin_achievement_conversation"
     )
     application.add_handler(admin_achievement_conv_handler)
+    logger.info("  ✅ Админская выдача достижения")
     
     # 6.6 Админское удаление достижения
     admin_remove_achievement_conv_handler = ConversationHandler(
@@ -22167,6 +25244,7 @@ def setup_handlers(application):
         name="admin_remove_achievement_conversation"
     )
     application.add_handler(admin_remove_achievement_conv_handler)
+    logger.info("  ✅ Админское удаление достижения")
     
     # 6.7 Админское управление пластинками
     admin_vinyl_conv_handler = ConversationHandler(
@@ -22187,6 +25265,7 @@ def setup_handlers(application):
         name="admin_vinyl_conversation"
     )
     application.add_handler(admin_vinyl_conv_handler)
+    logger.info("  ✅ Админское управление пластинками")
     
     # 6.8 Админский просмотр профиля
     admin_profile_conv_handler = ConversationHandler(
@@ -22204,6 +25283,7 @@ def setup_handlers(application):
         name="admin_profile_conversation"
     )
     application.add_handler(admin_profile_conv_handler)
+    logger.info("  ✅ Админский просмотр профиля")
     
     # 6.9 Админское создание промокода
     admin_promo_conv_handler = ConversationHandler(
@@ -22228,10 +25308,15 @@ def setup_handlers(application):
         name="admin_promo_conversation"
     )
     application.add_handler(admin_promo_conv_handler)
+    logger.info("  ✅ Админское создание промокода")
+    
+    logger.info("✅ Все ConversationHandler'ы добавлены!")
     
     # ============================================================
     # 7. ПОЛЬЗОВАТЕЛЬСКИЙ ПЕРИОД ДЛЯ ВЫРУЧКИ
     # ============================================================
+    logger.info("📋 Добавляю обработчик пользовательского периода для выручки...")
+    
     application.add_handler(
         MessageHandler(
             filters.TEXT & ~filters.COMMAND & filters.User(user_id=Config.ADMIN_IDS),
@@ -22239,26 +25324,57 @@ def setup_handlers(application):
         )
     )
     
+    logger.info("✅ Обработчик пользовательского периода для выручки добавлен!")
+    
     # ============================================================
     # 8. ГЛОБАЛЬНЫЙ ОБРАБОТЧИК КНОПОК (НИЗКИЙ ПРИОРИТЕТ)
     # ============================================================
+    logger.info("📋 Добавляю глобальный обработчик кнопок...")
+    
     application.add_handler(
         MessageHandler(filters.TEXT & ~filters.COMMAND, handle_global_buttons),
         group=2
     )
     
+    logger.info("✅ Глобальный обработчик кнопок добавлен!")
+    
     # ============================================================
     # 9. ОБРАБОТЧИК ОШИБОК
     # ============================================================
+    logger.info("📋 Добавляю обработчик ошибок...")
     application.add_error_handler(error_callback)
+    logger.info("✅ Обработчик ошибок добавлен!")
     
-    logger.info("✅ Все обработчики успешно настроены")
+    logger.info("✅ Все обработчики успешно настроены!")
+
+
+# ============================================================
+# ЗАПУСК БОТА
+# ============================================================
 
 def run_bot():
+    """
+    Основная функция запуска бота.
+    
+    Выполняет:
+    1. Проверку директории данных
+    2. Включение WAL режима для БД
+    3. Создание Application
+    4. Миграцию БД
+    5. Настройку обработчиков
+    6. Настройку JobQueue
+    7. Запуск поллинга
+    """
     try:
-        verify_data_directory()
+        logger.info("🚀 Начинаю запуск бота!")
         
-        # ===== ПРИНУДИТЕЛЬНОЕ ВКЛЮЧЕНИЕ WAL РЕЖИМА ДЛЯ ВСЕХ БД =====
+        # Проверка директории данных
+        logger.info("🔍 Проверяю директорию данных...")
+        verify_data_directory()
+        logger.info("✅ Директория данных проверена!")
+        
+        # Принудительное включение WAL режима для всех БД
+        logger.info("🔧 Включаю WAL режим для баз данных...")
         import sqlite3
         for db_path in [MAIN_DB_PATH, PERSISTENT_DB_PATH]:
             if os.path.exists(db_path):
@@ -22270,39 +25386,49 @@ def run_bot():
                     conn.execute('PRAGMA cache_size=-20000')
                     result = conn.execute('PRAGMA journal_mode').fetchone()
                     conn.close()
-                    logger.info(f"✅ WAL режим включен для {db_path}: {result[0]}")
+                    logger.info(f"✅ WAL режим включён для {db_path}: {result[0]}!")
                 except Exception as e:
-                    logger.error(f"❌ Ошибка WAL для {db_path}: {e}")
+                    logger.error(f"❌ Ошибка включения WAL для {db_path}: {e}")
         
-        logger.info("🔧 Включение WAL режима для баз данных...")
         db._enable_wal_mode()
         if hasattr(persistent_db, 'enable_wal_mode'):
             persistent_db.enable_wal_mode()
+        logger.info("✅ WAL режим включён для всех баз данных!")
         
-        logger.info("Создание Application...")
+        # Создание Application
+        logger.info("🏗️ Создаю Application...")
         application = Application.builder() \
             .token(Config.TOKEN) \
             .concurrent_updates(True) \
             .build()
+        logger.info("✅ Application создан!")
         
-        logger.info("🔧 Проверка и миграция базы данных...")
+        # Миграция базы данных
+        logger.info("🔧 Проверяю и мигрирую базу данных...")
         migration_success = migrate_database()
         if not migration_success:
-            logger.warning("⚠️ Миграция базы данных завершилась с ошибками, но продолжаем работу")
+            logger.warning("⚠️ Миграция базы данных завершилась с ошибками, но продолжаю работу!")
+        else:
+            logger.info("✅ Миграция базы данных выполнена успешно!")
         
-        logger.info("Настройка обработчиков...")
+        # Настройка обработчиков
+        logger.info("📋 Настраиваю обработчики...")
         setup_handlers(application)
+        logger.info("✅ Обработчики настроены!")
         
-        logger.info("Проверка JobQueue...")
+        # Проверка JobQueue
+        logger.info("🔍 Проверяю JobQueue...")
         
         try:
             from telegram.ext import JobQueue
             import datetime as dt
             
             job_queue = application.job_queue
-            logger.info(f"JobQueue доступен: {job_queue is not None}")
+            logger.info(f"📊 JobQueue доступен: {job_queue is not None}!")
             
             if job_queue:
+                logger.info("📋 Добавляю задачи в JobQueue...")
+                
                 # Проверка уведомлений каждую минуту
                 job_queue.run_repeating(
                     callback=process_notifications,
@@ -22310,6 +25436,7 @@ def run_bot():
                     first=10.0,
                     name="notifications_checker"
                 )
+                logger.info("  ✅ Добавлена задача: проверка уведомлений")
                 
                 # Мониторинг каждый час
                 job_queue.run_repeating(
@@ -22318,6 +25445,7 @@ def run_bot():
                     first=60.0,
                     name="monitoring_checker"
                 )
+                logger.info("  ✅ Добавлена задача: мониторинг")
                 
                 # Очистка старых записей каждый день в 3:00
                 job_queue.run_daily(
@@ -22326,6 +25454,7 @@ def run_bot():
                     days=(0, 1, 2, 3, 4, 5, 6),
                     name="cleanup_old_bookings"
                 )
+                logger.info("  ✅ Добавлена задача: очистка старых записей")
                 
                 # Проверка завершившихся записей каждую минуту (ВАЖНО!)
                 job_queue.run_repeating(
@@ -22334,6 +25463,7 @@ def run_bot():
                     first=10.0,
                     name="completed_bookings_checker"
                 )
+                logger.info("  ✅ Добавлена задача: проверка завершённых записей")
                 
                 # Проверка истекших блокировок каждую минуту
                 job_queue.run_repeating(
@@ -22342,6 +25472,7 @@ def run_bot():
                     first=15.0,
                     name="expired_blocks_checker"
                 )
+                logger.info("  ✅ Добавлена задача: проверка истекших блокировок")
                 
                 # Очистка истекших промокодов каждый час
                 job_queue.run_repeating(
@@ -22350,18 +25481,19 @@ def run_bot():
                     first=60.0,
                     name="cleanup_expired_promocodes"
                 )
+                logger.info("  ✅ Добавлена задача: очистка истекших промокодов")
                 
-                logger.info("✅ Все задачи добавлены в JobQueue")
+                logger.info("✅ Все задачи добавлены в JobQueue!")
             else:
-                logger.warning("⚠️ JobQueue не инициализирован")
+                logger.warning("⚠️ JobQueue не инициализирован! Фоновые задачи не будут работать!")
                 
         except Exception as e:
             logger.error(f"❌ Ошибка настройки JobQueue: {e}")
         
-        logger.info("🚀 Запуск бота...")
+        # Запуск бота
+        logger.info("🚀 Запускаю бота...")
         logger.info("✅ Бот готов к работе!")
         
-        # Запуск с правильными параметрами
         application.run_polling(
             poll_interval=1.0,
             timeout=30,
@@ -22370,16 +25502,19 @@ def run_bot():
         )
         
     except telegram.error.InvalidToken:
-        logger.error("❌ Неверный токен бота! Проверьте .env файл")
+        logger.error("❌ Неверный токен бота! Проверьте .env файл!")
         sys.exit(1)
+        
     except telegram.error.NetworkError as e:
         logger.error(f"❌ Ошибка сети: {e}")
         logger.info("🔄 Попытка переподключения через 10 секунд...")
         time.sleep(10)
         run_bot()
+        
     except KeyboardInterrupt:
-        logger.info("\n👋 Бот остановлен пользователем")
+        logger.info("\n👋 Бот остановлен пользователем!")
         sys.exit(0)
+        
     except Exception as e:
         logger.error(f"❌ Критическая ошибка: {e}")
         import traceback
@@ -22387,6 +25522,11 @@ def run_bot():
         logger.info("🔄 Попытка перезапуска через 10 секунд...")
         time.sleep(10)
         run_bot()
+
+
+# ============================================================
+# ТОЧКА ВХОДА
+# ============================================================
 
 if __name__ == '__main__':
     run_bot()
