@@ -3946,7 +3946,7 @@ class Config:
             return False, "*❌ Минимально 2 символа, слишком короткое имя! Введите имя длиной от 2 до 50 символов!*"
         
         if len(text.strip()) < 2 and field_name == "контакт":
-            return False, f"*❌ Минимально 2 символа, слишком короткий контакт!*"
+            return False, f"*❌ Минимально 2 символа, слишком короткий контакт! Введите контакт длиной от 2 до {Config.MAX_CONTACT_LENGTH} символов!*"
         
         return True, ""
 
@@ -3974,22 +3974,22 @@ class SecurityUtils:
                 return False, f"❌ *Слишком длинный формат времени! Максимально {Config.MAX_TIME_STR_LENGTH} символов.*"
             
             if '-' not in time_str:
-                return False, "❌ *Неверный формат времени! Используйте 'час-час' (например: 14-18 или 22-2)*"
+                return False, "*❌ Неверный формат времени! Используйте формат час-час (например, 14-18 или 22-2)!*"
             
             parts = time_str.split('-')
             if len(parts) != 2:
-                return False, "❌ *Неверный формат времени! Должно быть два числа через дефис.*"
+                return False, "*❌ Неверный формат времени! Используйте формат час-час (например, 14-18 или 22-2)!*"
             
             start_str, end_str = parts[0].strip(), parts[1].strip()
             
             if not start_str or not end_str:
-                return False, "❌ *Неверный формат времени! Часы не могут быть пустыми.*"
+                return False, "*❌ Неверный формат времени! Используйте формат час-час (например, 14-18 или 22-2)!*"
             
             try:
                 start_hour = int(start_str)
                 end_hour = int(end_str)
             except ValueError:
-                return False, "❌ *Неверный формат времени! Используйте числа (например: 14-18 или 22-2)*"
+                return False, "*❌ Неверный формат времени! Используйте формат час-час (например, 14-18 или 22-2)!*"
             
             if start_hour == 24:
                 start_hour = 0
@@ -4139,23 +4139,23 @@ class DateTimeUtils:
                 date_part = text.strip()
             
             if '.' not in date_part:
-                return None, "❌ Неверный формат даты! Используйте ДД.ММ.ГГГГ"
+                return None, "*❌ Неверный формат даты! Используйте формат ДД.ММ.ГГГГ!*"
             
             parts = date_part.split('.')
             if len(parts) != 3:
-                return None, "❌ Неверный формат даты! Используйте ДД.ММ.ГГГГ"
+                return None, "*❌ Неверный формат даты! Используйте формат ДД.ММ.ГГГГ!*"
             
             try:
                 day, month, year = map(int, parts)
             except ValueError:
-                return None, "❌ Неверный формат дата! Используйте числа"
+                return None, "*❌ Неверный формат даты! Используйте формат ДД.ММ.ГГГГ!*"
             
             if not (1 <= day <= 31):
-                return None, "❌ Неверный день! Должен быть от 1 до 31"
+                return None, "*❌ Неверный формат даты! Используйте формат ДД.ММ.ГГГГ!*"
             if not (1 <= month <= 12):
-                return None, "❌ Неверный месяц! Должен быть от 1 до 12"
+                return None, "*❌ Неверный формат даты! Используйте формат ДД.ММ.ГГГГ!*"
             if not (2024 <= year <= 2030):
-                return None, "❌ Неверный год!"
+                return None, "*❌ Неверный формат даты! Используйте формат ДД.ММ.ГГГГ!*"
             
             naive_datetime = datetime(year, month, day)
             user_datetime = Config.TIMEZONE.localize(naive_datetime)
@@ -4314,7 +4314,7 @@ class DateTimeUtils:
                 return False, error_msg
             
             if "-" not in time_str:
-                return False, "❌ *Неверный формат времени! Используйте 'час-час' (например: 14-18 или 22-2)*"
+                return False, "*❌ Неверный формат времени! Используйте формат час-час (например, 14-18 или 22-2)!*"
             
             start_hour_str, end_hour_str = time_str.split("-")
             
@@ -4335,14 +4335,14 @@ class DateTimeUtils:
             
             if is_track_creation:
                 if duration == 0:
-                    return False, f"❌ *Для создания трека требуется ровно 4 часа! У вас: 0 часов*"
+                    return False, f"*❌ Для создания трека требуется ровно 4 часа! Выберите временной слот продолжительностью 4 часа!*"
                 if duration != 4:
-                    return False, f"❌ *Для создания трека требуется ровно 4 часа! У вас: {duration} часов*"
+                    return False, f"*❌ Для создания трека требуется ровно 4 часа! Выберите временной слот продолжительностью 4 часа!*"
             else:
                 if duration == 0:
-                    return False, f"❌ *Минимальное время записи — 1 час! У вас: 0 часов*"
+                    return False, "*❌ Минимальное время записи — 1 час! Выберите длительность от 1 до 6 часов!*"
                 if duration > 6:
-                    return False, f"❌ *Максимальное время записи — 6 часов! У вас: {duration} часов*"
+                    return False, f"*❌ Максимальное время записи — 6 часов! Выберите длительность от 1 до 6 часов!*"
                 if duration < 1:
                     return False, f"❌ *Минимально 1 час! У вас: {duration} часов*"
             
@@ -4360,7 +4360,7 @@ class DateTimeUtils:
                 return True, duration
                     
         except ValueError:
-            return False, "❌ *Неверный формат времени! Используйте 'час-час' (например: 14-18 или 22-2)*"
+            return False, "*❌ Неверный формат времени! Используйте формат час-час (например, 14-18 или 22-2)!*"
         except Exception as e:
             logger.error(f"Ошибка валидации времени бронирования: {e}")
             return False, "❌ *Произошла ошибка обработки времени*"
@@ -6324,14 +6324,14 @@ class FreeIntervalCalculator:
             
             if is_track_creation:
                 if duration == 0:
-                    return False, f"❌ Для создания трека требуется ровно 4 часа! У вас: 0 часов"
+                    return False, f"*❌ Для создания трека требуется ровно 4 часа! Выберите временной слот продолжительностью 4 часа!*"
                 if duration != 4:
-                    return False, f"❌ Для создания трека требуется ровно 4 часа! У вас: {duration} часов"
+                    return False, f"*❌ Для создания трека требуется ровно 4 часа! Выберите временной слот продолжительностью 4 часа!*"
             else:
                 if duration == 0:
-                    return False, f"❌ Минимальное время записи — 1 час! У вас: 0 часов"
+                    return False, "*❌ Минимальное время записи — 1 час! Выберите длительность от 1 до 6 часов!*"
                 if duration > 6:
-                    return False, f"❌ Максимальное время записи — 6 часов! У вас: {duration} часов"
+                    return False, f"*❌ Максимальное время записи — 6 часов! Выберите длительность от 1 до 6 часов!*"
                 if duration < 1:
                     return False, f"❌ Минимально 1 час! У вас: {duration} часов"
             
@@ -6358,7 +6358,7 @@ class FreeIntervalCalculator:
                         else:
                             return False, f"❌ Время должно начинаться с {interval_start:02d}:00 или позже"
                     else:
-                        return False, f"❌ Для создания трека требуется ровно 4 часа! У вас: {duration} часов"
+                        return False, f"*❌ Для создания трека требуется ровно 4 часа! Выберите временной слот продолжительностью 4 часа!*"
                 else:
                     return False, f"❌ Для кроссночного бронирования трека выберите время, начинающееся с {interval_start:02d}:00 или позже"
             
@@ -6371,7 +6371,7 @@ class FreeIntervalCalculator:
                             if duration == 4:
                                 return True, ""
                             else:
-                                return False, f"❌ Для создания трека требуется ровно 4 часа! У вас: {duration} часов"
+                                return False, f"*❌ Для создания трека требуется ровно 4 часа! Выберите временной слот продолжительностью 4 часа!*"
                         else:
                             if 1 <= duration <= 6:
                                 return True, ""
@@ -8201,7 +8201,7 @@ async def handle_custom_revenue_period_inline(update: Update, context):
         
         # Просто отправляем сообщение об ошибке БЕЗ КНОПКИ "Назад"
         await update.message.reply_text(
-            "*❌ Неверный формат даты!*",
+            "*❌ Неверный формат даты! Используйте формат ДД.ММ.ГГГГ!*",
             parse_mode="Markdown"
         )
         return
@@ -8256,7 +8256,7 @@ async def handle_custom_revenue_period(update: Update, context):
         logger.error(f"Ошибка парсинга дат: {e}")
         
         await update.message.reply_text(
-            "*❌ Неверный формат даты!*",
+            "*❌ Неверный формат даты! Используйте формат ДД.ММ.ГГГГ!*",
             parse_mode="Markdown",
             reply_markup=ReplyKeyboardMarkup([
                 ["↩️ Главное меню"]
@@ -11078,7 +11078,7 @@ async def get_date(update: Update, context):
                     reply_markup = KeyboardManager.get_dates("vocal", with_engineer)
                 
                 await update.message.reply_text(
-                    f"*❌ Неверный формат даты!*",
+                    "*❌ Неверный формат даты! Используйте формат ДД.ММ.ГГГГ!*",
                     parse_mode="Markdown",
                     reply_markup=reply_markup
                 )
@@ -11097,7 +11097,7 @@ async def get_date(update: Update, context):
         reply_markup = KeyboardManager.get_dates("vocal", with_engineer)
     
     await update.message.reply_text(
-        f"*❌ Неверный формат даты!*",
+        "*❌ Неверный формат даты! Используйте формат ДД.ММ.ГГГГ!*",
         parse_mode="Markdown",
         reply_markup=reply_markup
     )
@@ -11169,20 +11169,20 @@ async def handle_date_selection(update: Update, context, text: str):
         
         if is_track_creation:
             await update.message.reply_text(
-                f"*❌ Неверный формат даты!*",
+                "*❌ Неверный формат даты! Используйте формат ДД.ММ.ГГГГ!*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_dates("track_creation", True)
             )
         elif is_12_hours:
             service_type = "12_hours_day" if context.user_data.get('12_hours_type', '').startswith('День') else "12_hours_night"
             await update.message.reply_text(
-                f"*❌ Неверный формат даты!*",
+                "*❌ Неверный формат даты! Используйте формат ДД.ММ.ГГГГ!*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_dates(service_type, False)
             )
         else:
             await update.message.reply_text(
-                f"*❌ Неверный формат даты!*",
+                "*❌ Неверный формат даты! Используйте формат ДД.ММ.ГГГГ!*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_dates("vocal", with_engineer)
             )
@@ -11197,20 +11197,20 @@ async def handle_date_selection(update: Update, context, text: str):
         
         if is_track_creation:
             await update.message.reply_text(
-                f"*❌ Дата уже прошла!*",
+                f"*❌ Дата уже прошла! Выберите будущую дату для записи!*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_dates("track_creation", True)
             )
         elif is_12_hours:
             service_type = "12_hours_day" if context.user_data.get('12_hours_type', '').startswith('День') else "12_hours_night"
             await update.message.reply_text(
-                f"*❌ Дата уже прошла!*",
+                f"*❌ Дата уже прошла! Выберите будущую дату для записи!*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_dates(service_type, False)
             )
         else:
             await update.message.reply_text(
-                f"*❌ Дата уже прошла!*",
+                f"*❌ Дата уже прошла! Выберите будущую дату для записи!*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_dates("vocal", with_engineer)
             )
@@ -11225,20 +11225,20 @@ async def handle_date_selection(update: Update, context, text: str):
         
         if is_track_creation:
             await update.message.reply_text(
-                f"*❌ Слишком поздно!*",
+                f"*❌ Слишком поздно! Выберите дату в пределах {Config.MAX_BOOKING_DAYS} дней от текущей!*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_dates("track_creation", True)
             )
         elif is_12_hours:
             service_type = "12_hours_day" if context.user_data.get('12_hours_type', '').startswith('День') else "12_hours_night"
             await update.message.reply_text(
-                f"*❌ Слишком поздно!*",
+                f"*❌ Слишком поздно! Выберите дату в пределах {Config.MAX_BOOKING_DAYS} дней от текущей!*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_dates(service_type, False)
             )
         else:
             await update.message.reply_text(
-                f"*❌ Слишком поздно!*",
+                f"*❌ Слишком поздно! Выберите дату в пределах {Config.MAX_BOOKING_DAYS} дней от текущей!*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_dates("vocal", with_engineer)
             )
@@ -11268,7 +11268,7 @@ async def handle_date_selection(update: Update, context, text: str):
         booking_datetime = DateTimeUtils.get_booking_datetime(date_str, target_time_slot)
         if not booking_datetime:
             await update.message.reply_text(
-                f"*❌ Этот слот занят на эту дату!*",
+                f"*❌ Этот слот занят на эту дату! Выберите другое время или другую дату!*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_dates(service_type, False)
             )
@@ -11282,7 +11282,7 @@ async def handle_date_selection(update: Update, context, text: str):
         
         if hours_until_booking < 72:
             await update.message.reply_text(
-                f"*❌ Этот слот занят на эту дату!*",
+                f"*❌ Этот слот занят на эту дату! Выберите другое время или другую дату!*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_dates(service_type, False)
             )
@@ -11294,7 +11294,7 @@ async def handle_date_selection(update: Update, context, text: str):
         
         if not is_available:
             await update.message.reply_text(
-                f"*❌ Этот слот занят на эту дату!*",
+                f"*❌ Этот слот занят на эту дату! Выберите другое время или другую дату!*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_dates(service_type, False)
             )
@@ -16437,7 +16437,7 @@ async def show_slots(update: Update, context):
     if is_track_creation:
         if '-' not in normalized_input:
             await update.message.reply_text(
-                "*❌ Неверный формат времени!*",
+                "*❌ Неверный формат времени! Используйте формат час-час (например, 14-18 или 22-2)!*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_time_input()
             )
@@ -16479,7 +16479,7 @@ async def show_slots(update: Update, context):
             
             if not can_book:
                 await update.message.reply_text(
-                    "*❌ Время должно начинаться в доступном интервале!*",
+                    "*❌ Время должно начинаться в доступном интервале! Выберите время из предложенных свободных слотов!*",
                     parse_mode="Markdown",
                     reply_markup=KeyboardManager.get_time_input()
                 )
@@ -16487,7 +16487,7 @@ async def show_slots(update: Update, context):
         
         if duration != 4:
             await update.message.reply_text(
-                "*❌ Для создания трека требуется ровно 4 часа!*",
+                "*❌ Для создания трека требуется ровно 4 часа! Выберите временной слот продолжительностью 4 часа!*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_time_input()
             )
@@ -16517,7 +16517,7 @@ async def show_slots(update: Update, context):
         
         if not is_in_any_interval:
             await update.message.reply_text(
-                "*❌ Время должно начинаться в доступном интервале!*",
+                "*❌ Время должно начинаться в доступном интервале! Выберите время из предложенных свободных слотов!*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_time_input()
             )
@@ -16607,28 +16607,28 @@ async def show_slots(update: Update, context):
         if not is_valid:
             if "Максимальное время" in error_msg:
                 await update.message.reply_text(
-                    "*❌ Максимальное время записи — 6 часов!*",
+                    "*❌ Максимальное время записи — 6 часов! Выберите длительность от 1 до 6 часов!*",
                     parse_mode="Markdown",
                     reply_markup=KeyboardManager.get_time_input()
                 )
                 return SHOW_SLOTS
             elif "Минимальное время" in error_msg or "минимально" in error_msg.lower():
                 await update.message.reply_text(
-                    "*❌ Минимальное время записи — 1 час!*",
+                    "*❌ Минимальное время записи — 1 час! Выберите длительность от 1 до 6 часов!*",
                     parse_mode="Markdown",
                     reply_markup=KeyboardManager.get_time_input()
                 )
                 return SHOW_SLOTS
             elif "Неверный формат" in error_msg:
                 await update.message.reply_text(
-                    "*❌ Неверный формат времени!*",
+                    "*❌ Неверный формат времени! Используйте формат час-час (например, 14-18 или 22-2)!*",
                     parse_mode="Markdown",
                     reply_markup=KeyboardManager.get_time_input()
                 )
                 return SHOW_SLOTS
             else:
                 await update.message.reply_text(
-                    "*❌ Неверный формат времени!*",
+                    "*❌ Неверный формат времени! Используйте формат час-час (например, 14-18 или 22-2)!*",
                     parse_mode="Markdown",
                     reply_markup=KeyboardManager.get_time_input()
                 )
@@ -16660,7 +16660,7 @@ async def show_slots(update: Update, context):
         
         if not is_in_any_interval:
             await update.message.reply_text(
-                "*❌ Время должно начинаться в доступном интервале!*",
+                "*❌ Время должно начинаться в доступном интервале! Выберите время из предложенных свободных слотов!*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_time_input()
             )
@@ -16677,7 +16677,7 @@ async def show_slots(update: Update, context):
         logger.info(f"Слот НЕ доступен: {display_time}")
         
         await update.message.reply_text(
-            "*❌ Время должно начинаться в доступном интервале!*",
+            "*❌ Время должно начинаться в доступном интервале! Выберите время из предложенных свободных слотов!*",
             parse_mode="Markdown",
             reply_markup=KeyboardManager.get_time_input()
         )
@@ -16701,7 +16701,7 @@ async def show_slots(update: Update, context):
         
         if not can_book:
             await update.message.reply_text(
-                "*❌ Время должно начинаться в доступном интервале!*",
+                "*❌ Время должно начинаться в доступном интервале! Выберите время из предложенных свободных слотов!*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_time_input()
             )
