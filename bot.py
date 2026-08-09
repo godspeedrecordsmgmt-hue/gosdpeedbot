@@ -11920,41 +11920,42 @@ async def confirm_booking(update: Update, context):
         admin_msg_lines = [
             f"*🚨 Новая заявка! #{booking_id}*",
             "",
-            f"👤 Пользователь: {safe_name}",
-            f"📱 Контакт: {safe_contact}",
-            f"🎧 Услуга: {service}"
+            f"*📋 Детали заявки:*",
+            f"• Пользователь: {safe_name}",
+            f"• Контакт: {safe_contact}",
+            f"• Услуга: {service}"
         ]
         
         # Добавляем тип услуги для админа
         if is_track_creation and context.user_data.get('track_type'):
-            admin_msg_lines.append(f"🎵 Тип: {context.user_data.get('track_type')}")
+            admin_msg_lines.append(f"• Тип: {context.user_data.get('track_type')}")
         elif is_mixing and context.user_data.get('mixing_type'):
-            admin_msg_lines.append(f"🎚️ Тип: {context.user_data.get('mixing_type')}")
+            admin_msg_lines.append(f"• Тип: {context.user_data.get('mixing_type')}")
         elif is_12_hours and context.user_data.get('12_hours_type'):
-            admin_msg_lines.append(f"⏰ Тип: {context.user_data.get('12_hours_type')}")
+            admin_msg_lines.append(f"• Тип: {context.user_data.get('12_hours_type')}")
         
         if clean_date_display and 'Не указана' not in clean_date_display:
-            admin_msg_lines.append(f"📅 Дата: {clean_date_display}")
+            admin_msg_lines.append(f"• Дата: {clean_date_display}")
         
         if display_time and display_time not in ['Не указано', 'Не указано (договорная)']:
             if is_12_hours:
-                admin_msg_lines.append(f"⏰ Время: {display_time} (12 часов)")
+                admin_msg_lines.append(f"• Время: {display_time} (12 часов)")
             elif is_track_creation:
-                admin_msg_lines.append(f"⏰ Время: {display_time} (4 часа)")
+                admin_msg_lines.append(f"• Время: {display_time} (4 часа)")
             elif duration and duration > 0:
                 formatted_duration = PriceCalculator.format_hours_ru(duration)
-                admin_msg_lines.append(f"⏰ Время: {display_time} ({formatted_duration})")
+                admin_msg_lines.append(f"• Время: {display_time} ({formatted_duration})")
             else:
-                admin_msg_lines.append(f"⏰ Время: {display_time}")
+                admin_msg_lines.append(f"• Время: {display_time}")
         
-        admin_msg_lines.append(f"💰 Стоимость: {price_text}")
+        admin_msg_lines.append(f"• Стоимость: {price_text}")
         
         # Добавляем скидки для админа
         admin_discount_lines = []
         if level_discount_percent and level_discount_percent > 0:
-            admin_discount_lines.append(f"🎟 Скидка по уровню: {level_discount_percent}%")
+            admin_discount_lines.append(f"• Скидка по уровню: {level_discount_percent}%")
         if promo_discount_percent and promo_discount_percent > 0:
-            admin_discount_lines.append(f"🎟 Промокод: {promo_discount_percent}%")
+            admin_discount_lines.append(f"• Промокод: {promo_discount_percent}%")
         if price_result.get('free_hours_applied', 0) > 0:
             free_hours = price_result['free_hours_applied']
             if free_hours == 1:
@@ -11963,11 +11964,11 @@ async def confirm_booking(update: Update, context):
                 hours_text = f"{free_hours} бесплатных часа"
             else:
                 hours_text = f"{free_hours} бесплатных часов"
-            admin_discount_lines.append(f"🎟 Промокод: {hours_text}")
+            admin_discount_lines.append(f"• Промокод: {hours_text}")
         if price_result.get('free_service_applied', False):
-            admin_discount_lines.append(f"🎟 Промокод: Бесплатная услуга")
+            admin_discount_lines.append(f"• Промокод: Бесплатная услуга")
         if promo_code_used:
-            admin_discount_lines.append(f"🎟 Код промокода: {promo_code_used}")
+            admin_discount_lines.append(f"• Код промокода: {promo_code_used}")
         
         if admin_discount_lines:
             admin_msg_lines.extend(admin_discount_lines)
