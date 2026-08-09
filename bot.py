@@ -21276,70 +21276,71 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
         if clean_date and clean_date[0] in "🟢🟡🟠🔴⚪️":
             clean_date = clean_date[2:].strip()
         
-        # ===== ИСПРАВЛЕНО: format_time_for_display() нормализует 24→00 =====
         display_time = time_slot
         if time_slot and '-' in time_slot:
             display_time = DateTimeUtils.format_time_for_display(time_slot)
         
-        user_message_lines = []
-        user_message_lines.append(f"*✅ Ваша заявка подтверждена!*")
-        user_message_lines.append("")
-        user_message_lines.append(f"👤 Имя: {name}")
-        user_message_lines.append(f"📱 Контакт: {contact}")
-        user_message_lines.append(f"🎧 Услуга: {service}")
+        # ===== НОВЫЙ ФОРМАТ СООБЩЕНИЯ =====
+        user_msg_lines = [
+            f"*✅ Ваша заявка подтверждена!*",
+            "",
+            f"*📋 Детали вашей заявки:*",
+            f"• Имя: {name}",
+            f"• Контакт: {contact}",
+            f"• Услуга: {service}"
+        ]
         
         if is_12_hours and twelve_hours_type:
-            user_message_lines.append(f"⏰ Тип аренды: {twelve_hours_type}")
+            user_msg_lines.append(f"• Тип аренды: {twelve_hours_type}")
         elif is_mixing and mixing_type:
-            user_message_lines.append(f"🎚️ Тип работы: {mixing_type}")
+            user_msg_lines.append(f"• Тип работы: {mixing_type}")
         elif is_track_creation and track_type:
-            user_message_lines.append(f"🎵 Тип: {track_type}")
+            user_msg_lines.append(f"• Тип: {track_type}")
         
         if clean_date and 'Не указана' not in clean_date:
-            user_message_lines.append(f"📅 Дата: {clean_date}")
+            user_msg_lines.append(f"• Дата: {clean_date}")
         
         if display_time and display_time not in ['Не указано', 'Не указано (договорная)']:
             if is_12_hours:
-                user_message_lines.append(f"⏰ Время: {display_time} (12 часов)")
+                user_msg_lines.append(f"• Время: {display_time} (12 часов)")
             elif is_track_creation:
-                user_message_lines.append(f"⏰ Время: {display_time} (4 часа)")
+                user_msg_lines.append(f"• Время: {display_time} (4 часа)")
             elif duration and duration > 0:
                 formatted_duration = PriceCalculator.format_hours_ru(duration)
-                user_message_lines.append(f"⏰ Время: {display_time} ({formatted_duration})")
+                user_msg_lines.append(f"• Время: {display_time} ({formatted_duration})")
             else:
-                user_message_lines.append(f"⏰ Время: {display_time}")
+                user_msg_lines.append(f"• Время: {display_time}")
         
         # ===== ЦЕНА (С УЧЁТОМ АЛЬБОМА И БЕСПЛАТНОГО ЧАСА) =====
         if (is_mixing == 1 and mixing_type and "Альбом" in mixing_type) or \
            (is_track_creation == 1 and track_type and "Альбом" in track_type):
-            user_message_lines.append(f"💰 Стоимость: Договорная")
+            user_msg_lines.append(f"• Стоимость: Договорная")
         elif free_service_applied == 1:
-            user_message_lines.append(f"💰 Стоимость: 0₽")
+            user_msg_lines.append(f"• Стоимость: 0₽")
         elif price == '0' and promo_code_used:
-            user_message_lines.append(f"💰 Стоимость: 0₽")
+            user_msg_lines.append(f"• Стоимость: 0₽")
         elif price and price != '0' and 'договорная' not in str(price).lower():
             try:
                 price_int = int(float(price))
-                formatted_price = f"{price_int}₽"
-                user_message_lines.append(f"💰 Стоимость: {formatted_price}")
+                user_msg_lines.append(f"• Стоимость: {price_int}₽")
             except:
-                user_message_lines.append(f"💰 Стоимость: {price}₽")
+                user_msg_lines.append(f"• Стоимость: {price}₽")
         else:
             if is_12_hours == 1:
                 rent_price = 6500 if twelve_hours_type and 'Ночь' in twelve_hours_type else 7000
-                user_message_lines.append(f"💰 Стоимость: {rent_price}₽")
+                user_msg_lines.append(f"• Стоимость: {rent_price}₽")
             elif is_mixing == 1:
-                user_message_lines.append(f"💰 Стоимость: 2500₽")
+                user_msg_lines.append(f"• Стоимость: 2500₽")
             elif is_track_creation == 1:
-                user_message_lines.append(f"💰 Стоимость: 9000₽")
+                user_msg_lines.append(f"• Стоимость: 9000₽")
             else:
-                user_message_lines.append(f"💰 Стоимость: Договорная")
+                user_msg_lines.append(f"• Стоимость: Договорная")
         
-        user_message_lines.append("")
-        user_message_lines.append(f"*📍 Адрес: Садовая ул., 91*")
-        user_message_lines.append(f"*📱 Контакты:* @mothman32")
+        user_msg_lines.append("")
+        user_msg_lines.append(f"*📍 Адрес: Садовая ул., 91*")
+        user_msg_lines.append(f"*📞 Контакты: @mothman32*")
         
-        user_message = "\n".join(user_message_lines)
+        user_message = "\n".join(user_msg_lines)
         
         await context.bot.send_message(
             chat_id=int(telegram_id),
@@ -21502,69 +21503,70 @@ async def process_booking_rejection(booking_id: int, admin_id: int, context: Con
         if clean_date and clean_date[0] in "🟢🟡🟠🔴⚪️":
             clean_date = clean_date[2:].strip()
         
-        # ===== ИСПРАВЛЕНО: format_time_for_display() нормализует 24→00 =====
         display_time = time_slot
         if time_slot and '-' in time_slot:
             display_time = DateTimeUtils.format_time_for_display(time_slot)
         
-        user_message_lines = []
-        user_message_lines.append(f"*❌ Ваша заявка отклонена*")
-        user_message_lines.append("")
-        user_message_lines.append(f"👤 Имя: {name}")
-        user_message_lines.append(f"📱 Контакт: {contact}")
-        user_message_lines.append(f"🎧 Услуга: {service}")
+        # ===== НОВЫЙ ФОРМАТ СООБЩЕНИЯ =====
+        user_msg_lines = [
+            f"*❌ Ваша заявка отклонена*",
+            "",
+            f"*📋 Детали вашей заявки:*",
+            f"• Имя: {name}",
+            f"• Контакт: {contact}",
+            f"• Услуга: {service}"
+        ]
         
         if is_12_hours and twelve_hours_type:
-            user_message_lines.append(f"⏰ Тип аренды: {twelve_hours_type}")
+            user_msg_lines.append(f"• Тип аренды: {twelve_hours_type}")
         elif is_mixing and mixing_type:
-            user_message_lines.append(f"🎚️ Тип работы: {mixing_type}")
+            user_msg_lines.append(f"• Тип работы: {mixing_type}")
         elif is_track_creation and track_type:
-            user_message_lines.append(f"🎵 Тип: {track_type}")
+            user_msg_lines.append(f"• Тип: {track_type}")
         
         if clean_date and 'Не указана' not in clean_date:
-            user_message_lines.append(f"📅 Дата: {clean_date}")
+            user_msg_lines.append(f"• Дата: {clean_date}")
         
         if display_time and display_time not in ['Не указано', 'Не указано (договорная)']:
             if is_12_hours:
-                user_message_lines.append(f"⏰ Время: {display_time} (12 часов)")
+                user_msg_lines.append(f"• Время: {display_time} (12 часов)")
             elif is_track_creation:
-                user_message_lines.append(f"⏰ Время: {display_time} (4 часа)")
+                user_msg_lines.append(f"• Время: {display_time} (4 часа)")
             elif duration and duration > 0:
                 formatted_duration = PriceCalculator.format_hours_ru(duration)
-                user_message_lines.append(f"⏰ Время: {display_time} ({formatted_duration})")
+                user_msg_lines.append(f"• Время: {display_time} ({formatted_duration})")
             else:
-                user_message_lines.append(f"⏰ Время: {display_time}")
+                user_msg_lines.append(f"• Время: {display_time}")
         
         # ===== ЦЕНА - ИСПРАВЛЕНО =====
         if (is_mixing == 1 and mixing_type and "Альбом" in mixing_type) or \
            (is_track_creation == 1 and track_type and "Альбом" in track_type):
-            user_message_lines.append(f"💰 Стоимость: Договорная")
+            user_msg_lines.append(f"• Стоимость: Договорная")
         elif free_service_applied == 1:
-            user_message_lines.append(f"💰 Стоимость: 0₽")
+            user_msg_lines.append(f"• Стоимость: 0₽")
         elif price == '0' and promo_code_used:
-            user_message_lines.append(f"💰 Стоимость: 0₽")
+            user_msg_lines.append(f"• Стоимость: 0₽")
         elif price and price != '0' and 'договорная' not in str(price).lower():
             try:
                 price_int = int(float(price))
-                formatted_price = f"{price_int}₽"
-                user_message_lines.append(f"💰 Стоимость: {formatted_price}")
+                user_msg_lines.append(f"• Стоимость: {price_int}₽")
             except:
-                user_message_lines.append(f"💰 Стоимость: {price}₽")
+                user_msg_lines.append(f"• Стоимость: {price}₽")
         else:
             if is_12_hours == 1:
                 rent_price = 6500 if twelve_hours_type and 'Ночь' in twelve_hours_type else 7000
-                user_message_lines.append(f"💰 Стоимость: {rent_price}₽")
+                user_msg_lines.append(f"• Стоимость: {rent_price}₽")
             elif is_mixing == 1:
-                user_message_lines.append(f"💰 Стоимость: 2500₽")
+                user_msg_lines.append(f"• Стоимость: 2500₽")
             elif is_track_creation == 1:
-                user_message_lines.append(f"💰 Стоимость: 9000₽")
+                user_msg_lines.append(f"• Стоимость: 9000₽")
             else:
-                user_message_lines.append(f"💰 Стоимость: Договорная")
+                user_msg_lines.append(f"• Стоимость: Договорная")
         
-        user_message_lines.append("")
-        user_message_lines.append(f"*📞 Свяжитесь с администратором @mothman32*")
+        user_msg_lines.append("")
+        user_msg_lines.append(f"*📞 Свяжитесь с администратором @mothman32*")
         
-        user_message = "\n".join(user_message_lines)
+        user_message = "\n".join(user_msg_lines)
         
         await context.bot.send_message(
             chat_id=int(telegram_id),
