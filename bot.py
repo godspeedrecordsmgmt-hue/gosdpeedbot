@@ -5437,7 +5437,6 @@ def get_user_display_name(user_data):
     else:
         return "Пользователь"
 
-
 class DateTimeUtils:
     """
     Утилиты для работы с датой и временем.
@@ -5451,7 +5450,11 @@ class DateTimeUtils:
     - get_booking_datetime: Получение datetime бронирования
     - calculate_duration: Расчёт длительности
     - can_book_in_advance: Проверка возможности бронирования
-    - и другие вспомогательные методы
+    - get_min_advance_hours_for_service: Минимальное время для бронирования
+    - check_date_availability: Проверка доступности даты
+    - can_book_12_hours_rental: Проверка возможности аренды
+    - get_hours_until_booking: Часы до начала записи
+    - format_time_left: Форматирование оставшегося времени
     """
     
     @staticmethod
@@ -5709,7 +5712,8 @@ class DateTimeUtils:
         return period["rules"] == "day"
 
     @staticmethod
-    def can_book_in_advance(start_datetime, start_hour, with_engineer, is_12_hours=False, is_track_creation=False, booking_start_time=None):
+    def can_book_in_advance(start_datetime, start_hour, with_engineer, 
+                           is_12_hours=False, is_track_creation=False, booking_start_time=None):
         """
         Проверяет, можно ли забронировать с учётом минимального времени.
         
@@ -5752,66 +5756,6 @@ class DateTimeUtils:
             return False, min_hours
 
     @staticmethod
-    def get_hours_until_booking(date_str: str, time_slot: str) -> float:
-        """
-        Возвращает количество часов до начала записи.
-        
-        Аргументы:
-            date_str: Дата записи
-            time_slot: Время записи
-        
-        Возвращает:
-            float: Часов до начала или -1 при ошибке
-        """
-        try:
-            if not date_str or not time_slot:
-                return -1
-            
-            # Очищаем дату
-            clean_date = date_str
-            if '(' in clean_date:
-                clean_date = clean_date.split('(')[0].strip()
-            if clean_date and clean_date[0] in "🟢🟡🟠🔴⚪️":
-                clean_date = clean_date[2:].strip()
-            
-            if 'Не указана' in clean_date or 'договорная' in clean_date.lower():
-                return -1
-            
-            # Очищаем время
-            clean_time = time_slot
-            if clean_time == 'Не указано' or clean_time == 'Не указано (договорная)':
-                return -1
-            
-            # Нормализуем время
-            if '-' in clean_time:
-                clean_time = DateTimeUtils.normalize_time_input(clean_time)
-                start_hour_str = clean_time.split('-')[0].strip()
-                start_hour = int(start_hour_str)
-            else:
-                return -1
-            
-            # Парсим дату
-            day, month, year = map(int, clean_date.split('.'))
-            
-            # Создаём datetime начала записи
-            start_datetime = datetime(year, month, day, start_hour, 0, 0)
-            start_datetime = Config.TIMEZONE.localize(start_datetime)
-            
-            now = DateTimeUtils.now()
-            
-            if start_datetime <= now:
-                return 0
-            
-            time_until = start_datetime - now
-            hours_until = time_until.total_seconds() / 3600
-            
-            return hours_until
-            
-        except Exception as e:
-            logger.error(f"❌ Ошибка в get_hours_until_booking: {e}")
-            return -1
-
-    @staticmethod
     def get_min_advance_hours_for_service(with_engineer=False, is_12_hours=False, is_track_creation=False):
         """Возвращает минимальное количество часов для бронирования."""
         if is_12_hours:
@@ -5823,7 +5767,7 @@ class DateTimeUtils:
         else:
             return Config.MIN_BOOKING_ADVANCE['without_engineer']
     
-        @staticmethod
+    @staticmethod
     def check_date_availability(date_str, start_hour, with_engineer=False, 
                                 is_12_hours=False, is_track_creation=False, booking_start_time=None):
         """
@@ -5917,6 +5861,66 @@ class DateTimeUtils:
         return hours_until_booking >= min_hours, hours_until_booking
     
     @staticmethod
+    def get_hours_until_booking(date_str: str, time_slot: str) -> float:
+        """
+        Возвращает количество часов до начала записи.
+        
+        Аргументы:
+            date_str: Дата записи
+            time_slot: Время записи
+        
+        Возвращает:
+            float: Часов до начала или -1 при ошибке
+        """
+        try:
+            if not date_str or not time_slot:
+                return -1
+            
+            # Очищаем дату
+            clean_date = date_str
+            if '(' in clean_date:
+                clean_date = clean_date.split('(')[0].strip()
+            if clean_date and clean_date[0] in "🟢🟡🟠🔴⚪️":
+                clean_date = clean_date[2:].strip()
+            
+            if 'Не указана' in clean_date or 'договорная' in clean_date.lower():
+                return -1
+            
+            # Очищаем время
+            clean_time = time_slot
+            if clean_time == 'Не указано' or clean_time == 'Не указано (договорная)':
+                return -1
+            
+            # Нормализуем время
+            if '-' in clean_time:
+                clean_time = DateTimeUtils.normalize_time_input(clean_time)
+                start_hour_str = clean_time.split('-')[0].strip()
+                start_hour = int(start_hour_str)
+            else:
+                return -1
+            
+            # Парсим дату
+            day, month, year = map(int, clean_date.split('.'))
+            
+            # Создаём datetime начала записи
+            start_datetime = datetime(year, month, day, start_hour, 0, 0)
+            start_datetime = Config.TIMEZONE.localize(start_datetime)
+            
+            now = DateTimeUtils.now()
+            
+            if start_datetime <= now:
+                return 0
+            
+            time_until = start_datetime - now
+            hours_until = time_until.total_seconds() / 3600
+            
+            return hours_until
+            
+        except Exception as e:
+            logger.error(f"❌ Ошибка в get_hours_until_booking: {e}")
+            return -1
+    
+    @staticmethod
     def format_time_left(hours, minutes):
         """
         Форматирует оставшееся время для отображения.
@@ -5936,7 +5940,6 @@ class DateTimeUtils:
             return f"{minutes} минут"
         else:
             return "менее минуты"
-
 
 def get_notification_service_type(service: str, with_engineer: bool = False, 
                                  is_12_hours: bool = False, 
