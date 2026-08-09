@@ -21399,7 +21399,7 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
         # ===== ОБНОВЛЯЕМ СООБЩЕНИЕ АДМИНА =====
         await context.bot.edit_message_text(
             chat_id=chat_id, message_id=message_id,
-            text="*✅ Запись подтверждена!*", parse_mode="Markdown"
+            text=f"*✅ Запись #{booking_id} подтверждена!*", parse_mode="Markdown"
         )
         
         logger.info(f"✅ Запись #{booking_id} успешно подтверждена")
@@ -21575,10 +21575,10 @@ async def process_booking_rejection(booking_id: int, admin_id: int, context: Con
         )
         logger.info(f"✅ Сообщение об отклонении отправлено пользователю {telegram_id}")
         
-        # Обновляем сообщение админа
+        # ===== ОБНОВЛЯЕМ СООБЩЕНИЕ АДМИНА =====
         await context.bot.edit_message_text(
             chat_id=chat_id, message_id=message_id,
-            text="*❌ Запись отклонена!*", parse_mode="Markdown"
+            text=f"*❌ Запись #{booking_id} отклонена!*", parse_mode="Markdown"
         )
         
         logger.info(f"❌ Запись #{booking_id} отклонена, промокод и купон возвращены")
