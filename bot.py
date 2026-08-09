@@ -6670,7 +6670,7 @@ class KeyboardManager:
     @staticmethod
     def get_confirmation():
         return ReplyKeyboardMarkup([
-            ["✅ Всё верно, отправить!", "✏️ Исправить данные"],  # ← КНОПКИ СЛЕВА И СПРАВА
+            ["✅ Всё верно, отправить", "✏️ Исправить данные"],  # ← КНОПКИ СЛЕВА И СПРАВА
             ["❌ Отменить"]                                       # ← ЦЕНТР
         ], resize_keyboard=True)
     
@@ -9526,7 +9526,7 @@ async def handle_global_buttons(update: Update, context):
     logger.info(f"🔍 ГЛОБАЛЬНЫЙ ОБРАБОТЧИК КНОПОК: '{text}'")
     
     # ===== КНОПКИ, КОТОРЫЕ ДОЛЖЕН ОБРАБАТЫВАТЬ CONVERSATIONHANDLER =====
-    if text in ["✅ Всё верно, отправить!", "✏️ Исправить данные", "❌ Отменить", "↩️ Назад"]:
+    if text in ["✅ Всё верно, отправить", "✏️ Исправить данные", "❌ Отменить", "↩️ Назад"]:
         return None  # Пропускаем, чтобы обработал ConversationHandler
     
     # ===== ОСНОВНЫЕ КНОПКИ ПОЛЬЗОВАТЕЛЯ =====
@@ -11572,7 +11572,7 @@ async def handle_confirmation_text(update: Update, context):
     text = update.message.text.strip()
     logger.info(f"🔍 handle_confirmation_text вызван с текстом: '{text}'")
     
-    valid_buttons = ["✅ Всё верно, отправить!", "✏️ Исправить данные", "❌ Отменить", "↩️ Назад"]
+    valid_buttons = ["✅ Всё верно, отправить", "✏️ Исправить данные", "❌ Отменить", "↩️ Назад"]
     
     if text not in valid_buttons:
         keyboard = KeyboardManager.get_confirmation()
@@ -11592,7 +11592,7 @@ async def handle_confirmation_text(update: Update, context):
     if text == "↩️ Назад":
         return await handle_back_to_previous_step(update, context)
     
-    if text == "✅ Всё верно, отправить!":
+    if text == "✅ Всё верно, отправить":
         return await confirm_booking(update, context)
 
 @handle_errors_with_rate_limit
@@ -22047,7 +22047,7 @@ def setup_handlers(application):
             TRACK_CREATION_TYPE: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_track_creation_type)],
             DATE: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_date)],
             SHOW_SLOTS: [
-                MessageHandler(filters.Regex('^(✅ Всё верно, отправить!)$'), handle_confirmation_text),
+                MessageHandler(filters.Regex('^(✅ Всё верно, отправить)$'), handle_confirmation_text),
                 MessageHandler(filters.Regex('^(✏️ Исправить данные)$'), handle_confirmation_text),
                 MessageHandler(filters.Regex('^(❌ Отменить)$'), handle_confirmation_text),
                 MessageHandler(filters.TEXT & ~filters.COMMAND, show_slots),
