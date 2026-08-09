@@ -10444,28 +10444,37 @@ async def get_mixing_type(update: Update, context):
         discount_text = ""
         
         if price_result.get('level_discount_percent', 0) > 0:
-            discount_text += f"\n🎟 Скидка по уровню: {price_result['level_discount_percent']}%"
+            discount_text += f"\n• Скидка по уровню: {price_result['level_discount_percent']}%"
         
         if price_result.get('promo_discount_percent', 0) > 0:
-            discount_text += f"\n🎟 Промокод: {price_result['promo_discount_percent']}%"
+            discount_text += f"\n• Промокод: {price_result['promo_discount_percent']}%"
         
         if price_result.get('free_service_applied', False) and price_result.get('promo_code_used'):
-            discount_text += f"\n🎟 Промокод: Бесплатная услуга"
+            discount_text += f"\n• Промокод: Бесплатная услуга"
         
         safe_name = context.user_data.get('safe_name', context.user_data.get('name', ''))
         safe_contact = context.user_data.get('safe_contact', context.user_data.get('contact', ''))
         
-        # ===== ЕДИНЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
-        confirmation_text = (
-            f"*✅ Шаг 5/5: Подтверждение*\n\n"
-            f"*✨ Проверьте правильность введённых данных:*\n\n"
-            f"👤 Имя: {safe_name}\n"
-            f"📱 Контакт: {safe_contact}\n"
-            f"🎧 Услуга: {context.user_data['service']}\n"
-            f"🎚️ Тип: {context.user_data.get('mixing_type', 'Не указан')}\n"
-            f"💰 Стоимость: {price_result['final_price']}₽{discount_text}\n\n"
-            f"*👇 Выберите подходящий вариант:*"
-        )
+        # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
+        confirmation_lines = [
+            f"*✅ Шаг 5/5: Подтверждение*",
+            "",
+            f"*✨ Проверьте правильность введённых данных:*",
+            "",
+            f"• Имя: {safe_name}",
+            f"• Контакт: {safe_contact}",
+            f"• Услуга: {context.user_data['service']}",
+            f"• Тип: {context.user_data.get('mixing_type', 'Не указан')}",
+            f"• Стоимость: {price_result['final_price']}₽"
+        ]
+        
+        if discount_text:
+            confirmation_lines.append(discount_text.lstrip('\n'))
+        
+        confirmation_lines.append("")
+        confirmation_lines.append("*👇 Выберите подходящий вариант:*")
+        
+        confirmation_text = "\n".join(confirmation_lines)
         
         await update.message.reply_text(
             confirmation_text,
@@ -10483,17 +10492,22 @@ async def get_mixing_type(update: Update, context):
         safe_name = context.user_data.get('safe_name', context.user_data.get('name', ''))
         safe_contact = context.user_data.get('safe_contact', context.user_data.get('contact', ''))
         
-        # ===== ЕДИНЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
-        confirmation_text = (
-            f"*✅ Шаг 5/5: Подтверждение*\n\n"
-            f"*✨ Проверьте правильность введённых данных:*\n\n"
-            f"👤 Имя: {safe_name}\n"
-            f"📱 Контакт: {safe_contact}\n"
-            f"🎧 Услуга: {context.user_data['service']}\n"
-            f"🎚️ Тип: {context.user_data.get('mixing_type', 'Не указан')}\n"
-            f"💰 Стоимость: Договорная\n\n"
-            f"*👇 Выберите подходящий вариант:*"
-        )
+        # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
+        confirmation_lines = [
+            f"*✅ Шаг 5/5: Подтверждение*",
+            "",
+            f"*✨ Проверьте правильность введённых данных:*",
+            "",
+            f"• Имя: {safe_name}",
+            f"• Контакт: {safe_contact}",
+            f"• Услуга: {context.user_data['service']}",
+            f"• Тип: {context.user_data.get('mixing_type', 'Не указан')}",
+            f"• Стоимость: Договорная",
+            "",
+            "*👇 Выберите подходящий вариант:*"
+        ]
+        
+        confirmation_text = "\n".join(confirmation_lines)
         
         await update.message.reply_text(
             confirmation_text,
@@ -10607,17 +10621,22 @@ async def get_track_creation_type(update: Update, context):
         safe_name = context.user_data.get('safe_name', context.user_data.get('name', ''))
         safe_contact = context.user_data.get('safe_contact', context.user_data.get('contact', ''))
         
-        # ===== ЕДИНЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
-        confirmation_text = (
-            f"*✅ Шаг 5/5: Подтверждение*\n\n"
-            f"*✨ Проверьте правильность введённых данных:*\n\n"
-            f"👤 Имя: {safe_name}\n"
-            f"📱 Контакт: {safe_contact}\n"
-            f"🎧 Услуга: Создание трека\n"
-            f"🎵 Тип: {context.user_data['track_type']}\n"
-            f"💰 Стоимость: Договорная\n\n"
-            f"*👇 Выберите подходящий вариант:*"
-        )
+        # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
+        confirmation_lines = [
+            f"*✅ Шаг 5/5: Подтверждение*",
+            "",
+            f"*✨ Проверьте правильность введённых данных:*",
+            "",
+            f"• Имя: {safe_name}",
+            f"• Контакт: {safe_contact}",
+            f"• Услуга: Создание трека",
+            f"• Тип: {context.user_data['track_type']}",
+            f"• Стоимость: Договорная",
+            "",
+            "*👇 Выберите подходящий вариант:*"
+        ]
+        
+        confirmation_text = "\n".join(confirmation_lines)
         
         await update.message.reply_text(
             confirmation_text,
@@ -10650,17 +10669,22 @@ async def handle_no_date_option(update: Update, context):
         safe_name = context.user_data.get('safe_name', context.user_data.get('name', ''))
         safe_contact = context.user_data.get('safe_contact', context.user_data.get('contact', ''))
         
-        # ===== ЕДИНЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
-        confirmation_text = (
-            f"*✅ Шаг 5/5: Подтверждение*\n\n"
-            f"*✨ Проверьте правильность введённых данных:*\n\n"
-            f"👤 Имя: {safe_name}\n"
-            f"📱 Контакт: {safe_contact}\n"
-            f"🎧 Услуга: {context.user_data['service']}\n"
-            f"🎚️ Тип: {context.user_data.get('mixing_type', 'Не указан')}\n"
-            f"💰 Стоимость: Договорная\n\n"
-            f"*👇 Выберите подходящий вариант:*"
-        )
+        # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
+        confirmation_lines = [
+            f"*✅ Шаг 5/5: Подтверждение*",
+            "",
+            f"*✨ Проверьте правильность введённых данных:*",
+            "",
+            f"• Имя: {safe_name}",
+            f"• Контакт: {safe_contact}",
+            f"• Услуга: {context.user_data['service']}",
+            f"• Тип: {context.user_data.get('mixing_type', 'Не указан')}",
+            f"• Стоимость: Договорная",
+            "",
+            "*👇 Выберите подходящий вариант:*"
+        ]
+        
+        confirmation_text = "\n".join(confirmation_lines)
         
         await update.message.reply_text(
             confirmation_text,
@@ -10674,17 +10698,22 @@ async def handle_no_date_option(update: Update, context):
         safe_name = context.user_data.get('safe_name', context.user_data.get('name', ''))
         safe_contact = context.user_data.get('safe_contact', context.user_data.get('contact', ''))
         
-        # ===== ЕДИНЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
-        confirmation_text = (
-            f"*✅ Шаг 5/5: Подтверждение*\n\n"
-            f"*✨ Проверьте правильность введённых данных:*\n\n"
-            f"👤 Имя: {safe_name}\n"
-            f"📱 Контакт: {safe_contact}\n"
-            f"🎧 Услуга: {context.user_data['service']}\n"
-            f"🎵 Тип: {track_type}\n"
-            f"💰 Стоимость: Договорная\n\n"
-            f"*👇 Выберите подходящий вариант:*"
-        )
+        # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
+        confirmation_lines = [
+            f"*✅ Шаг 5/5: Подтверждение*",
+            "",
+            f"*✨ Проверьте правильность введённых данных:*",
+            "",
+            f"• Имя: {safe_name}",
+            f"• Контакт: {safe_contact}",
+            f"• Услуга: {context.user_data['service']}",
+            f"• Тип: {track_type}",
+            f"• Стоимость: Договорная",
+            "",
+            "*👇 Выберите подходящий вариант:*"
+        ]
+        
+        confirmation_text = "\n".join(confirmation_lines)
         
         await update.message.reply_text(
             confirmation_text,
@@ -10701,16 +10730,21 @@ async def handle_no_date_option(update: Update, context):
         safe_name = context.user_data.get('safe_name', context.user_data.get('name', ''))
         safe_contact = context.user_data.get('safe_contact', context.user_data.get('contact', ''))
         
-        # ===== ЕДИНЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
-        confirmation_text = (
-            f"*✅ Шаг 5/5: Подтверждение*\n\n"
-            f"*✨ Проверьте правильность введённых данных:*\n\n"
-            f"👤 Имя: {safe_name}\n"
-            f"📱 Контакт: {safe_contact}\n"
-            f"🎧 Услуга: {context.user_data['service']}\n"
-            f"💰 Стоимость: Договорная\n\n"
-            f"*👇 Выберите подходящий вариант:*"
-        )
+        # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
+        confirmation_lines = [
+            f"*✅ Шаг 5/5: Подтверждение*",
+            "",
+            f"*✨ Проверьте правильность введённых данных:*",
+            "",
+            f"• Имя: {safe_name}",
+            f"• Контакт: {safe_contact}",
+            f"• Услуга: {context.user_data['service']}",
+            f"• Стоимость: Договорная",
+            "",
+            "*👇 Выберите подходящий вариант:*"
+        ]
+        
+        confirmation_text = "\n".join(confirmation_lines)
         
         await update.message.reply_text(
             confirmation_text,
@@ -14932,31 +14966,40 @@ async def handle_admin_price(update: Update, context):
         formatted_price = f"{price_str}₽"
     
     if record_type == "📝 Договорная запись":
-        confirmation_text = (
-            "*👑 Шаг 4/4: Подтверждение*\n\n"
-            "*✅ Проверьте данные:*\n\n"
-            "*📋 Данные:*\n"
-            f"• Уникальный ID: {unique_id}\n"
-            f"• Тип записи: {record_type}\n"
-            f"• Стоимость: {formatted_price}\n\n"
-            "*📝 Дополнительная информация:*\n"
-            "• Запись будет создана от имени администратора\n"
-            "• Пользователь увидит запись в своем профиле\n\n"
+        # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
+        confirmation_lines = [
+            f"*👑 Шаг 4/4: Подтверждение*",
+            "",
+            f"*✨ Проверьте правильность введённых данных:*",
+            "",
+            f"• Уникальный ID: {unique_id}",
+            f"• Тип записи: {record_type}",
+            f"• Стоимость: {formatted_price}",
+            "",
+            f"*📝 Дополнительная информация:*",
+            f"• Запись будет создана от имени администратора",
+            f"• Пользователь увидит запись в своем профиле",
+            "",
             "*👇 Всё верно?*"
-        )
+        ]
     else:
-        confirmation_text = (
-            "*👑 Шаг 4/4: Подтверждение*\n\n"
-            "*✅ Проверьте данные:*\n\n"
-            "*📋 Данные:*\n"
-            f"• Уникальный ID: {unique_id}\n"
-            f"• Тип записи: {record_type}\n"
-            f"• Стоимость: {formatted_price}\n\n"
-            "*📝 Дополнительная информация:*\n"
-            "• Запись будет создана от имени администратора\n"
-            "• Пользователь увидит запись в своем профиле\n\n"
+        confirmation_lines = [
+            f"*👑 Шаг 4/4: Подтверждение*",
+            "",
+            f"*✨ Проверьте правильность введённых данных:*",
+            "",
+            f"• Уникальный ID: {unique_id}",
+            f"• Тип записи: {record_type}",
+            f"• Стоимость: {formatted_price}",
+            "",
+            f"*📝 Дополнительная информация:*",
+            f"• Запись будет создана от имени администратора",
+            f"• Пользователь увидит запись в своем профиле",
+            "",
             "*👇 Всё верно?*"
-        )
+        ]
+    
+    confirmation_text = "\n".join(confirmation_lines)
     
     await update.message.reply_text(
         confirmation_text,
@@ -16378,9 +16421,9 @@ async def show_slots(update: Update, context):
         # ===== ФОРМИРУЕМ ТЕКСТ О СКИДКАХ =====
         discount_text = ""
         if price_result.get('level_discount_percent', 0) > 0:
-            discount_text += f"\n🎟 Скидка по уровню: {price_result['level_discount_percent']}%"
+            discount_text += f"\n• Скидка по уровню: {price_result['level_discount_percent']}%"
         if price_result.get('promo_discount_percent', 0) > 0:
-            discount_text += f"\n🎟 Промокод: {price_result['promo_discount_percent']}%"
+            discount_text += f"\n• Промокод: {price_result['promo_discount_percent']}%"
         if price_result.get('free_hours_applied', 0) > 0:
             free_hours = price_result['free_hours_applied']
             if free_hours == 1:
@@ -16389,22 +16432,32 @@ async def show_slots(update: Update, context):
                 hours_text = f"{free_hours} бесплатных часа"
             else:
                 hours_text = f"{free_hours} бесплатных часов"
-            discount_text += f"\n🎟 Промокод: {hours_text}"
+            discount_text += f"\n• Промокод: {hours_text}"
         if price_result.get('free_service_applied', False):
-            discount_text += f"\n🎟 Промокод: Бесплатная услуга"
+            discount_text += f"\n• Промокод: Бесплатная услуга"
         
-        # ===== ЕДИНЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
-        confirmation_text = (
-            f"*✅ Шаг 6/6: Подтверждение*\n\n"
-            f"*✨ Проверьте правильность введённых данных:*\n\n"
-            f"👤 Имя: {safe_name}\n"
-            f"📱 Контакт: {safe_contact}\n"
-            f"🎧 Услуга: {context.user_data['service']}\n"
-            f"📅 Дата: {display_date}\n"
-            f"⏰ Время: {display_time} (12 часов)\n"
-            f"💰 Стоимость: {price_result['final_price']}₽ + залог (по договору){discount_text}\n\n"
-            f"*👇 Выберите подходящий вариант:*"
-        )
+        # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
+        confirmation_lines = [
+            f"*✅ Шаг 6/6: Подтверждение*",
+            "",
+            f"*✨ Проверьте правильность введённых данных:*",
+            "",
+            f"• Имя: {safe_name}",
+            f"• Контакт: {safe_contact}",
+            f"• Услуга: {context.user_data['service']}",
+            f"• Тип: {context.user_data.get('12_hours_type', 'Не указан')}",
+            f"• Дата: {display_date}",
+            f"• Время: {display_time} (12 часов)",
+            f"• Стоимость: {price_result['final_price']}₽ + залог (по договору)"
+        ]
+        
+        if discount_text:
+            confirmation_lines.append(discount_text.lstrip('\n'))
+        
+        confirmation_lines.append("")
+        confirmation_lines.append("*👇 Выберите подходящий вариант:*")
+        
+        confirmation_text = "\n".join(confirmation_lines)
         
         context.user_data['_conversation_state'] = CONFIRM
         
@@ -16558,9 +16611,9 @@ async def show_slots(update: Update, context):
         # ===== ФОРМИРУЕМ ТЕКСТ О СКИДКАХ =====
         discount_text = ""
         if price_result.get('level_discount_percent', 0) > 0:
-            discount_text += f"\n🎟 Скидка по уровню: {price_result['level_discount_percent']}%"
+            discount_text += f"\n• Скидка по уровню: {price_result['level_discount_percent']}%"
         if price_result.get('promo_discount_percent', 0) > 0:
-            discount_text += f"\n🎟 Промокод: {price_result['promo_discount_percent']}%"
+            discount_text += f"\n• Промокод: {price_result['promo_discount_percent']}%"
         if price_result.get('free_hours_applied', 0) > 0:
             free_hours = price_result['free_hours_applied']
             if free_hours == 1:
@@ -16569,23 +16622,32 @@ async def show_slots(update: Update, context):
                 hours_text = f"{free_hours} бесплатных часа"
             else:
                 hours_text = f"{free_hours} бесплатных часов"
-            discount_text += f"\n🎟 Промокод: {hours_text}"
+            discount_text += f"\n• Промокод: {hours_text}"
         if price_result.get('free_service_applied', False):
-            discount_text += f"\n🎟 Промокод: Бесплатная услуга"
+            discount_text += f"\n• Промокод: Бесплатная услуга"
         
-        # ===== ЕДИНЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
-        confirmation_text = (
-            f"*✅ Шаг 7/7: Подтверждение*\n\n"
-            f"*✨ Проверьте правильность введённых данных:*\n\n"
-            f"👤 Имя: {safe_name}\n"
-            f"📱 Контакт: {safe_contact}\n"
-            f"🎧 Услуга: {context.user_data['service']}\n"
-            f"🎵 Тип: {context.user_data.get('track_type', 'Один трек')}\n"
-            f"📅 Дата: {display_date}\n"
-            f"⏰ Время: {display_time} (4 часа)\n"
-            f"💰 Стоимость: {price_result['final_price']}₽{discount_text}\n\n"
-            f"*👇 Выберите подходящий вариант:*"
-        )
+        # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
+        confirmation_lines = [
+            f"*✅ Шаг 7/7: Подтверждение*",
+            "",
+            f"*✨ Проверьте правильность введённых данных:*",
+            "",
+            f"• Имя: {safe_name}",
+            f"• Контакт: {safe_contact}",
+            f"• Услуга: {context.user_data['service']}",
+            f"• Тип: {context.user_data.get('track_type', 'Один трек')}",
+            f"• Дата: {display_date}",
+            f"• Время: {display_time} (4 часа)",
+            f"• Стоимость: {price_result['final_price']}₽"
+        ]
+        
+        if discount_text:
+            confirmation_lines.append(discount_text.lstrip('\n'))
+        
+        confirmation_lines.append("")
+        confirmation_lines.append("*👇 Выберите подходящий вариант:*")
+        
+        confirmation_text = "\n".join(confirmation_lines)
         
         context.user_data['_conversation_state'] = CONFIRM
         
@@ -16749,10 +16811,10 @@ async def show_slots(update: Update, context):
     discount_text = ""
     
     if price_result.get('level_discount_percent', 0) > 0:
-        discount_text += f"\n🎟 Скидка по уровню: {price_result['level_discount_percent']}%"
+        discount_text += f"\n• Скидка по уровню: {price_result['level_discount_percent']}%"
     
     if price_result.get('promo_discount_percent', 0) > 0:
-        discount_text += f"\n🎟 Промокод: {price_result['promo_discount_percent']}%"
+        discount_text += f"\n• Промокод: {price_result['promo_discount_percent']}%"
     
     if price_result.get('free_hours_applied', 0) > 0:
         free_hours = price_result['free_hours_applied']
@@ -16762,12 +16824,12 @@ async def show_slots(update: Update, context):
             hours_text = f"{free_hours} бесплатных часа"
         else:
             hours_text = f"{free_hours} бесплатных часов"
-        discount_text += f"\n🎟 Промокод: {hours_text}"
+        discount_text += f"\n• Промокод: {hours_text}"
     
     if price_result.get('free_service_applied', False):
-        discount_text += f"\n🎟 Промокод: Бесплатная услуга"
+        discount_text += f"\n• Промокод: Бесплатная услуга"
     
-    # ===== ЕДИНЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
+    # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
     # Определяем шаг
     if is_mixing:
         step_text = "Шаг 5/5"
@@ -16797,28 +16859,36 @@ async def show_slots(update: Update, context):
     else:
         time_text = display_time
     
-    confirmation_text = (
-        f"*✅ {step_text}: Подтверждение*\n\n"
-        f"*✨ Проверьте правильность введённых данных:*\n\n"
-        f"👤 Имя: {safe_name}\n"
-        f"📱 Контакт: {safe_contact}\n"
-        f"🎧 Услуга: {context.user_data['service']}\n"
-    )
+    # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
+    confirmation_lines = [
+        f"*✅ {step_text}: Подтверждение*",
+        "",
+        f"*✨ Проверьте правильность введённых данных:*",
+        "",
+        f"• Имя: {safe_name}",
+        f"• Контакт: {safe_contact}",
+        f"• Услуга: {context.user_data['service']}"
+    ]
     
     # Добавляем дополнительную информацию в зависимости от услуги
     if is_track_creation and context.user_data.get('track_type'):
-        confirmation_text += f"🎵 Тип: {context.user_data.get('track_type')}\n"
+        confirmation_lines.append(f"• Тип: {context.user_data.get('track_type')}")
     elif is_mixing and context.user_data.get('mixing_type'):
-        confirmation_text += f"🎚️ Тип: {context.user_data.get('mixing_type')}\n"
+        confirmation_lines.append(f"• Тип: {context.user_data.get('mixing_type')}")
     elif is_12_hours and context.user_data.get('12_hours_type'):
-        confirmation_text += f"⏰ Тип: {context.user_data.get('12_hours_type')}\n"
+        confirmation_lines.append(f"• Тип: {context.user_data.get('12_hours_type')}")
     
-    confirmation_text += (
-        f"📅 Дата: {display_date}\n"
-        f"⏰ Время: {time_text}\n"
-        f"💰 Стоимость: {price_text}{discount_text}\n\n"
-        f"*👇 Выберите подходящий вариант:*"
-    )
+    confirmation_lines.append(f"• Дата: {display_date}")
+    confirmation_lines.append(f"• Время: {time_text}")
+    confirmation_lines.append(f"• Стоимость: {price_text}")
+    
+    if discount_text:
+        confirmation_lines.append(discount_text.lstrip('\n'))
+    
+    confirmation_lines.append("")
+    confirmation_lines.append("*👇 Выберите подходящий вариант:*")
+    
+    confirmation_text = "\n".join(confirmation_lines)
     
     context.user_data['_conversation_state'] = CONFIRM
     
