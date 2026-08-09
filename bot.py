@@ -19773,7 +19773,7 @@ async def test_award(update: Update, context):
         now_utc = now.astimezone(pytz.UTC)
         
         clean_date = date_str
-        if '(' in clean_date):
+        if '(' in clean_date:
             clean_date = clean_date.split('(')[0].strip()
         if clean_date and clean_date[0] in "🟢🟡🟠🔴⚪️":
             clean_date = clean_date[2:].strip()
