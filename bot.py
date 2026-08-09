@@ -11720,7 +11720,7 @@ async def confirm_booking(update: Update, context):
             
             if not is_available:
                 await update.message.reply_text(
-                    f"*❌ К сожалению, это время только что заняли!*",
+                    f"*❌ К сожалению, это время только что заняли! Выберите другое время или обновите список слотов!*",
                     reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
                     parse_mode="Markdown"
                 )
