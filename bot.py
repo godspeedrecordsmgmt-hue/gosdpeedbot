@@ -3936,14 +3936,14 @@ class Config:
         if len(text) > max_length:
             # Определяем правильное окончание для поля
             if field_name == "имя":
-                return False, f"*❌ Максимально {max_length} символов, слишком длинное имя!*"
+                return False, f"*❌ Максимально {max_length} символов, слишком длинное имя! Введите имя покороче до {max_length} символов!*"
             elif field_name == "контакт":
                 return False, f"*❌ Максимально {max_length} символов, слишком длинный контакт!*"
             else:
                 return False, f"*❌ Максимально {max_length} символов, слишком длинное {field_name}!*"
         
         if len(text.strip()) < 2 and field_name == "имя":
-            return False, f"*❌ Минимально 2 символа, слишком короткое имя!*"
+            return False, "*❌ Минимально 2 символа, слишком короткое имя! Введите имя длиной от 2 до 50 символов!*"
         
         if len(text.strip()) < 2 and field_name == "контакт":
             return False, f"*❌ Минимально 2 символа, слишком короткий контакт!*"
@@ -9771,7 +9771,7 @@ async def get_contact(update: Update, context):
         
         if text not in ["↩️ Назад", "✏️ Ввести вручную"]:
             await update.message.reply_text(
-                "*❌ Пожалуйста, используйте кнопки!\n\n👇 Выберите подходящий вариант:*",
+                "*❌ Пожалуйста, используйте кнопки! Выберите подходящий вариант из предложенных!*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_contact_request()
             )
@@ -10159,7 +10159,7 @@ async def get_service(update: Update, context):
     keyboard = KeyboardManager.get_services()
     
     await update.message.reply_text(
-        "*❌ Пожалуйста, используйте кнопки!\n\n👇 Выберите подходящий вариант:*",
+        "*❌ Пожалуйста, используйте кнопки! Выберите подходящий вариант из предложенных!*",
         parse_mode="Markdown",
         reply_markup=keyboard
     )
@@ -10209,7 +10209,7 @@ async def get_engineer_option(update: Update, context):
             await update.message.edit_reply_markup(reply_markup=reply_markup)
             
             await update.message.reply_text(
-                "*❌ Пожалуйста, используйте кнопки!\n\n👇 Выберите подходящий вариант:*",
+                "*❌ Пожалуйста, используйте кнопки! Выберите подходящий вариант из предложенных!*",
                 parse_mode="Markdown",
                 reply_markup=reply_markup
             )
@@ -10218,7 +10218,7 @@ async def get_engineer_option(update: Update, context):
             logger.error(f"Ошибка редактирования клавиатуры: {edit_error}")
             
             await update.message.reply_text(
-                "*❌ Пожалуйста, используйте кнопки!\n\n👇 Выберите подходящий вариант:*",
+                "*❌ Пожалуйста, используйте кнопки! Выберите подходящий вариант из предложенных!*",
                 parse_mode="Markdown",
                 reply_markup=reply_markup
             )
@@ -10312,7 +10312,7 @@ async def get_twelve_hours_option(update: Update, context):
     if not is_day and not is_night:
         logger.warning(f"❌ Неизвестный выбор: '{text}'")
         await update.message.reply_text(
-            "*❌ Пожалуйста, используйте кнопки!\n\n👇 Выберите подходящий вариант:*",
+            "*❌ Пожалуйста, используйте кнопки! Выберите подходящий вариант из предложенных!*",
             parse_mode="Markdown",
             reply_markup=KeyboardManager.get_12_hours_options()
         )
@@ -10413,7 +10413,7 @@ async def get_mixing_type(update: Update, context):
     
     if text not in ["🎵 Трек", "💿 Альбом"]:
         await update.message.reply_text(
-            "*❌ Пожалуйста, используйте кнопки!\n\n👇 Выберите подходящий вариант:*",
+            "*❌ Пожалуйста, используйте кнопки! Выберите подходящий вариант из предложенных!*",
             parse_mode="Markdown",
             reply_markup=KeyboardManager.get_mixing()
         )
@@ -10633,7 +10633,7 @@ async def get_track_creation_type(update: Update, context):
         ], resize_keyboard=True, one_time_keyboard=True)
         
         await update.message.reply_text(
-            "*❌ Пожалуйста, используйте кнопки!\n\n👇 Выберите подходящий вариант:*",
+            "*❌ Пожалуйста, используйте кнопки! Выберите подходящий вариант из предложенных!*",
             parse_mode="Markdown",
             reply_markup=reply_markup
         )
@@ -11577,7 +11577,7 @@ async def handle_confirmation_text(update: Update, context):
     if text not in valid_buttons:
         keyboard = KeyboardManager.get_confirmation()
         await update.message.reply_text(
-            "*❌ Пожалуйста, используйте кнопки!\n\n👇 Выберите подходящий вариант:*",
+            "*❌ Пожалуйста, используйте кнопки! Выберите подходящий вариант из предложенных!*",
             parse_mode="Markdown",
             reply_markup=keyboard
         )
@@ -13695,7 +13695,7 @@ async def handle_admin_cancel_back(update: Update, context):
         return ADMIN_CANCEL_USER_ID
     
     await update.message.reply_text(
-        "❌ Пожалуйста, используйте кнопки!\n\n👇 Выберите подходящий вариант:",
+        "*❌ Пожалуйста, используйте кнопки! Выберите подходящий вариант из предложенных!*",
         parse_mode="Markdown",
         reply_markup=ReplyKeyboardMarkup([
             ["↩️ Главное меню", "↩️ Назад"]
@@ -14041,7 +14041,7 @@ async def handle_admin_achievement_confirm(update: Update, context):
     
     if text != "✅ Да, выдать достижение":
         await update.message.reply_text(
-            "*❌ Пожалуйста, используйте кнопки!\n\n👇 Выберите один из вариантов:*",
+            "*❌ Пожалуйста, используйте кнопки! Выберите подходящий вариант из предложенных!*",
             parse_mode="Markdown",
             reply_markup=ReplyKeyboardMarkup([
                 ["✅ Да, выдать достижение", "✏️ Исправить данные"],
@@ -14669,7 +14669,7 @@ async def handle_admin_remove_achievement_back(update: Update, context):
         return ADMIN_REMOVE_ACHIEVEMENT_USER_ID
     
     await update.message.reply_text(
-        "*❌ Пожалуйста, используйте кнопки!\n\n👇 Выберите подходящий вариант:*",
+        "*❌ Пожалуйста, используйте кнопки! Выберите подходящий вариант из предложенных!*",
         parse_mode="Markdown",
         reply_markup=ReplyKeyboardMarkup([
             ["↩️ Главное меню", "↩️ Назад"]
@@ -14839,8 +14839,7 @@ async def handle_admin_record_type(update: Update, context):
     
     if text not in ["📝 Договорная запись", "🎤 Запись в студии"]:
         await update.message.reply_text(
-            "*❌ Пожалуйста, используйте кнопки!*\n\n"
-            "*👇 Выберите подходящий вариант:*",
+            "*❌ Пожалуйста, используйте кнопки! Выберите подходящий вариант из предложенных!*",
             parse_mode="Markdown",
             reply_markup=ReplyKeyboardMarkup([
                 ["📝 Договорная запись", "🎤 Запись в студии"],
@@ -15038,8 +15037,7 @@ async def handle_admin_confirm(update: Update, context):
     
     if text != "✅ Да, создать запись":
         await update.message.reply_text(
-            "*❌ Пожалуйста, используйте кнопки!*\n\n"
-            "*👇 Выберите один из вариантов:*",
+            "*❌ Пожалуйста, используйте кнопки! Выберите подходящий вариант из предложенных!*",
             parse_mode="Markdown",
             reply_markup=ReplyKeyboardMarkup([
                 ["✅ Да, создать запись", "✏️ Исправить данные"],
@@ -15740,8 +15738,7 @@ async def handle_admin_block_type(update: Update, context):
             ]
         
         await update.message.reply_text(
-            f"*❌ Пожалуйста, используйте кнопки!*\n\n"
-            f"*👇 Выберите подходящий вариант:*",
+            "*❌ Пожалуйста, используйте кнопки! Выберите подходящий вариант из предложенных!*",
             parse_mode="Markdown",
             reply_markup=ReplyKeyboardMarkup(keyboard_buttons, resize_keyboard=True, one_time_keyboard=True)
         )
@@ -15942,7 +15939,7 @@ async def handle_admin_block_confirm(update: Update, context):
     
     if text != "✅ Да, подтвердить":
         await update.message.reply_text(
-            "*❌ Пожалуйста, используйте кнопки!\n\n👇 Выберите подходящий вариант:*",
+            "*❌ Пожалуйста, используйте кнопки! Выберите подходящий вариант из предложенных!*",
             parse_mode="Markdown",
             reply_markup=ReplyKeyboardMarkup([
                 ["✅ Да, подтвердить", "✏️ Исправить данные"],
@@ -16320,7 +16317,7 @@ async def show_slots(update: Update, context):
     if context.user_data.get('_conversation_state') == CONFIRM:
         keyboard = KeyboardManager.get_confirmation()
         await update.message.reply_text(
-            "*❌ Пожалуйста, используйте кнопки!\n\n👇 Выберите подходящий вариант:*",
+            "*❌ Пожалуйста, используйте кнопки! Выберите подходящий вариант из предложенных!*",
             parse_mode="Markdown",
             reply_markup=keyboard
         )
@@ -17473,7 +17470,7 @@ async def admin_promo_select_type(update: Update, context):
         return ADMIN_PROMO_USER_ID
     
     await update.message.reply_text(
-        "*❌ Пожалуйста, используйте кнопки!\n\n👇 Выберите подходящий вариант:*",
+        "*❌ Пожалуйста, используйте кнопки! Выберите подходящий вариант из предложенных!*",
         parse_mode="Markdown",
         reply_markup=ReplyKeyboardMarkup([
             ["🌍 Общий промокод", "👤 Персональный промокод"],
@@ -17768,7 +17765,7 @@ async def admin_promo_duration(update: Update, context):
         return ADMIN_PROMO_DURATION_INPUT
     
     await update.message.reply_text(
-        "*❌ Пожалуйста, используйте кнопки!\n\n👇 Выберите подходящий вариант:*",
+        "*❌ Пожалуйста, используйте кнопки! Выберите подходящий вариант из предложенных!*",
         parse_mode="Markdown",
         reply_markup=ReplyKeyboardMarkup([
             ["♾️ Бессрочный", "⏱️ Временный"],
@@ -18003,7 +18000,7 @@ async def admin_promo_type(update: Update, context):
     
     if text not in discount_type_map:
         await update.message.reply_text(
-            "*❌ Пожалуйста, используйте кнопки!\n\n👇 Выберите подходящий вариант:*",
+            "*❌ Пожалуйста, используйте кнопки! Выберите подходящий вариант из предложенных!*",
             parse_mode="Markdown",
             reply_markup=ReplyKeyboardMarkup([
                 ["💰 % на все", "🎯 % на услугу"],
@@ -18332,7 +18329,7 @@ async def admin_promo_service(update: Update, context):
     
     if text not in service_map:
         await update.message.reply_text(
-            "*❌ Пожалуйста, используйте кнопки!\n\n👇 Выберите подходящий вариант:*",
+            "*❌ Пожалуйста, используйте кнопки! Выберите подходящий вариант из предложенных!*",
             parse_mode="Markdown",
             reply_markup=ReplyKeyboardMarkup([
                 ["🎤 Вокал", "🎸 Инструмент", "⏰ Аренда"],
@@ -18791,7 +18788,7 @@ async def admin_promo_confirm(update: Update, context):
     
     if text != "✅ Да, создать промокод":
         await update.message.reply_text(
-            "*❌ Пожалуйста, используйте кнопки!\n\n👇 Выберите подходящий вариант:*",
+            "*❌ Пожалуйста, используйте кнопки! Выберите подходящий вариант из предложенных!*",
             parse_mode="Markdown",
             reply_markup=ReplyKeyboardMarkup([
                 ["✅ Да, создать промокод", "✏️ Исправить данные"],
@@ -19568,7 +19565,7 @@ async def handle_admin_vinyl_action(update: Update, context):
     
     if text not in ["➕ Начислить", "➖ Удалить"]:
         await update.message.reply_text(
-            "*❌ Пожалуйста, используйте кнопки!\n\n👇 Выберите подходящий вариант:*",
+            "*❌ Пожалуйста, используйте кнопки! Выберите подходящий вариант из предложенных!*",
             parse_mode="Markdown",
             reply_markup=ReplyKeyboardMarkup([
                 ["➕ Начислить", "➖ Удалить"],
@@ -19741,7 +19738,7 @@ async def handle_admin_vinyl_confirm(update: Update, context):
     
     if text != "✅ Да, подтвердить":
         await update.message.reply_text(
-            "*❌ Пожалуйста, используйте кнопки!\n\n👇 Выберите подходящий вариант:*",
+            "*❌ Пожалуйста, используйте кнопки! Выберите подходящий вариант из предложенных!*",
             parse_mode="Markdown",
             reply_markup=ReplyKeyboardMarkup([
                 ["✅ Да, подтвердить", "✏️ Исправить данные"],
