@@ -11833,12 +11833,14 @@ async def confirm_booking(update: Update, context):
         else:
             price_text = f"{price_result['final_price']}₽"
         
+        # ===== НОВЫЙ ФОРМАТ СООБЩЕНИЯ =====
         user_msg_lines = [
             f"*✅ Заявка успешно отправлена!*",
             "",
-            f"*✨ Благодарим вас, {safe_name}!*",
+            f"*✨ Ожидайте подтверждения от администратора!*",
             "",
-            f"*📋 Детали вашей заявки №{booking_id}:*",
+            f"*📋 Детали вашей заявки:*",
+            f"• Номер заявки: #{booking_id}",
             f"• Имя: {safe_name}",
             f"• Контакт: {safe_contact}",
             f"• Услуга: {service}"
@@ -11871,10 +11873,6 @@ async def confirm_booking(update: Update, context):
         
         if discount_text:
             user_msg_lines.append(discount_text.lstrip('\n'))
-        
-        user_msg_lines.append("")
-        user_msg_lines.append(f"*📋 Дальнейшие шаги:*")
-        user_msg_lines.append(f"• Администратор свяжется с вами для подтверждения")
         
         user_msg = "\n".join(user_msg_lines)
         
