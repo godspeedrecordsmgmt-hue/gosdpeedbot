@@ -1032,7 +1032,6 @@ class AchievementSystem:
             return "❌ Ошибка загрузки достижений"
     
     @staticmethod
-    @retry_on_lock(max_retries=15, delay=1.0, backoff=2.0)
     async def add_vinyls_for_booking(user_id: str, context=None, booking_data: dict = None):
         """Начисляет пластинки за запись с защитой от дублей"""
         try:
@@ -1209,8 +1208,8 @@ class AchievementSystem:
                             chat_id=int(user_id),
                             text=(
                                 f"*🎉 Добавлено 25 пластинок за запись!*\n\n"
-                                f"*💰 Пластинок после записи: {new_vinyls} 💿*\n\n"
-                                f"*Продолжайте записываться! 🔥*"
+                                f"*✨ Продолжайте записываться! 🔥*\n\n"
+                                f"*💰 Пластинок после записи: {new_vinyls} 💿*"
                             ),
                             parse_mode="Markdown"
                         )
