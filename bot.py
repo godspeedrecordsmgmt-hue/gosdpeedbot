@@ -1208,7 +1208,7 @@ class AchievementSystem:
                             chat_id=int(user_id),
                             text=(
                                 f"*🎉 Добавлено 25 пластинок за запись!*\n\n"
-                                f"*✨ Продолжайте записываться! 🔥*\n\n"
+                                f"*✨ Продолжайте записываться!*\n\n"
                                 f"*💰 Пластинок после записи: {new_vinyls} 💿*"
                             ),
                             parse_mode="Markdown"
