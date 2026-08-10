@@ -21255,8 +21255,8 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
                                             chat_id=int(referrer_id),
                                             text=(
                                                 f"*🎉 Добавлено 25 пластинок за реферала!*\n\n"
-                                                f"*💰 Пластинок после начисления: {referrer_new_vinyls} 💿*\n\n"
-                                                f"*Продолжайте приглашать друзей! 🔥*"
+                                                f"*✨ Продолжайте приглашать друзей! 🔥*\n\n"
+                                                f"*💰 Пластинок после начисления: {referrer_new_vinyls} 💿*"
                                             ),
                                             parse_mode="Markdown"
                                         )
@@ -21284,15 +21284,16 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
             f"*✅ Ваша заявка подтверждена!*",
             "",
             f"*📋 Детали вашей заявки:*",
+            f"• Номер заявки: #{booking_id}",
             f"• Имя: {name}",
             f"• Контакт: {contact}",
             f"• Услуга: {service}"
         ]
         
         if is_12_hours and twelve_hours_type:
-            user_msg_lines.append(f"• Тип аренды: {twelve_hours_type}")
+            user_msg_lines.append(f"• Тип: {twelve_hours_type}")
         elif is_mixing and mixing_type:
-            user_msg_lines.append(f"• Тип работы: {mixing_type}")
+            user_msg_lines.append(f"• Тип: {mixing_type}")
         elif is_track_creation and track_type:
             user_msg_lines.append(f"• Тип: {track_type}")
         
@@ -21310,7 +21311,7 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
             else:
                 user_msg_lines.append(f"• Время: {display_time}")
         
-        # ===== ЦЕНА (С УЧЁТОМ АЛЬБОМА И БЕСПЛАТНОГО ЧАСА) =====
+        # ===== ЦЕНА =====
         if (is_mixing == 1 and mixing_type and "Альбом" in mixing_type) or \
            (is_track_creation == 1 and track_type and "Альбом" in track_type):
             user_msg_lines.append(f"• Стоимость: Договорная")
@@ -21511,15 +21512,16 @@ async def process_booking_rejection(booking_id: int, admin_id: int, context: Con
             f"*❌ Ваша заявка отклонена*",
             "",
             f"*📋 Детали вашей заявки:*",
+            f"• Номер заявки: #{booking_id}",
             f"• Имя: {name}",
             f"• Контакт: {contact}",
             f"• Услуга: {service}"
         ]
         
         if is_12_hours and twelve_hours_type:
-            user_msg_lines.append(f"• Тип аренды: {twelve_hours_type}")
+            user_msg_lines.append(f"• Тип: {twelve_hours_type}")
         elif is_mixing and mixing_type:
-            user_msg_lines.append(f"• Тип работы: {mixing_type}")
+            user_msg_lines.append(f"• Тип: {mixing_type}")
         elif is_track_creation and track_type:
             user_msg_lines.append(f"• Тип: {track_type}")
         
@@ -21537,7 +21539,7 @@ async def process_booking_rejection(booking_id: int, admin_id: int, context: Con
             else:
                 user_msg_lines.append(f"• Время: {display_time}")
         
-        # ===== ЦЕНА - ИСПРАВЛЕНО =====
+        # ===== ЦЕНА =====
         if (is_mixing == 1 and mixing_type and "Альбом" in mixing_type) or \
            (is_track_creation == 1 and track_type and "Альбом" in track_type):
             user_msg_lines.append(f"• Стоимость: Договорная")
