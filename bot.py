@@ -11719,7 +11719,7 @@ async def confirm_booking(update: Update, context):
             
             if not is_available:
                 await update.message.reply_text(
-                    f"*❌ К сожалению, это время только что заняли! Выберите другое время или обновите список слотов!*",
+                    f"*❌ К сожалению, это время только что заняли!*",
                     reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
                     parse_mode="Markdown"
                 )
@@ -11917,9 +11917,10 @@ async def confirm_booking(update: Update, context):
         
         # ===== ОТПРАВЛЯЕМ УВЕДОМЛЕНИЕ АДМИНУ =====
         admin_msg_lines = [
-            f"*🚨 Новая заявка! #{booking_id}*",
+            f"*🚨 Новая заявка!*",
             "",
             f"*📋 Детали заявки:*",
+            f"• Номер заявки: #{booking_id}",
             f"• Пользователь: {safe_name}",
             f"• Контакт: {safe_contact}",
             f"• Услуга: {service}"
@@ -12047,8 +12048,8 @@ async def confirm_booking(update: Update, context):
                                 chat_id=int(referrer_id),
                                 text=(
                                     f"*🎉 Добавлено 25 пластинок за реферала!*\n\n"
-                                    f"*💰 Пластинок после начисления: {referrer_new_vinyls} 💿*\n\n"
-                                    f"*Продолжайте приглашать друзей! 🔥*"
+                                    f"*✨ Продолжайте приглашать друзей! 🔥*\n\n"
+                                    f"*💰 Пластинок после начисления: {referrer_new_vinyls} 💿*"
                                 ),
                                 parse_mode="Markdown"
                             )
