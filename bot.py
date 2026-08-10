@@ -727,10 +727,11 @@ class AchievementSystem:
                                     
                                     message = (
                                         f"*🏆 Новое достижение!*\n\n"
-                                        f"*«{name}»*\n\n"
-                                        f"*🎁 Награда:* +{vinyls} 💿\n"
-                                        f"*💰 Всего пластинок:* {new_vinyls} 💿\n\n"
-                                        f"*🔥 Продолжайте в том же духе!*"
+                                        f"*✨ Продолжайте в том же духе! 🔥*\n\n"
+                                        f"*🎁 Награда:*\n"
+                                        f"• Достижение: «{name}»\n"
+                                        f"• Пластинок: +{vinyls} 💿\n"
+                                        f"• Всего: {new_vinyls} 💿"
                                     )
                                     
                                     await context.bot.send_message(
