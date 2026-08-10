@@ -3973,22 +3973,22 @@ class SecurityUtils:
                 return False, f"❌ *Слишком длинный формат времени! Максимально {Config.MAX_TIME_STR_LENGTH} символов.*"
             
             if '-' not in time_str:
-                return False, "*❌ Неверный формат времени! Используйте формат час-час (например, 14-18 или 22-2)!*"
+                return False, "*❌ Неверный формат времени! Используйте формат час-час. Например, 14-18 или 22-2!*"
             
             parts = time_str.split('-')
             if len(parts) != 2:
-                return False, "*❌ Неверный формат времени! Используйте формат час-час (например, 14-18 или 22-2)!*"
+                return False, "*❌ Неверный формат времени! Используйте формат час-час. Например, 14-18 или 22-2!*"
             
             start_str, end_str = parts[0].strip(), parts[1].strip()
             
             if not start_str or not end_str:
-                return False, "*❌ Неверный формат времени! Используйте формат час-час (например, 14-18 или 22-2)!*"
+                return False, "*❌ Неверный формат времени! Используйте формат час-час. Например, 14-18 или 22-2!*"
             
             try:
                 start_hour = int(start_str)
                 end_hour = int(end_str)
             except ValueError:
-                return False, "*❌ Неверный формат времени! Используйте формат час-час (например, 14-18 или 22-2)!*"
+                return False, "*❌ Неверный формат времени! Используйте формат час-час. Например, 14-18 или 22-2!*"
             
             if start_hour == 24:
                 start_hour = 0
@@ -4313,7 +4313,7 @@ class DateTimeUtils:
                 return False, error_msg
             
             if "-" not in time_str:
-                return False, "*❌ Неверный формат времени! Используйте формат час-час (например, 14-18 или 22-2)!*"
+                return False, "*❌ Неверный формат времени! Используйте формат час-час. Например, 14-18 или 22-2!*"
             
             start_hour_str, end_hour_str = time_str.split("-")
             
@@ -4359,7 +4359,7 @@ class DateTimeUtils:
                 return True, duration
                     
         except ValueError:
-            return False, "*❌ Неверный формат времени! Используйте формат час-час (например, 14-18 или 22-2)!*"
+            return False, "*❌ Неверный формат времени! Используйте формат час-час. Например, 14-18 или 22-2!*"
         except Exception as e:
             logger.error(f"Ошибка валидации времени бронирования: {e}")
             return False, "❌ *Произошла ошибка обработки времени*"
@@ -16488,7 +16488,7 @@ async def show_slots(update: Update, context):
     if is_track_creation:
         if '-' not in normalized_input:
             await update.message.reply_text(
-                "*❌ Неверный формат времени! Используйте формат час-час (например, 14-18 или 22-2)!*",
+                "*❌ Неверный формат времени! Используйте формат час-час. Например, 14-18 или 22-2!*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_time_input()
             )
@@ -16681,14 +16681,14 @@ async def show_slots(update: Update, context):
                 return SHOW_SLOTS
             elif "Неверный формат" in error_msg:
                 await update.message.reply_text(
-                    "*❌ Неверный формат времени! Используйте формат час-час (например, 14-18 или 22-2)!*",
+                    "*❌ Неверный формат времени! Используйте формат час-час. Например, 14-18 или 22-2!*",
                     parse_mode="Markdown",
                     reply_markup=KeyboardManager.get_time_input()
                 )
                 return SHOW_SLOTS
             else:
                 await update.message.reply_text(
-                    "*❌ Неверный формат времени! Используйте формат час-час (например, 14-18 или 22-2)!*",
+                    "*❌ Неверный формат времени! Используйте формат час-час. Например, 14-18 или 22-2!*",
                     parse_mode="Markdown",
                     reply_markup=KeyboardManager.get_time_input()
                 )
