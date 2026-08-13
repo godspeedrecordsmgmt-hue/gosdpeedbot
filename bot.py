@@ -16862,8 +16862,8 @@ async def show_slots(update: Update, context):
     display_date = context.user_data.get('date_with_color', context.user_data['date'])
     display_time = context.user_data.get('display_time', context.user_data['time'])
     
-    # ===== ОЧИЩАЕМ УСЛУГУ ОТ СМАЙЛИКОВ =====
-    clean_service = context.user_data['service'].replace('🎤', '').replace('🎸', '').strip()
+    # ===== ОЧИЩАЕМ УСЛУГУ ОТ СМАЙЛИКОВ (ВСЕ ВОЗМОЖНЫЕ) =====
+    clean_service = context.user_data['service'].replace('🎤', '').replace('🎸', '').replace('⏰', '').replace('🎚️', '').replace('🎛️', '').replace('🎵', '').replace('🎹', '').strip()
     
     # ===== ОЧИЩАЕМ ТИП ОТ СМАЙЛИКОВ (убираем всё до пробела) =====
     clean_type = ""
