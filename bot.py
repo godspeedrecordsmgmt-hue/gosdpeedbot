@@ -11857,16 +11857,6 @@ async def confirm_booking(update: Update, context):
         if display_time and '-' in display_time:
             display_time = DateTimeUtils.format_time_for_display(display_time)
         
-        # Формируем цену
-        if price_result['final_price'] == "Договорная" or price_result.get('is_contractual'):
-            price_text = "Договорная"
-        elif price_result.get('free_service_applied', False):
-            price_text = "0₽ (Бесплатная услуга)"
-        elif price_result['final_price'] == 0:
-            price_text = "0₽"
-        else:
-            price_text = f"{price_result['final_price']}₽"
-        
         # ===== НОВЫЙ ФОРМАТ СООБЩЕНИЯ =====
         user_msg_lines = [
             f"*✅ Заявка успешно отправлена!*",
@@ -11902,12 +11892,19 @@ async def confirm_booking(update: Update, context):
             else:
                 user_msg_lines.append(f"• Время: {display_time}")
         
-        if price_text:
-            if is_12_hours == 1:
-                rent_price = 6500 if context.user_data.get('12_hours_type') and 'Ночь' in context.user_data.get('12_hours_type') else 7000
-                user_msg_lines.append(f"• Стоимость: {rent_price}₽ + залог (по договору)")
-            else:
-                user_msg_lines.append(f"• Стоимость: {price_text}")
+        # ===== ЦЕНА (для аренды — итоговая со скидкой + залог) =====
+        if is_12_hours == 1:
+            rent_price = 6500 if context.user_data.get('12_hours_type') and 'Ночь' in context.user_data.get('12_hours_type') else 7000
+            final_price = price_result.get('final_price', rent_price)
+            user_msg_lines.append(f"• Стоимость: {final_price}₽ + залог (по договору)")
+        elif price_result['final_price'] == "Договорная" or price_result.get('is_contractual'):
+            user_msg_lines.append(f"• Стоимость: Договорная")
+        elif price_result.get('free_service_applied', False):
+            user_msg_lines.append(f"• Стоимость: 0₽ (Бесплатная услуга)")
+        elif price_result['final_price'] == 0:
+            user_msg_lines.append(f"• Стоимость: 0₽")
+        else:
+            user_msg_lines.append(f"• Стоимость: {price_result['final_price']}₽")
         
         if discount_text:
             user_msg_lines.append(discount_text.lstrip('\n'))
@@ -11953,12 +11950,19 @@ async def confirm_booking(update: Update, context):
             else:
                 admin_msg_lines.append(f"• Время: {display_time}")
         
-        # ===== ЦЕНА ДЛЯ АДМИНА =====
+        # ===== ЦЕНА ДЛЯ АДМИНА (итоговая со скидкой + залог для аренды) =====
         if is_12_hours == 1:
             rent_price = 6500 if context.user_data.get('12_hours_type') and 'Ночь' in context.user_data.get('12_hours_type') else 7000
-            admin_msg_lines.append(f"• Стоимость: {rent_price}₽ + залог (по договору)")
+            final_price = price_result.get('final_price', rent_price)
+            admin_msg_lines.append(f"• Стоимость: {final_price}₽ + залог (по договору)")
+        elif price_result['final_price'] == "Договорная" or price_result.get('is_contractual'):
+            admin_msg_lines.append(f"• Стоимость: Договорная")
+        elif price_result.get('free_service_applied', False):
+            admin_msg_lines.append(f"• Стоимость: 0₽ (Бесплатная услуга)")
+        elif price_result['final_price'] == 0:
+            admin_msg_lines.append(f"• Стоимость: 0₽")
         else:
-            admin_msg_lines.append(f"• Стоимость: {price_text}")
+            admin_msg_lines.append(f"• Стоимость: {price_result['final_price']}₽")
         
         # Добавляем скидки для админа
         admin_discount_lines = []
@@ -16447,10 +16451,11 @@ async def show_slots(update: Update, context):
         if price_result.get('free_service_applied', False):
             discount_text += f"\n• Промокод: Бесплатная услуга"
         
-        # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
-        # Цена для аренды
+        # ===== Цена для аренды (итоговая со скидкой) =====
         rent_price = 6500 if context.user_data.get('12_hours_type') and 'Ночь' in context.user_data.get('12_hours_type') else 7000
+        final_price = price_result.get('final_price', rent_price)
         
+        # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
         confirmation_lines = [
             f"*✅ Шаг 6/6: Подтверждение*",
             "",
@@ -16462,7 +16467,7 @@ async def show_slots(update: Update, context):
             f"• Тип: {context.user_data.get('12_hours_type', 'Не указан')}",
             f"• Дата: {display_date}",
             f"• Время: {display_time} (12 часов)",
-            f"• Стоимость: {rent_price}₽ + залог (по договору)"
+            f"• Стоимость: {final_price}₽ + залог (по договору)"
         ]
         
         if discount_text:
@@ -21325,9 +21330,20 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
             else:
                 user_msg_lines.append(f"• Время: {display_time}")
         
-        # ===== ЦЕНА =====
-        if (is_mixing == 1 and mixing_type and "Альбом" in mixing_type) or \
-           (is_track_creation == 1 and track_type and "Альбом" in track_type):
+        # ===== ЦЕНА (для аренды — итоговая со скидкой + залог) =====
+        if is_12_hours == 1:
+            rent_price = 6500 if twelve_hours_type and 'Ночь' in twelve_hours_type else 7000
+            # Используем price из БД (уже со скидкой) или rent_price если нет скидки
+            if price and price != '0' and price != str(rent_price):
+                try:
+                    price_int = int(float(price))
+                    user_msg_lines.append(f"• Стоимость: {price_int}₽ + залог (по договору)")
+                except:
+                    user_msg_lines.append(f"• Стоимость: {rent_price}₽ + залог (по договору)")
+            else:
+                user_msg_lines.append(f"• Стоимость: {rent_price}₽ + залог (по договору)")
+        elif (is_mixing == 1 and mixing_type and "Альбом" in mixing_type) or \
+             (is_track_creation == 1 and track_type and "Альбом" in track_type):
             user_msg_lines.append(f"• Стоимость: Договорная")
         elif free_service_applied == 1:
             user_msg_lines.append(f"• Стоимость: 0₽")
@@ -21340,15 +21356,7 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
             except:
                 user_msg_lines.append(f"• Стоимость: {price}₽")
         else:
-            if is_12_hours == 1:
-                rent_price = 6500 if twelve_hours_type and 'Ночь' in twelve_hours_type else 7000
-                user_msg_lines.append(f"• Стоимость: {rent_price}₽ + залог (по договору)")
-            elif is_mixing == 1:
-                user_msg_lines.append(f"• Стоимость: 2500₽")
-            elif is_track_creation == 1:
-                user_msg_lines.append(f"• Стоимость: 9000₽")
-            else:
-                user_msg_lines.append(f"• Стоимость: Договорная")
+            user_msg_lines.append(f"• Стоимость: Договорная")
         
         # ===== СКИДКИ =====
         if level_discount_percent and level_discount_percent > 0:
@@ -21562,9 +21570,20 @@ async def process_booking_rejection(booking_id: int, admin_id: int, context: Con
             else:
                 user_msg_lines.append(f"• Время: {display_time}")
         
-        # ===== ЦЕНА =====
-        if (is_mixing == 1 and mixing_type and "Альбом" in mixing_type) or \
-           (is_track_creation == 1 and track_type and "Альбом" in track_type):
+        # ===== ЦЕНА (для аренды — итоговая со скидкой + залог) =====
+        if is_12_hours == 1:
+            rent_price = 6500 if twelve_hours_type and 'Ночь' in twelve_hours_type else 7000
+            # Используем price из БД (уже со скидкой) или rent_price если нет скидки
+            if price and price != '0' and price != str(rent_price):
+                try:
+                    price_int = int(float(price))
+                    user_msg_lines.append(f"• Стоимость: {price_int}₽ + залог (по договору)")
+                except:
+                    user_msg_lines.append(f"• Стоимость: {rent_price}₽ + залог (по договору)")
+            else:
+                user_msg_lines.append(f"• Стоимость: {rent_price}₽ + залог (по договору)")
+        elif (is_mixing == 1 and mixing_type and "Альбом" in mixing_type) or \
+             (is_track_creation == 1 and track_type and "Альбом" in track_type):
             user_msg_lines.append(f"• Стоимость: Договорная")
         elif free_service_applied == 1:
             user_msg_lines.append(f"• Стоимость: 0₽")
@@ -21577,15 +21596,7 @@ async def process_booking_rejection(booking_id: int, admin_id: int, context: Con
             except:
                 user_msg_lines.append(f"• Стоимость: {price}₽")
         else:
-            if is_12_hours == 1:
-                rent_price = 6500 if twelve_hours_type and 'Ночь' in twelve_hours_type else 7000
-                user_msg_lines.append(f"• Стоимость: {rent_price}₽ + залог (по договору)")
-            elif is_mixing == 1:
-                user_msg_lines.append(f"• Стоимость: 2500₽")
-            elif is_track_creation == 1:
-                user_msg_lines.append(f"• Стоимость: 9000₽")
-            else:
-                user_msg_lines.append(f"• Стоимость: Договорная")
+            user_msg_lines.append(f"• Стоимость: Договорная")
         
         # ===== СКИДКИ =====
         if level_discount_percent and level_discount_percent > 0:
