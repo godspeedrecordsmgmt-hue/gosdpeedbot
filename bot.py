@@ -21298,6 +21298,18 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
         if time_slot and '-' in time_slot:
             display_time = DateTimeUtils.format_time_for_display(time_slot)
         
+        # ===== ОЧИЩАЕМ СМАЙЛИКИ ИЗ УСЛУГИ =====
+        clean_service = service.replace('🎤', '').replace('🎸', '').replace('⏰', '').replace('🎚️', '').replace('🎛️', '').replace('🎵', '').replace('🎹', '').strip()
+        
+        # ===== ОЧИЩАЕМ ТИП ОТ СМАЙЛИКОВ =====
+        clean_type = ""
+        if is_12_hours and twelve_hours_type:
+            clean_type = twelve_hours_type.replace('☀️', '').replace('🌙', '').strip()
+        elif is_mixing and mixing_type:
+            clean_type = mixing_type.replace('🎵', '').replace('💿', '').strip()
+        elif is_track_creation and track_type:
+            clean_type = track_type.replace('🎵', '').replace('💿', '').strip()
+        
         # ===== НОВЫЙ ФОРМАТ СООБЩЕНИЯ =====
         user_msg_lines = [
             f"*✅ Ваша заявка подтверждена!*",
@@ -21306,15 +21318,11 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
             f"• Номер заявки: #{booking_id}",
             f"• Имя: {name}",
             f"• Контакт: {contact}",
-            f"• Услуга: {service}"
+            f"• Услуга: {clean_service}"
         ]
         
-        if is_12_hours and twelve_hours_type:
-            user_msg_lines.append(f"• Тип: {twelve_hours_type}")
-        elif is_mixing and mixing_type:
-            user_msg_lines.append(f"• Тип: {mixing_type}")
-        elif is_track_creation and track_type:
-            user_msg_lines.append(f"• Тип: {track_type}")
+        if clean_type:
+            user_msg_lines.append(f"• Тип: {clean_type}")
         
         if clean_date and 'Не указана' not in clean_date:
             user_msg_lines.append(f"• Дата: {clean_date}")
@@ -21333,7 +21341,6 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
         # ===== ЦЕНА (для аренды — итоговая со скидкой + залог) =====
         if is_12_hours == 1:
             rent_price = 6500 if twelve_hours_type and 'Ночь' in twelve_hours_type else 7000
-            # Используем price из БД (уже со скидкой) или rent_price если нет скидки
             if price and price != '0' and price != str(rent_price):
                 try:
                     price_int = int(float(price))
@@ -21538,6 +21545,18 @@ async def process_booking_rejection(booking_id: int, admin_id: int, context: Con
         if time_slot and '-' in time_slot:
             display_time = DateTimeUtils.format_time_for_display(time_slot)
         
+        # ===== ОЧИЩАЕМ СМАЙЛИКИ ИЗ УСЛУГИ =====
+        clean_service = service.replace('🎤', '').replace('🎸', '').replace('⏰', '').replace('🎚️', '').replace('🎛️', '').replace('🎵', '').replace('🎹', '').strip()
+        
+        # ===== ОЧИЩАЕМ ТИП ОТ СМАЙЛИКОВ =====
+        clean_type = ""
+        if is_12_hours and twelve_hours_type:
+            clean_type = twelve_hours_type.replace('☀️', '').replace('🌙', '').strip()
+        elif is_mixing and mixing_type:
+            clean_type = mixing_type.replace('🎵', '').replace('💿', '').strip()
+        elif is_track_creation and track_type:
+            clean_type = track_type.replace('🎵', '').replace('💿', '').strip()
+        
         # ===== НОВЫЙ ФОРМАТ СООБЩЕНИЯ =====
         user_msg_lines = [
             f"*❌ Ваша заявка отклонена*",
@@ -21546,15 +21565,11 @@ async def process_booking_rejection(booking_id: int, admin_id: int, context: Con
             f"• Номер заявки: #{booking_id}",
             f"• Имя: {name}",
             f"• Контакт: {contact}",
-            f"• Услуга: {service}"
+            f"• Услуга: {clean_service}"
         ]
         
-        if is_12_hours and twelve_hours_type:
-            user_msg_lines.append(f"• Тип: {twelve_hours_type}")
-        elif is_mixing and mixing_type:
-            user_msg_lines.append(f"• Тип: {mixing_type}")
-        elif is_track_creation and track_type:
-            user_msg_lines.append(f"• Тип: {track_type}")
+        if clean_type:
+            user_msg_lines.append(f"• Тип: {clean_type}")
         
         if clean_date and 'Не указана' not in clean_date:
             user_msg_lines.append(f"• Дата: {clean_date}")
@@ -21573,7 +21588,6 @@ async def process_booking_rejection(booking_id: int, admin_id: int, context: Con
         # ===== ЦЕНА (для аренды — итоговая со скидкой + залог) =====
         if is_12_hours == 1:
             rent_price = 6500 if twelve_hours_type and 'Ночь' in twelve_hours_type else 7000
-            # Используем price из БД (уже со скидкой) или rent_price если нет скидки
             if price and price != '0' and price != str(rent_price):
                 try:
                     price_int = int(float(price))
