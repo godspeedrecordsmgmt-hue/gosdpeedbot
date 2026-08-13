@@ -81,6 +81,29 @@ def to_moscow_time(dt=None):
     return dt + timedelta(hours=3)
 # ===== КОНЕЦ ФУНКЦИИ =====
 
+# ===== ФУНКЦИЯ ДЛЯ ОЧИСТКИ УСЛУГИ ОТ СМАЙЛИКОВ =====
+def clean_service_text(service: str) -> str:
+    """Удаляет смайлики из названия услуги"""
+    if not service:
+        return service
+    # Список эмодзи для удаления
+    emojis_to_remove = ['🎸', '🎤', '⏰', '🎚️', '🎵', '🎹', '📝', '👑', '🎛️', '☀️', '🌙', '💿', '💰', '🎯', '⏱️']
+    cleaned = service
+    for emoji in emojis_to_remove:
+        cleaned = cleaned.replace(emoji, '').strip()
+    return cleaned
+
+def clean_date_text(date_str: str) -> str:
+    """Удаляет цветные эмодзи из даты"""
+    if not date_str:
+        return date_str
+    cleaned = date_str
+    for emoji in ['🟢', '🟡', '🟠', '🔴', '⚪️']:
+        cleaned = cleaned.replace(emoji, '').strip()
+    if '(' in cleaned:
+        cleaned = cleaned.split('(')[0].strip()
+    return cleaned
+
 # ===== ФУНКЦИИ ДЛЯ ПРАВИЛЬНОГО СКЛОНЕНИЯ =====
 def get_hours_word(hours):
     """Возвращает правильное склонение слова 'час'"""
@@ -11836,28 +11859,27 @@ async def confirm_booking(update: Update, context):
         safe_contact = SecurityUtils.safe_markdown_text(context.user_data.get('contact', ''))
         
         # ===== ОЧИЩАЕМ УСЛУГУ ОТ СМАЙЛИКОВ =====
-        clean_service = service.replace('', '').replace('', '').replace('', '').replace('', '').replace('', '').replace('', '').replace('', '').strip()
+        clean_service = clean_service_text(service)
         
-        # ===== ОЧИЩАЕМ ТИП ОТ СМАЙЛИКОВ (убираем всё до пробела) =====
+        # ===== ОЧИЩАЕМ ДАТУ ОТ СМАЙЛИКОВ =====
+        clean_date_display = selected_date
+        if clean_date_display:
+            for emoji in ['🟢', '🟡', '🟠', '🔴', '⚪️']:
+                clean_date_display = clean_date_display.replace(emoji, '').strip()
+            if '(' in clean_date_display:
+                clean_date_display = clean_date_display.split('(')[0].strip()
+        
+        # ===== ОЧИЩАЕМ ТИП ОТ СМАЙЛИКОВ =====
         clean_type = ""
         if is_track_creation and context.user_data.get('track_type'):
             track_type_raw = context.user_data.get('track_type')
-            if ' ' in track_type_raw:
-                clean_type = track_type_raw.split(' ', 1)[1].strip()
-            else:
-                clean_type = track_type_raw.strip()
+            clean_type = clean_service_text(track_type_raw)
         elif is_mixing and context.user_data.get('mixing_type'):
             mixing_type_raw = context.user_data.get('mixing_type')
-            if ' ' in mixing_type_raw:
-                clean_type = mixing_type_raw.split(' ', 1)[1].strip()
-            else:
-                clean_type = mixing_type_raw.strip()
+            clean_type = clean_service_text(mixing_type_raw)
         elif is_12_hours and context.user_data.get('12_hours_type'):
             twelve_hours_type_raw = context.user_data.get('12_hours_type')
-            if ' ' in twelve_hours_type_raw:
-                clean_type = twelve_hours_type_raw.split(' ', 1)[1].strip()
-            else:
-                clean_type = twelve_hours_type_raw.strip()
+            clean_type = clean_service_text(twelve_hours_type_raw)
         
         # ===== ФОРМИРУЕМ ТЕКСТ СКИДОК ДЛЯ ПОЛЬЗОВАТЕЛЯ =====
         discount_lines = []
@@ -11890,14 +11912,6 @@ async def confirm_booking(update: Update, context):
         discount_text = ""
         if discount_lines:
             discount_text = "\n" + "\n".join(discount_lines)
-        
-        # ===== ЕДИНЫЙ ФОРМАТ СООБЩЕНИЯ ПОЛЬЗОВАТЕЛЮ =====
-        # Форматируем дату
-        clean_date_display = selected_date
-        if clean_date_display and '(' in clean_date_display:
-            clean_date_display = clean_date_display.split('(')[0].strip()
-        if clean_date_display and clean_date_display[0] in "🟢🟡🟠🔴⚪️":
-            clean_date_display = clean_date_display[2:].strip()
         
         # Форматируем время
         display_time = time_slot
@@ -16409,14 +16423,20 @@ async def show_slots(update: Update, context):
         display_date = context.user_data.get('date_with_color', context.user_data['date'])
         
         # ===== ОЧИЩАЕМ УСЛУГУ ОТ СМАЙЛИКОВ =====
-        clean_service = context.user_data['service'].replace('', '').strip()
+        clean_service = clean_service_text(context.user_data['service'])
         
-        # ===== ОЧИЩАЕМ ТИП ОТ СМАЙЛИКОВ (убираем всё до пробела) =====
+        # ===== ОЧИЩАЕМ ДАТУ ОТ СМАЙЛИКОВ =====
+        clean_date_display = display_date
+        if clean_date_display:
+            for emoji in ['🟢', '🟡', '🟠', '🔴', '⚪️']:
+                clean_date_display = clean_date_display.replace(emoji, '').strip()
+            if '(' in clean_date_display:
+                clean_date_display = clean_date_display.split('(')[0].strip()
+        
+        # ===== ОЧИЩАЕМ ТИП ОТ СМАЙЛИКОВ =====
+        clean_type = ""
         twelve_hours_type_raw = context.user_data.get('12_hours_type', 'Не указан')
-        if ' ' in twelve_hours_type_raw:
-            clean_type = twelve_hours_type_raw.split(' ', 1)[1].strip()
-        else:
-            clean_type = twelve_hours_type_raw.strip()
+        clean_type = clean_service_text(twelve_hours_type_raw)
         
         # ===== ФОРМИРУЕМ ТЕКСТ О СКИДКАХ =====
         discount_text = ""
@@ -16440,7 +16460,7 @@ async def show_slots(update: Update, context):
         rent_price = 6500 if context.user_data.get('12_hours_type') and 'Ночь' in context.user_data.get('12_hours_type') else 7000
         final_price = price_result.get('final_price', rent_price)
         
-        # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ (БЕЗ СМАЙЛИКОВ) =====
+        # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ (БЕЗ СМАЙЛИКОВ В УСЛУГЕ И ДАТЕ) =====
         confirmation_lines = [
             f"*✅ Шаг 6/6: Подтверждение*",
             "",
@@ -16450,7 +16470,7 @@ async def show_slots(update: Update, context):
             f"• Контакт: {safe_contact}",
             f"• Услуга: {clean_service}",
             f"• Тип: {clean_type}",
-            f"• Дата: {display_date}",
+            f"• Дата: {clean_date_display}",
             f"• Время: {display_time} (12 часов)",
             f"• Стоимость: {final_price}₽ + залог (по договору)"
         ]
@@ -16613,14 +16633,20 @@ async def show_slots(update: Update, context):
         display_time = context.user_data.get('display_time', context.user_data['time'])
         
         # ===== ОЧИЩАЕМ УСЛУГУ ОТ СМАЙЛИКОВ =====
-        clean_service = context.user_data['service'].replace('', '').strip()
+        clean_service = clean_service_text(context.user_data['service'])
         
-        # ===== ОЧИЩАЕМ ТИП ОТ СМАЙЛИКОВ (убираем всё до пробела) =====
+        # ===== ОЧИЩАЕМ ДАТУ ОТ СМАЙЛИКОВ =====
+        clean_date_display = display_date
+        if clean_date_display:
+            for emoji in ['🟢', '🟡', '🟠', '🔴', '⚪️']:
+                clean_date_display = clean_date_display.replace(emoji, '').strip()
+            if '(' in clean_date_display:
+                clean_date_display = clean_date_display.split('(')[0].strip()
+        
+        # ===== ОЧИЩАЕМ ТИП ОТ СМАЙЛИКОВ =====
+        clean_type = ""
         track_type_raw = context.user_data.get('track_type', 'Один трек')
-        if ' ' in track_type_raw:
-            clean_type = track_type_raw.split(' ', 1)[1].strip()
-        else:
-            clean_type = track_type_raw.strip()
+        clean_type = clean_service_text(track_type_raw)
         
         # ===== ФОРМИРУЕМ ТЕКСТ О СКИДКАХ =====
         discount_text = ""
@@ -16640,7 +16666,7 @@ async def show_slots(update: Update, context):
         if price_result.get('free_service_applied', False):
             discount_text += f"\n• Промокод: Бесплатная услуга"
         
-        # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ (БЕЗ СМАЙЛИКОВ) =====
+        # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ (БЕЗ СМАЙЛИКОВ В УСЛУГЕ И ДАТЕ) =====
         confirmation_lines = [
             f"*✅ Шаг 7/7: Подтверждение*",
             "",
@@ -16650,7 +16676,7 @@ async def show_slots(update: Update, context):
             f"• Контакт: {safe_contact}",
             f"• Услуга: {clean_service}",
             f"• Тип: {clean_type}",
-            f"• Дата: {display_date}",
+            f"• Дата: {clean_date_display}",
             f"• Время: {display_time} (4 часа)",
             f"• Стоимость: {price_result['final_price']}₽"
         ]
@@ -16821,29 +16847,28 @@ async def show_slots(update: Update, context):
     display_date = context.user_data.get('date_with_color', context.user_data['date'])
     display_time = context.user_data.get('display_time', context.user_data['time'])
     
-    # ===== ОЧИЩАЕМ УСЛУГУ ОТ СМАЙЛИКОВ (ВСЕ ВОЗМОЖНЫЕ) =====
-    clean_service = context.user_data['service'].replace('', '').replace('', '').replace('', '').replace('', '').replace('', '').replace('', '').replace('', '').strip()
+    # ===== ОЧИЩАЕМ УСЛУГУ ОТ СМАЙЛИКОВ =====
+    clean_service = clean_service_text(context.user_data['service'])
     
-    # ===== ОЧИЩАЕМ ТИП ОТ СМАЙЛИКОВ (убираем всё до пробела) =====
+    # ===== ОЧИЩАЕМ ДАТУ ОТ СМАЙЛИКОВ =====
+    clean_date_display = display_date
+    if clean_date_display:
+        for emoji in ['🟢', '🟡', '🟠', '🔴', '⚪️']:
+            clean_date_display = clean_date_display.replace(emoji, '').strip()
+        if '(' in clean_date_display:
+            clean_date_display = clean_date_display.split('(')[0].strip()
+    
+    # ===== ОЧИЩАЕМ ТИП ОТ СМАЙЛИКОВ =====
     clean_type = ""
     if is_track_creation and context.user_data.get('track_type'):
         track_type_raw = context.user_data.get('track_type')
-        if ' ' in track_type_raw:
-            clean_type = track_type_raw.split(' ', 1)[1].strip()
-        else:
-            clean_type = track_type_raw.strip()
+        clean_type = clean_service_text(track_type_raw)
     elif is_mixing and context.user_data.get('mixing_type'):
         mixing_type_raw = context.user_data.get('mixing_type')
-        if ' ' in mixing_type_raw:
-            clean_type = mixing_type_raw.split(' ', 1)[1].strip()
-        else:
-            clean_type = mixing_type_raw.strip()
+        clean_type = clean_service_text(mixing_type_raw)
     elif is_12_hours and context.user_data.get('12_hours_type'):
         twelve_hours_type_raw = context.user_data.get('12_hours_type')
-        if ' ' in twelve_hours_type_raw:
-            clean_type = twelve_hours_type_raw.split(' ', 1)[1].strip()
-        else:
-            clean_type = twelve_hours_type_raw.strip()
+        clean_type = clean_service_text(twelve_hours_type_raw)
     
     # ===== ФОРМИРУЕМ ТЕКСТ О СКИДКАХ =====
     discount_text = ""
@@ -16897,7 +16922,7 @@ async def show_slots(update: Update, context):
     else:
         time_text = display_time
     
-    # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ (БЕЗ СМАЙЛИКОВ) =====
+    # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ (БЕЗ СМАЙЛИКОВ В УСЛУГЕ И ДАТЕ) =====
     confirmation_lines = [
         f"*✅ {step_text}: Подтверждение*",
         "",
@@ -16912,7 +16937,7 @@ async def show_slots(update: Update, context):
     if clean_type:
         confirmation_lines.append(f"• Тип: {clean_type}")
     
-    confirmation_lines.append(f"• Дата: {display_date}")
+    confirmation_lines.append(f"• Дата: {clean_date_display}")
     confirmation_lines.append(f"• Время: {time_text}")
     confirmation_lines.append(f"• Стоимость: {price_text}")
     
@@ -21303,39 +21328,44 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
                     logger.error(f"❌ Ошибка проверки реферального бонуса: {e}")
         
         # ===== ОТПРАВКА СООБЩЕНИЯ ПОЛЬЗОВАТЕЛЮ =====
+        # ===== ОЧИЩАЕМ УСЛУГУ ОТ СМАЙЛИКОВ =====
+        clean_service = clean_service_text(service)
+        
+        # ===== ОЧИЩАЕМ ДАТУ ОТ СМАЙЛИКОВ =====
         clean_date = date_str
-        if date_str and '(' in date_str:
-            clean_date = date_str.split('(')[0].strip()
-        if clean_date and clean_date[0] in "🟢🟡🟠🔴⚪️":
-            clean_date = clean_date[2:].strip()
+        if clean_date:
+            for emoji in ['🟢', '🟡', '🟠', '🔴', '⚪️']:
+                clean_date = clean_date.replace(emoji, '').strip()
+            if '(' in clean_date:
+                clean_date = clean_date.split('(')[0].strip()
         
         display_time = time_slot
         if time_slot and '-' in time_slot:
             display_time = DateTimeUtils.format_time_for_display(time_slot)
         
-        # ===== ОЧИЩАЕМ УСЛУГУ ОТ СМАЙЛИКОВ =====
-        clean_service = service.replace('', '').replace('', '').replace('', '').replace('', '').replace('', '').replace('', '').replace('', '').strip()
-        
-        # ===== ОЧИЩАЕМ ТИП ОТ СМАЙЛИКОВ (убираем всё до пробела) =====
+        # ===== ОЧИЩАЕМ ТИП ОТ СМАЙЛИКОВ =====
         clean_type = ""
         if is_12_hours and twelve_hours_type:
-            twelve_hours_type_raw = twelve_hours_type
-            if ' ' in twelve_hours_type_raw:
-                clean_type = twelve_hours_type_raw.split(' ', 1)[1].strip()
-            else:
-                clean_type = twelve_hours_type_raw.strip()
+            clean_type = clean_service_text(twelve_hours_type)
         elif is_mixing and mixing_type:
-            mixing_type_raw = mixing_type
-            if ' ' in mixing_type_raw:
-                clean_type = mixing_type_raw.split(' ', 1)[1].strip()
-            else:
-                clean_type = mixing_type_raw.strip()
+            clean_type = clean_service_text(mixing_type)
         elif is_track_creation and track_type:
-            track_type_raw = track_type
-            if ' ' in track_type_raw:
-                clean_type = track_type_raw.split(' ', 1)[1].strip()
-            else:
-                clean_type = track_type_raw.strip()
+            clean_type = clean_service_text(track_type)
+        
+        # ===== ФОРМИРУЕМ ТЕКСТ СКИДОК =====
+        discount_lines = []
+        if level_discount_percent and level_discount_percent > 0:
+            discount_lines.append(f"• Скидка по уровню: {level_discount_percent}%")
+        if promo_discount_percent and promo_discount_percent > 0:
+            discount_lines.append(f"• Промокод: {promo_discount_percent}%")
+        if promo_code_used:
+            discount_lines.append(f"• Код промокода: {promo_code_used}")
+        if free_service_applied == 1 and promo_code_used:
+            discount_lines.append(f"• Промокод: Бесплатная услуга")
+        
+        discount_text = ""
+        if discount_lines:
+            discount_text = "\n" + "\n".join(discount_lines)
         
         # ===== НОВЫЙ ФОРМАТ СООБЩЕНИЯ =====
         user_msg_lines = [
@@ -21397,18 +21427,8 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
             else:
                 user_msg_lines.append(f"• Стоимость: Договорная")
         
-        # ===== СКИДКИ =====
-        if level_discount_percent and level_discount_percent > 0:
-            user_msg_lines.append(f"• Скидка по уровню: {level_discount_percent}%")
-        
-        if promo_discount_percent and promo_discount_percent > 0:
-            user_msg_lines.append(f"• Промокод: {promo_discount_percent}%")
-        
-        if promo_code_used:
-            user_msg_lines.append(f"• Код промокода: {promo_code_used}")
-        
-        if free_service_applied == 1 and promo_code_used:
-            user_msg_lines.append(f"• Промокод: Бесплатная услуга")
+        if discount_text:
+            user_msg_lines.append(discount_text.lstrip('\n'))
         
         user_msg_lines.append("")
         user_msg_lines.append(f"*📍 Адрес: Садовая ул., 91*")
@@ -21544,7 +21564,7 @@ async def process_booking_rejection(booking_id: int, admin_id: int, context: Con
                 ''', (promo_code_used, str(telegram_id)))
                 logger.info(f"🔄 Промокод {promo_code_used} ВОЗВРАЩЁН пользователю {telegram_id} при отклонении записи #{booking_id}")
             
-            # ===== ВОЗВРАЩАЕМ КУПОН (ЕСЛИ БЫЛ) - С ПРОВЕРКОЙ =====
+            # ===== ВОЗВРАЩАЕМ КУПОН (ЕСЛИ БЫЛ) =====
             if level_coupon_id:
                 cursor.execute('SELECT id FROM user_coupons WHERE id = ?', (level_coupon_id,))
                 exists = cursor.fetchone()
@@ -21567,39 +21587,44 @@ async def process_booking_rejection(booking_id: int, admin_id: int, context: Con
             conn.commit()
         
         # ===== ОТПРАВЛЯЕМ СООБЩЕНИЕ ПОЛЬЗОВАТЕЛЮ =====
+        # ===== ОЧИЩАЕМ УСЛУГУ ОТ СМАЙЛИКОВ =====
+        clean_service = clean_service_text(service)
+        
+        # ===== ОЧИЩАЕМ ДАТУ ОТ СМАЙЛИКОВ =====
         clean_date = date_str
-        if date_str and '(' in date_str:
-            clean_date = date_str.split('(')[0].strip()
-        if clean_date and clean_date[0] in "🟢🟡🟠🔴⚪️":
-            clean_date = clean_date[2:].strip()
+        if clean_date:
+            for emoji in ['🟢', '🟡', '🟠', '🔴', '⚪️']:
+                clean_date = clean_date.replace(emoji, '').strip()
+            if '(' in clean_date:
+                clean_date = clean_date.split('(')[0].strip()
         
         display_time = time_slot
         if time_slot and '-' in time_slot:
             display_time = DateTimeUtils.format_time_for_display(time_slot)
         
-        # ===== ОЧИЩАЕМ УСЛУГУ ОТ СМАЙЛИКОВ =====
-        clean_service = service.replace('', '').replace('', '').replace('', '').replace('', '').replace('', '').replace('', '').replace('', '').strip()
-        
-        # ===== ОЧИЩАЕМ ТИП ОТ СМАЙЛИКОВ (убираем всё до пробела) =====
+        # ===== ОЧИЩАЕМ ТИП ОТ СМАЙЛИКОВ =====
         clean_type = ""
         if is_12_hours and twelve_hours_type:
-            twelve_hours_type_raw = twelve_hours_type
-            if ' ' in twelve_hours_type_raw:
-                clean_type = twelve_hours_type_raw.split(' ', 1)[1].strip()
-            else:
-                clean_type = twelve_hours_type_raw.strip()
+            clean_type = clean_service_text(twelve_hours_type)
         elif is_mixing and mixing_type:
-            mixing_type_raw = mixing_type
-            if ' ' in mixing_type_raw:
-                clean_type = mixing_type_raw.split(' ', 1)[1].strip()
-            else:
-                clean_type = mixing_type_raw.strip()
+            clean_type = clean_service_text(mixing_type)
         elif is_track_creation and track_type:
-            track_type_raw = track_type
-            if ' ' in track_type_raw:
-                clean_type = track_type_raw.split(' ', 1)[1].strip()
-            else:
-                clean_type = track_type_raw.strip()
+            clean_type = clean_service_text(track_type)
+        
+        # ===== ФОРМИРУЕМ ТЕКСТ СКИДОК =====
+        discount_lines = []
+        if level_discount_percent and level_discount_percent > 0:
+            discount_lines.append(f"• Скидка по уровню: {level_discount_percent}%")
+        if promo_discount_percent and promo_discount_percent > 0:
+            discount_lines.append(f"• Промокод: {promo_discount_percent}%")
+        if promo_code_used:
+            discount_lines.append(f"• Код промокода: {promo_code_used}")
+        if free_service_applied == 1 and promo_code_used:
+            discount_lines.append(f"• Промокод: Бесплатная услуга")
+        
+        discount_text = ""
+        if discount_lines:
+            discount_text = "\n" + "\n".join(discount_lines)
         
         # ===== НОВЫЙ ФОРМАТ СООБЩЕНИЯ =====
         user_msg_lines = [
@@ -21661,18 +21686,8 @@ async def process_booking_rejection(booking_id: int, admin_id: int, context: Con
             else:
                 user_msg_lines.append(f"• Стоимость: Договорная")
         
-        # ===== СКИДКИ =====
-        if level_discount_percent and level_discount_percent > 0:
-            user_msg_lines.append(f"• Скидка по уровню: {level_discount_percent}%")
-        
-        if promo_discount_percent and promo_discount_percent > 0:
-            user_msg_lines.append(f"• Промокод: {promo_discount_percent}%")
-        
-        if promo_code_used:
-            user_msg_lines.append(f"• Код промокода: {promo_code_used}")
-        
-        if free_service_applied == 1 and promo_code_used:
-            user_msg_lines.append(f"• Промокод: Бесплатная услуга")
+        if discount_text:
+            user_msg_lines.append(discount_text.lstrip('\n'))
         
         user_msg_lines.append("")
         user_msg_lines.append(f"*📞 Свяжитесь с администратором @mothman32*")
