@@ -11812,17 +11812,29 @@ async def confirm_booking(update: Update, context):
         safe_name = SecurityUtils.safe_markdown_text(context.user_data.get('name', ''))
         safe_contact = SecurityUtils.safe_markdown_text(context.user_data.get('contact', ''))
         
-        # ===== ОЧИЩАЕМ СМАЙЛИКИ ИЗ УСЛУГИ =====
+        # ===== ОЧИЩАЕМ УСЛУГУ ОТ СМАЙЛИКОВ =====
         clean_service = service.replace('🎤', '').replace('🎸', '').replace('⏰', '').replace('🎚️', '').replace('🎛️', '').replace('🎵', '').replace('🎹', '').strip()
         
-        # ===== ОЧИЩАЕМ ТИП ОТ СМАЙЛИКОВ =====
+        # ===== ОЧИЩАЕМ ТИП ОТ СМАЙЛИКОВ (убираем всё до пробела) =====
         clean_type = ""
         if is_track_creation and context.user_data.get('track_type'):
-            clean_type = context.user_data.get('track_type').replace('🎵', '').replace('💿', '').strip()
+            track_type_raw = context.user_data.get('track_type')
+            if ' ' in track_type_raw:
+                clean_type = track_type_raw.split(' ', 1)[1].strip()
+            else:
+                clean_type = track_type_raw.strip()
         elif is_mixing and context.user_data.get('mixing_type'):
-            clean_type = context.user_data.get('mixing_type').replace('🎵', '').replace('💿', '').strip()
+            mixing_type_raw = context.user_data.get('mixing_type')
+            if ' ' in mixing_type_raw:
+                clean_type = mixing_type_raw.split(' ', 1)[1].strip()
+            else:
+                clean_type = mixing_type_raw.strip()
         elif is_12_hours and context.user_data.get('12_hours_type'):
-            clean_type = context.user_data.get('12_hours_type').replace('☀️', '').replace('🌙', '').strip()
+            twelve_hours_type_raw = context.user_data.get('12_hours_type')
+            if ' ' in twelve_hours_type_raw:
+                clean_type = twelve_hours_type_raw.split(' ', 1)[1].strip()
+            else:
+                clean_type = twelve_hours_type_raw.strip()
         
         # ===== ФОРМИРУЕМ ТЕКСТ СКИДОК ДЛЯ ПОЛЬЗОВАТЕЛЯ =====
         discount_lines = []
@@ -16437,9 +16449,15 @@ async def show_slots(update: Update, context):
         safe_contact = context.user_data.get('safe_contact', context.user_data.get('contact', ''))
         display_date = context.user_data.get('date_with_color', context.user_data['date'])
         
-        # ===== ОЧИЩАЕМ УСЛУГУ И ТИП ОТ СМАЙЛИКОВ =====
+        # ===== ОЧИЩАЕМ УСЛУГУ ОТ СМАЙЛИКОВ =====
         clean_service = context.user_data['service'].replace('⏰', '').strip()
-        clean_type = context.user_data.get('12_hours_type', 'Не указан').replace('☀️', '').replace('🌙', '').strip()
+        
+        # ===== ОЧИЩАЕМ ТИП ОТ СМАЙЛИКОВ (убираем всё до пробела) =====
+        twelve_hours_type_raw = context.user_data.get('12_hours_type', 'Не указан')
+        if ' ' in twelve_hours_type_raw:
+            clean_type = twelve_hours_type_raw.split(' ', 1)[1].strip()
+        else:
+            clean_type = twelve_hours_type_raw.strip()
         
         # ===== ФОРМИРУЕМ ТЕКСТ О СКИДКАХ =====
         discount_text = ""
@@ -16635,9 +16653,15 @@ async def show_slots(update: Update, context):
         display_date = context.user_data.get('date_with_color', context.user_data['date'])
         display_time = context.user_data.get('display_time', context.user_data['time'])
         
-        # ===== ОЧИЩАЕМ УСЛУГУ И ТИП ОТ СМАЙЛИКОВ =====
+        # ===== ОЧИЩАЕМ УСЛУГУ ОТ СМАЙЛИКОВ =====
         clean_service = context.user_data['service'].replace('🎵', '').strip()
-        clean_type = context.user_data.get('track_type', 'Один трек').replace('🎵', '').replace('💿', '').strip()
+        
+        # ===== ОЧИЩАЕМ ТИП ОТ СМАЙЛИКОВ (убираем всё до пробела) =====
+        track_type_raw = context.user_data.get('track_type', 'Один трек')
+        if ' ' in track_type_raw:
+            clean_type = track_type_raw.split(' ', 1)[1].strip()
+        else:
+            clean_type = track_type_raw.strip()
         
         # ===== ФОРМИРУЕМ ТЕКСТ О СКИДКАХ =====
         discount_text = ""
@@ -16838,15 +16862,29 @@ async def show_slots(update: Update, context):
     display_date = context.user_data.get('date_with_color', context.user_data['date'])
     display_time = context.user_data.get('display_time', context.user_data['time'])
     
-    # ===== ОЧИЩАЕМ УСЛУГУ И ТИП ОТ СМАЙЛИКОВ =====
+    # ===== ОЧИЩАЕМ УСЛУГУ ОТ СМАЙЛИКОВ =====
     clean_service = context.user_data['service'].replace('🎤', '').replace('🎸', '').strip()
+    
+    # ===== ОЧИЩАЕМ ТИП ОТ СМАЙЛИКОВ (убираем всё до пробела) =====
     clean_type = ""
     if is_track_creation and context.user_data.get('track_type'):
-        clean_type = context.user_data.get('track_type').replace('🎵', '').replace('💿', '').strip()
+        track_type_raw = context.user_data.get('track_type')
+        if ' ' in track_type_raw:
+            clean_type = track_type_raw.split(' ', 1)[1].strip()
+        else:
+            clean_type = track_type_raw.strip()
     elif is_mixing and context.user_data.get('mixing_type'):
-        clean_type = context.user_data.get('mixing_type').replace('🎵', '').replace('💿', '').strip()
+        mixing_type_raw = context.user_data.get('mixing_type')
+        if ' ' in mixing_type_raw:
+            clean_type = mixing_type_raw.split(' ', 1)[1].strip()
+        else:
+            clean_type = mixing_type_raw.strip()
     elif is_12_hours and context.user_data.get('12_hours_type'):
-        clean_type = context.user_data.get('12_hours_type').replace('☀️', '').replace('🌙', '').strip()
+        twelve_hours_type_raw = context.user_data.get('12_hours_type')
+        if ' ' in twelve_hours_type_raw:
+            clean_type = twelve_hours_type_raw.split(' ', 1)[1].strip()
+        else:
+            clean_type = twelve_hours_type_raw.strip()
     
     # ===== ФОРМИРУЕМ ТЕКСТ О СКИДКАХ =====
     discount_text = ""
@@ -21316,17 +21354,29 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
         if time_slot and '-' in time_slot:
             display_time = DateTimeUtils.format_time_for_display(time_slot)
         
-        # ===== ОЧИЩАЕМ СМАЙЛИКИ ИЗ УСЛУГИ =====
+        # ===== ОЧИЩАЕМ УСЛУГУ ОТ СМАЙЛИКОВ =====
         clean_service = service.replace('🎤', '').replace('🎸', '').replace('⏰', '').replace('🎚️', '').replace('🎛️', '').replace('🎵', '').replace('🎹', '').strip()
         
-        # ===== ОЧИЩАЕМ ТИП ОТ СМАЙЛИКОВ =====
+        # ===== ОЧИЩАЕМ ТИП ОТ СМАЙЛИКОВ (убираем всё до пробела) =====
         clean_type = ""
         if is_12_hours and twelve_hours_type:
-            clean_type = twelve_hours_type.replace('☀️', '').replace('🌙', '').strip()
+            twelve_hours_type_raw = twelve_hours_type
+            if ' ' in twelve_hours_type_raw:
+                clean_type = twelve_hours_type_raw.split(' ', 1)[1].strip()
+            else:
+                clean_type = twelve_hours_type_raw.strip()
         elif is_mixing and mixing_type:
-            clean_type = mixing_type.replace('🎵', '').replace('💿', '').strip()
+            mixing_type_raw = mixing_type
+            if ' ' in mixing_type_raw:
+                clean_type = mixing_type_raw.split(' ', 1)[1].strip()
+            else:
+                clean_type = mixing_type_raw.strip()
         elif is_track_creation and track_type:
-            clean_type = track_type.replace('🎵', '').replace('💿', '').strip()
+            track_type_raw = track_type
+            if ' ' in track_type_raw:
+                clean_type = track_type_raw.split(' ', 1)[1].strip()
+            else:
+                clean_type = track_type_raw.strip()
         
         # ===== НОВЫЙ ФОРМАТ СООБЩЕНИЯ =====
         user_msg_lines = [
@@ -21563,17 +21613,29 @@ async def process_booking_rejection(booking_id: int, admin_id: int, context: Con
         if time_slot and '-' in time_slot:
             display_time = DateTimeUtils.format_time_for_display(time_slot)
         
-        # ===== ОЧИЩАЕМ СМАЙЛИКИ ИЗ УСЛУГИ =====
+        # ===== ОЧИЩАЕМ УСЛУГУ ОТ СМАЙЛИКОВ =====
         clean_service = service.replace('🎤', '').replace('🎸', '').replace('⏰', '').replace('🎚️', '').replace('🎛️', '').replace('🎵', '').replace('🎹', '').strip()
         
-        # ===== ОЧИЩАЕМ ТИП ОТ СМАЙЛИКОВ =====
+        # ===== ОЧИЩАЕМ ТИП ОТ СМАЙЛИКОВ (убираем всё до пробела) =====
         clean_type = ""
         if is_12_hours and twelve_hours_type:
-            clean_type = twelve_hours_type.replace('☀️', '').replace('🌙', '').strip()
+            twelve_hours_type_raw = twelve_hours_type
+            if ' ' in twelve_hours_type_raw:
+                clean_type = twelve_hours_type_raw.split(' ', 1)[1].strip()
+            else:
+                clean_type = twelve_hours_type_raw.strip()
         elif is_mixing and mixing_type:
-            clean_type = mixing_type.replace('🎵', '').replace('💿', '').strip()
+            mixing_type_raw = mixing_type
+            if ' ' in mixing_type_raw:
+                clean_type = mixing_type_raw.split(' ', 1)[1].strip()
+            else:
+                clean_type = mixing_type_raw.strip()
         elif is_track_creation and track_type:
-            clean_type = track_type.replace('🎵', '').replace('💿', '').strip()
+            track_type_raw = track_type
+            if ' ' in track_type_raw:
+                clean_type = track_type_raw.split(' ', 1)[1].strip()
+            else:
+                clean_type = track_type_raw.strip()
         
         # ===== НОВЫЙ ФОРМАТ СООБЩЕНИЯ =====
         user_msg_lines = [
