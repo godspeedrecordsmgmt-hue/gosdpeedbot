@@ -21338,6 +21338,19 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
             else:
                 user_msg_lines.append(f"• Стоимость: Договорная")
         
+        # ===== СКИДКИ =====
+        if level_discount_percent and level_discount_percent > 0:
+            user_msg_lines.append(f"• Скидка по уровню: {level_discount_percent}%")
+        
+        if promo_discount_percent and promo_discount_percent > 0:
+            user_msg_lines.append(f"• Промокод: {promo_discount_percent}%")
+        
+        if promo_code_used:
+            user_msg_lines.append(f"• Код промокода: {promo_code_used}")
+        
+        if free_service_applied == 1 and promo_code_used:
+            user_msg_lines.append(f"• Промокод: Бесплатная услуга")
+        
         user_msg_lines.append("")
         user_msg_lines.append(f"*📍 Адрес: Садовая ул., 91*")
         user_msg_lines.append(f"*📞 Контакты: @mothman32*")
@@ -21474,26 +21487,22 @@ async def process_booking_rejection(booking_id: int, admin_id: int, context: Con
             
             # ===== ВОЗВРАЩАЕМ КУПОН (ЕСЛИ БЫЛ) - С ПРОВЕРКОЙ =====
             if level_coupon_id:
-                # Проверяем, существует ли купон в user_coupons
                 cursor.execute('SELECT id FROM user_coupons WHERE id = ?', (level_coupon_id,))
                 exists = cursor.fetchone()
                 
                 if exists:
-                    # Купон существует - увеличиваем remaining_uses
                     cursor.execute('''
                         UPDATE user_coupons SET remaining_uses = remaining_uses + 1 
                         WHERE id = ? AND is_permanent = 0
                     ''', (level_coupon_id,))
                     logger.info(f"🔄 Купон {level_coupon_id} ВОЗВРАЩЁН (обновлён) при отклонении записи #{booking_id}")
                 else:
-                    # Купон был удалён - создаём новый
                     cursor.execute('''
                         INSERT INTO user_coupons (user_id, level, discount_percent, remaining_uses, is_permanent)
                         VALUES (?, 1, 50, 1, 0)
                     ''', (str(telegram_id),))
                     logger.info(f"🔄 Создан НОВЫЙ купон 50% для пользователя {telegram_id} при отклонении записи #{booking_id}")
             
-            # Обновляем статус записи
             cursor.execute('UPDATE bookings SET status = "rejected" WHERE id = ?', (booking_id,))
             cursor.execute('DELETE FROM notifications WHERE booking_id = ?', (booking_id,))
             conn.commit()
@@ -21565,6 +21574,19 @@ async def process_booking_rejection(booking_id: int, admin_id: int, context: Con
                 user_msg_lines.append(f"• Стоимость: 9000₽")
             else:
                 user_msg_lines.append(f"• Стоимость: Договорная")
+        
+        # ===== СКИДКИ =====
+        if level_discount_percent and level_discount_percent > 0:
+            user_msg_lines.append(f"• Скидка по уровню: {level_discount_percent}%")
+        
+        if promo_discount_percent and promo_discount_percent > 0:
+            user_msg_lines.append(f"• Промокод: {promo_discount_percent}%")
+        
+        if promo_code_used:
+            user_msg_lines.append(f"• Код промокода: {promo_code_used}")
+        
+        if free_service_applied == 1 and promo_code_used:
+            user_msg_lines.append(f"• Промокод: Бесплатная услуга")
         
         user_msg_lines.append("")
         user_msg_lines.append(f"*📞 Свяжитесь с администратором @mothman32*")
