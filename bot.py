@@ -10424,7 +10424,7 @@ async def get_mixing_type(update: Update, context):
     
     if "Трек" in mixing_type:
         context.user_data['mixing_type'] = "🎵 Трек"
-        context.user_data['service'] = "🎛️ Сведение/мастеринг"
+        context.user_data['service'] = "Сведение/мастеринг"
         context.user_data['is_mixing'] = True
         
         # ===== РАСЧЕТ ЦЕНЫ =====
@@ -10455,6 +10455,10 @@ async def get_mixing_type(update: Update, context):
         safe_name = context.user_data.get('safe_name', context.user_data.get('name', ''))
         safe_contact = context.user_data.get('safe_contact', context.user_data.get('contact', ''))
         
+        # Очищаем услугу от смайликов
+        clean_service = context.user_data['service'].replace('🎛️', '').strip()
+        clean_type = context.user_data.get('mixing_type', 'Не указан').replace('🎵', '').strip()
+        
         # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
         confirmation_lines = [
             f"*✅ Шаг 5/5: Подтверждение*",
@@ -10463,8 +10467,8 @@ async def get_mixing_type(update: Update, context):
             "",
             f"• Имя: {safe_name}",
             f"• Контакт: {safe_contact}",
-            f"• Услуга: {context.user_data['service']}",
-            f"• Тип: {context.user_data.get('mixing_type', 'Не указан')}",
+            f"• Услуга: {clean_service}",
+            f"• Тип: {clean_type}",
             f"• Стоимость: {price_result['final_price']}₽"
         ]
         
@@ -10485,12 +10489,16 @@ async def get_mixing_type(update: Update, context):
     
     else:
         context.user_data['mixing_type'] = "💿 Альбом"
-        context.user_data['service'] = "🎛️ Сведение/мастеринг"
+        context.user_data['service'] = "Сведение/мастеринг"
         context.user_data['price'] = "Договорная"
         context.user_data['is_mixing'] = True
         
         safe_name = context.user_data.get('safe_name', context.user_data.get('name', ''))
         safe_contact = context.user_data.get('safe_contact', context.user_data.get('contact', ''))
+        
+        # ===== ОЧИЩАЕМ УСЛУГУ И ТИП ОТ СМАЙЛИКОВ =====
+        clean_service = context.user_data['service'].replace('🎛️', '').strip()
+        clean_type = context.user_data.get('mixing_type', 'Не указан').replace('💿', '').strip()
         
         # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
         confirmation_lines = [
@@ -10500,8 +10508,8 @@ async def get_mixing_type(update: Update, context):
             "",
             f"• Имя: {safe_name}",
             f"• Контакт: {safe_contact}",
-            f"• Услуга: {context.user_data['service']}",
-            f"• Тип: {context.user_data.get('mixing_type', 'Не указан')}",
+            f"• Услуга: {clean_service}",
+            f"• Тип: {clean_type}",
             f"• Стоимость: Договорная",
             "",
             "*👇 Выберите подходящий вариант:*"
@@ -10569,7 +10577,7 @@ async def get_track_creation_type(update: Update, context):
         
         context.user_data['is_track_creation'] = True
         context.user_data['track_type'] = "🎵 Трек"
-        context.user_data['service'] = "🎵 Создание трека"
+        context.user_data['service'] = "Создание трека"
         context.user_data['price'] = 9000
         context.user_data['with_engineer'] = True
         
@@ -10621,6 +10629,10 @@ async def get_track_creation_type(update: Update, context):
         safe_name = context.user_data.get('safe_name', context.user_data.get('name', ''))
         safe_contact = context.user_data.get('safe_contact', context.user_data.get('contact', ''))
         
+        # ===== ОЧИЩАЕМ УСЛУГУ И ТИП ОТ СМАЙЛИКОВ =====
+        clean_service = context.user_data['service'].replace('🎵', '').strip()
+        clean_type = context.user_data.get('track_type', 'Не указан').replace('💿', '').strip()
+        
         # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
         confirmation_lines = [
             f"*✅ Шаг 5/5: Подтверждение*",
@@ -10629,8 +10641,8 @@ async def get_track_creation_type(update: Update, context):
             "",
             f"• Имя: {safe_name}",
             f"• Контакт: {safe_contact}",
-            f"• Услуга: Создание трека",
-            f"• Тип: {context.user_data['track_type']}",
+            f"• Услуга: {clean_service}",
+            f"• Тип: {clean_type}",
             f"• Стоимость: Договорная",
             "",
             "*👇 Выберите подходящий вариант:*"
@@ -10669,6 +10681,10 @@ async def handle_no_date_option(update: Update, context):
         safe_name = context.user_data.get('safe_name', context.user_data.get('name', ''))
         safe_contact = context.user_data.get('safe_contact', context.user_data.get('contact', ''))
         
+        # Очищаем услугу от смайликов
+        clean_service = context.user_data['service'].replace('🎛️', '').strip()
+        clean_type = context.user_data.get('mixing_type', 'Не указан').replace('💿', '').strip()
+        
         # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
         confirmation_lines = [
             f"*✅ Шаг 5/5: Подтверждение*",
@@ -10677,8 +10693,8 @@ async def handle_no_date_option(update: Update, context):
             "",
             f"• Имя: {safe_name}",
             f"• Контакт: {safe_contact}",
-            f"• Услуга: {context.user_data['service']}",
-            f"• Тип: {context.user_data.get('mixing_type', 'Не указан')}",
+            f"• Услуга: {clean_service}",
+            f"• Тип: {clean_type}",
             f"• Стоимость: Договорная",
             "",
             "*👇 Выберите подходящий вариант:*"
@@ -10698,6 +10714,10 @@ async def handle_no_date_option(update: Update, context):
         safe_name = context.user_data.get('safe_name', context.user_data.get('name', ''))
         safe_contact = context.user_data.get('safe_contact', context.user_data.get('contact', ''))
         
+        # Очищаем услугу и тип от смайликов
+        clean_service = context.user_data['service'].replace('🎵', '').strip()
+        clean_type = track_type.replace('💿', '').strip()
+        
         # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
         confirmation_lines = [
             f"*✅ Шаг 5/5: Подтверждение*",
@@ -10706,8 +10726,8 @@ async def handle_no_date_option(update: Update, context):
             "",
             f"• Имя: {safe_name}",
             f"• Контакт: {safe_contact}",
-            f"• Услуга: {context.user_data['service']}",
-            f"• Тип: {track_type}",
+            f"• Услуга: {clean_service}",
+            f"• Тип: {clean_type}",
             f"• Стоимость: Договорная",
             "",
             "*👇 Выберите подходящий вариант:*"
@@ -10730,6 +10750,9 @@ async def handle_no_date_option(update: Update, context):
         safe_name = context.user_data.get('safe_name', context.user_data.get('name', ''))
         safe_contact = context.user_data.get('safe_contact', context.user_data.get('contact', ''))
         
+        # Очищаем услугу от смайликов
+        clean_service = context.user_data['service'].replace('🎤', '').replace('🎸', '').replace('⏰', '').replace('🎚️', '').replace('🎛️', '').replace('🎵', '').replace('🎹', '').strip()
+        
         # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
         confirmation_lines = [
             f"*✅ Шаг 5/5: Подтверждение*",
@@ -10738,7 +10761,7 @@ async def handle_no_date_option(update: Update, context):
             "",
             f"• Имя: {safe_name}",
             f"• Контакт: {safe_contact}",
-            f"• Услуга: {context.user_data['service']}",
+            f"• Услуга: {clean_service}",
             f"• Стоимость: Договорная",
             "",
             "*👇 Выберите подходящий вариант:*"
@@ -14996,39 +15019,25 @@ async def handle_admin_price(update: Update, context):
     except:
         formatted_price = f"{price_str}₽"
     
-    if record_type == "📝 Договорная запись":
-        # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
-        confirmation_lines = [
-            f"*👑 Шаг 4/4: Подтверждение*",
-            "",
-            f"*✨ Проверьте правильность введённых данных:*",
-            "",
-            f"• Уникальный ID: {unique_id}",
-            f"• Тип записи: {record_type}",
-            f"• Стоимость: {formatted_price}",
-            "",
-            f"*📝 Дополнительная информация:*",
-            f"• Запись будет создана от имени администратора",
-            f"• Пользователь увидит запись в своем профиле",
-            "",
-            "*👇 Всё верно?*"
-        ]
-    else:
-        confirmation_lines = [
-            f"*👑 Шаг 4/4: Подтверждение*",
-            "",
-            f"*✨ Проверьте правильность введённых данных:*",
-            "",
-            f"• Уникальный ID: {unique_id}",
-            f"• Тип записи: {record_type}",
-            f"• Стоимость: {formatted_price}",
-            "",
-            f"*📝 Дополнительная информация:*",
-            f"• Запись будет создана от имени администратора",
-            f"• Пользователь увидит запись в своем профиле",
-            "",
-            "*👇 Всё верно?*"
-        ]
+    # Очищаем тип записи от смайликов
+    clean_record_type = record_type.replace('📝', '').replace('🎤', '').strip()
+    
+    # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
+    confirmation_lines = [
+        f"*👑 Шаг 4/4: Подтверждение*",
+        "",
+        f"*✨ Проверьте правильность введённых данных:*",
+        "",
+        f"• Уникальный ID: {unique_id}",
+        f"• Тип записи: {clean_record_type}",
+        f"• Стоимость: {formatted_price}",
+        "",
+        f"*📝 Дополнительная информация:*",
+        f"• Запись будет создана от имени администратора",
+        f"• Пользователь увидит запись в своем профиле",
+        "",
+        "*👇 Всё верно?*"
+    ]
     
     confirmation_text = "\n".join(confirmation_lines)
     
@@ -15122,12 +15131,12 @@ async def handle_admin_confirm(update: Update, context):
     
     try:
         if record_type == "📝 Договорная запись":
-            service_name = f"📝 Договорная запись (Админ)"
+            service_name = f"Договорная запись (Админ)"
             date_str_for_db = "Не указана (договорная)"
             time_slot_for_db = "Не указано (договорная)"
             is_contractual = True
         else:
-            service_name = f"🎤 Запись в студии (Админ)"
+            service_name = f"Запись в студии (Админ)"
             date_str_for_db = "Запись в студии"
             time_slot_for_db = "Запись в студии"
             is_contractual = False
@@ -15208,87 +15217,37 @@ async def handle_admin_confirm(update: Update, context):
             except Exception as e:
                 logger.error(f"❌ Ошибка обновления total_spent: {e}")
         
-        if record_type == "📝 Договорная запись":
-            admin_message = f"*✅ Договорная запись создана для пользователя @{target_username}*"
-        else:
-            admin_message = f"*✅ Запись создана для пользователя @{target_username}*"
+        # Очищаем тип записи от смайликов
+        clean_record_type = record_type.replace('📝', '').replace('🎤', '').strip()
+        
+        # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
+        confirmation_lines = [
+            f"*👑 Шаг 4/4: Подтверждение*",
+            "",
+            f"*✨ Проверьте правильность введённых данных:*",
+            "",
+            f"• Уникальный ID: {unique_id}",
+            f"• Тип записи: {clean_record_type}",
+            f"• Стоимость: {formatted_price}",
+            "",
+            f"*📝 Дополнительная информация:*",
+            f"• Запись будет создана от имени администратора",
+            f"• Пользователь увидит запись в своем профиле",
+            "",
+            "*👇 Всё верно?*"
+        ]
+        
+        confirmation_text = "\n".join(confirmation_lines)
         
         await update.message.reply_text(
-            admin_message,
+            confirmation_text,
             parse_mode="Markdown",
-            reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
+            reply_markup=ReplyKeyboardMarkup([
+                ["✅ Да, создать запись", "✏️ Исправить данные"],
+                ["❌ Отменить"]
+            ], resize_keyboard=True, one_time_keyboard=True)
         )
-        
-        # ===== ОТПРАВКА СООБЩЕНИЯ ПОЛЬЗОВАТЕЛЮ (С АДРЕСОМ И КОНТАКТАМИ) =====
-        if target_telegram_id:
-            try:
-                # ПРОВЕРЯЕМ, МОЖЕТ ЛИ БОТ ОТПРАВИТЬ СООБЩЕНИЕ
-                try:
-                    await context.bot.send_chat_action(
-                        chat_id=int(target_telegram_id), 
-                        action="typing"
-                    )
-                    logger.info(f"✅ Бот может отправлять сообщения пользователю {target_telegram_id}")
-                except Exception as e:
-                    logger.error(f"❌ Бот не может отправить сообщение пользователю {target_telegram_id}: {e}")
-                    await context.bot.send_message(
-                        chat_id=int(admin_telegram_id),
-                        text=f"*⚠️ Пользователь @{target_username} заблокировал бота!\n\nЗапись #{booking_id} создана, но уведомление не отправлено.*",
-                        parse_mode="Markdown"
-                    )
-                    raise telegram.error.Forbidden("User blocked bot")
-
-                # ТОТ ЖЕ ТЕКСТ + АДРЕС И КОНТАКТЫ
-                if record_type == "📝 Договорная запись":
-                    user_message = (
-                        f"*🎁 Договорная запись успешно создана администратором!*\n\n"
-                        f"*📋 Детали:*\n"
-                        f"*• Тип:* {record_type}\n"
-                        f"*• Стоимость:* {price}₽\n"
-                        f"*• ID записи:* #{booking_id}\n\n"
-                        f"*📍 Адрес: Садовая ул., 91*\n"
-                        f"*📱 Контакты: @mothman32*"
-                    )
-                else:
-                    user_message = (
-                        f"*🎁 Запись в студии успешно создана администратором!*\n\n"
-                        f"*📋 Детали:*\n"
-                        f"*• Тип:* {record_type}\n"
-                        f"*• Стоимость:* {price}₽\n"
-                        f"*• ID записи:* #{booking_id}\n\n"
-                        f"*📍 Адрес: Садовая ул., 91*\n"
-                        f"*📱 Контакты: @mothman32*"
-                    )
-                
-                await context.bot.send_message(
-                    chat_id=int(target_telegram_id),
-                    text=user_message,
-                    parse_mode="Markdown"
-                )
-                logger.info(f"✅ Сообщение пользователю {target_telegram_id} отправлено")
-                
-            except telegram.error.Forbidden:
-                logger.warning(f"⚠️ Пользователь {target_telegram_id} заблокировал бота")
-                
-            except Exception as user_error:
-                logger.error(f"❌ Не удалось отправить сообщение пользователю {target_telegram_id}: {user_error}")
-                # Пробуем отправить без Markdown
-                try:
-                    await context.bot.send_message(
-                        chat_id=int(target_telegram_id),
-                        text=f"Администратор создал для вас запись #{booking_id}\n\n📍 Адрес: Садовая ул., 91\n📱 Контакты: @mothman32"
-                    )
-                    logger.info(f"✅ Упрощенное сообщение отправлено пользователю {target_telegram_id}")
-                except Exception as e2:
-                    logger.error(f"❌ Не удалось отправить даже упрощенное сообщение: {e2}")
-                    await context.bot.send_message(
-                        chat_id=int(admin_telegram_id),
-                        text=f"⚠️ КРИТИЧЕСКАЯ ОШИБКА: Не удалось отправить сообщение пользователю @{target_username}\n\nЗапись #{booking_id} создана, но уведомление не отправлено.",
-                        parse_mode="Markdown"
-                    )
-        
-        context.user_data.clear()
-        logger.info(f"🎉 Админская запись #{booking_id} успешно создана!")
+        return ADMIN_CONFIRM
         
     except Exception as e:
         logger.error(f"❌ Критическая ошибка при создании админской записи: {e}")
@@ -21406,7 +21365,7 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
             else:
                 user_msg_lines.append(f"• Время: {display_time}")
         
-        # ===== ЦЕНА (для аренды — итоговая со скидкой + залог) =====
+        # ===== ЦЕНА =====
         if is_12_hours == 1:
             rent_price = 6500 if twelve_hours_type and 'Ночь' in twelve_hours_type else 7000
             if price and price != '0' and price != str(rent_price):
@@ -21431,7 +21390,12 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
             except:
                 user_msg_lines.append(f"• Стоимость: {price}₽")
         else:
-            user_msg_lines.append(f"• Стоимость: Договорная")
+            if is_mixing == 1:
+                user_msg_lines.append(f"• Стоимость: 2500₽")
+            elif is_track_creation == 1:
+                user_msg_lines.append(f"• Стоимость: 9000₽")
+            else:
+                user_msg_lines.append(f"• Стоимость: Договорная")
         
         # ===== СКИДКИ =====
         if level_discount_percent and level_discount_percent > 0:
@@ -21665,7 +21629,7 @@ async def process_booking_rejection(booking_id: int, admin_id: int, context: Con
             else:
                 user_msg_lines.append(f"• Время: {display_time}")
         
-        # ===== ЦЕНА (для аренды — итоговая со скидкой + залог) =====
+        # ===== ЦЕНА =====
         if is_12_hours == 1:
             rent_price = 6500 if twelve_hours_type and 'Ночь' in twelve_hours_type else 7000
             if price and price != '0' and price != str(rent_price):
@@ -21690,7 +21654,12 @@ async def process_booking_rejection(booking_id: int, admin_id: int, context: Con
             except:
                 user_msg_lines.append(f"• Стоимость: {price}₽")
         else:
-            user_msg_lines.append(f"• Стоимость: Договорная")
+            if is_mixing == 1:
+                user_msg_lines.append(f"• Стоимость: 2500₽")
+            elif is_track_creation == 1:
+                user_msg_lines.append(f"• Стоимость: 9000₽")
+            else:
+                user_msg_lines.append(f"• Стоимость: Договорная")
         
         # ===== СКИДКИ =====
         if level_discount_percent and level_discount_percent > 0:
