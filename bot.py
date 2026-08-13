@@ -16437,6 +16437,10 @@ async def show_slots(update: Update, context):
         safe_contact = context.user_data.get('safe_contact', context.user_data.get('contact', ''))
         display_date = context.user_data.get('date_with_color', context.user_data['date'])
         
+        # ===== ОЧИЩАЕМ УСЛУГУ И ТИП ОТ СМАЙЛИКОВ =====
+        clean_service = context.user_data['service'].replace('⏰', '').strip()
+        clean_type = context.user_data.get('12_hours_type', 'Не указан').replace('☀️', '').replace('🌙', '').strip()
+        
         # ===== ФОРМИРУЕМ ТЕКСТ О СКИДКАХ =====
         discount_text = ""
         if price_result.get('level_discount_percent', 0) > 0:
@@ -16459,7 +16463,7 @@ async def show_slots(update: Update, context):
         rent_price = 6500 if context.user_data.get('12_hours_type') and 'Ночь' in context.user_data.get('12_hours_type') else 7000
         final_price = price_result.get('final_price', rent_price)
         
-        # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
+        # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ (БЕЗ СМАЙЛИКОВ) =====
         confirmation_lines = [
             f"*✅ Шаг 6/6: Подтверждение*",
             "",
@@ -16467,8 +16471,8 @@ async def show_slots(update: Update, context):
             "",
             f"• Имя: {safe_name}",
             f"• Контакт: {safe_contact}",
-            f"• Услуга: {context.user_data['service']}",
-            f"• Тип: {context.user_data.get('12_hours_type', 'Не указан')}",
+            f"• Услуга: {clean_service}",
+            f"• Тип: {clean_type}",
             f"• Дата: {display_date}",
             f"• Время: {display_time} (12 часов)",
             f"• Стоимость: {final_price}₽ + залог (по договору)"
@@ -16631,6 +16635,10 @@ async def show_slots(update: Update, context):
         display_date = context.user_data.get('date_with_color', context.user_data['date'])
         display_time = context.user_data.get('display_time', context.user_data['time'])
         
+        # ===== ОЧИЩАЕМ УСЛУГУ И ТИП ОТ СМАЙЛИКОВ =====
+        clean_service = context.user_data['service'].replace('🎵', '').strip()
+        clean_type = context.user_data.get('track_type', 'Один трек').replace('🎵', '').replace('💿', '').strip()
+        
         # ===== ФОРМИРУЕМ ТЕКСТ О СКИДКАХ =====
         discount_text = ""
         if price_result.get('level_discount_percent', 0) > 0:
@@ -16649,7 +16657,7 @@ async def show_slots(update: Update, context):
         if price_result.get('free_service_applied', False):
             discount_text += f"\n• Промокод: Бесплатная услуга"
         
-        # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
+        # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ (БЕЗ СМАЙЛИКОВ) =====
         confirmation_lines = [
             f"*✅ Шаг 7/7: Подтверждение*",
             "",
@@ -16657,8 +16665,8 @@ async def show_slots(update: Update, context):
             "",
             f"• Имя: {safe_name}",
             f"• Контакт: {safe_contact}",
-            f"• Услуга: {context.user_data['service']}",
-            f"• Тип: {context.user_data.get('track_type', 'Один трек')}",
+            f"• Услуга: {clean_service}",
+            f"• Тип: {clean_type}",
             f"• Дата: {display_date}",
             f"• Время: {display_time} (4 часа)",
             f"• Стоимость: {price_result['final_price']}₽"
@@ -16830,6 +16838,16 @@ async def show_slots(update: Update, context):
     display_date = context.user_data.get('date_with_color', context.user_data['date'])
     display_time = context.user_data.get('display_time', context.user_data['time'])
     
+    # ===== ОЧИЩАЕМ УСЛУГУ И ТИП ОТ СМАЙЛИКОВ =====
+    clean_service = context.user_data['service'].replace('🎤', '').replace('🎸', '').strip()
+    clean_type = ""
+    if is_track_creation and context.user_data.get('track_type'):
+        clean_type = context.user_data.get('track_type').replace('🎵', '').replace('💿', '').strip()
+    elif is_mixing and context.user_data.get('mixing_type'):
+        clean_type = context.user_data.get('mixing_type').replace('🎵', '').replace('💿', '').strip()
+    elif is_12_hours and context.user_data.get('12_hours_type'):
+        clean_type = context.user_data.get('12_hours_type').replace('☀️', '').replace('🌙', '').strip()
+    
     # ===== ФОРМИРУЕМ ТЕКСТ О СКИДКАХ =====
     discount_text = ""
     
@@ -16882,7 +16900,7 @@ async def show_slots(update: Update, context):
     else:
         time_text = display_time
     
-    # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
+    # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ (БЕЗ СМАЙЛИКОВ) =====
     confirmation_lines = [
         f"*✅ {step_text}: Подтверждение*",
         "",
@@ -16890,16 +16908,12 @@ async def show_slots(update: Update, context):
         "",
         f"• Имя: {safe_name}",
         f"• Контакт: {safe_contact}",
-        f"• Услуга: {context.user_data['service']}"
+        f"• Услуга: {clean_service}"
     ]
     
-    # Добавляем дополнительную информацию в зависимости от услуги
-    if is_track_creation and context.user_data.get('track_type'):
-        confirmation_lines.append(f"• Тип: {context.user_data.get('track_type')}")
-    elif is_mixing and context.user_data.get('mixing_type'):
-        confirmation_lines.append(f"• Тип: {context.user_data.get('mixing_type')}")
-    elif is_12_hours and context.user_data.get('12_hours_type'):
-        confirmation_lines.append(f"• Тип: {context.user_data.get('12_hours_type')}")
+    # Добавляем дополнительную информацию в зависимости от услуги (без смайликов)
+    if clean_type:
+        confirmation_lines.append(f"• Тип: {clean_type}")
     
     confirmation_lines.append(f"• Дата: {display_date}")
     confirmation_lines.append(f"• Время: {time_text}")
