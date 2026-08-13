@@ -11903,7 +11903,11 @@ async def confirm_booking(update: Update, context):
                 user_msg_lines.append(f"• Время: {display_time}")
         
         if price_text:
-            user_msg_lines.append(f"• Стоимость: {price_text}")
+            if is_12_hours == 1:
+                rent_price = 6500 if context.user_data.get('12_hours_type') and 'Ночь' in context.user_data.get('12_hours_type') else 7000
+                user_msg_lines.append(f"• Стоимость: {rent_price}₽ + залог (по договору)")
+            else:
+                user_msg_lines.append(f"• Стоимость: {price_text}")
         
         if discount_text:
             user_msg_lines.append(discount_text.lstrip('\n'))
@@ -11949,7 +11953,12 @@ async def confirm_booking(update: Update, context):
             else:
                 admin_msg_lines.append(f"• Время: {display_time}")
         
-        admin_msg_lines.append(f"• Стоимость: {price_text}")
+        # ===== ЦЕНА ДЛЯ АДМИНА =====
+        if is_12_hours == 1:
+            rent_price = 6500 if context.user_data.get('12_hours_type') and 'Ночь' in context.user_data.get('12_hours_type') else 7000
+            admin_msg_lines.append(f"• Стоимость: {rent_price}₽ + залог (по договору)")
+        else:
+            admin_msg_lines.append(f"• Стоимость: {price_text}")
         
         # Добавляем скидки для админа
         admin_discount_lines = []
@@ -16439,6 +16448,9 @@ async def show_slots(update: Update, context):
             discount_text += f"\n• Промокод: Бесплатная услуга"
         
         # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
+        # Цена для аренды
+        rent_price = 6500 if context.user_data.get('12_hours_type') and 'Ночь' in context.user_data.get('12_hours_type') else 7000
+        
         confirmation_lines = [
             f"*✅ Шаг 6/6: Подтверждение*",
             "",
@@ -16450,7 +16462,7 @@ async def show_slots(update: Update, context):
             f"• Тип: {context.user_data.get('12_hours_type', 'Не указан')}",
             f"• Дата: {display_date}",
             f"• Время: {display_time} (12 часов)",
-            f"• Стоимость: {price_result['final_price']}₽ + залог (по договору)"
+            f"• Стоимость: {rent_price}₽ + залог (по договору)"
         ]
         
         if discount_text:
@@ -16490,7 +16502,7 @@ async def show_slots(update: Update, context):
     if is_track_creation:
         if '-' not in normalized_input:
             await update.message.reply_text(
-                "*❌ Неверный формат времени! Используйте формат час-час. Например, 14-18 или 22-2!*",
+                "*❌ Неверный формат времени! Используйте формат час-час (например, 14-18 или 22-2)!*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_time_input()
             )
@@ -16683,14 +16695,14 @@ async def show_slots(update: Update, context):
                 return SHOW_SLOTS
             elif "Неверный формат" in error_msg:
                 await update.message.reply_text(
-                    "*❌ Неверный формат времени! Используйте формат час-час. Например, 14-18 или 22-2!*",
+                    "*❌ Неверный формат времени! Используйте формат час-час (например, 14-18 или 22-2)!*",
                     parse_mode="Markdown",
                     reply_markup=KeyboardManager.get_time_input()
                 )
                 return SHOW_SLOTS
             else:
                 await update.message.reply_text(
-                    "*❌ Неверный формат времени! Используйте формат час-час. Например, 14-18 или 22-2!*",
+                    "*❌ Неверный формат времени! Используйте формат час-час (например, 14-18 или 22-2)!*",
                     parse_mode="Markdown",
                     reply_markup=KeyboardManager.get_time_input()
                 )
@@ -21330,7 +21342,7 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
         else:
             if is_12_hours == 1:
                 rent_price = 6500 if twelve_hours_type and 'Ночь' in twelve_hours_type else 7000
-                user_msg_lines.append(f"• Стоимость: {rent_price}₽")
+                user_msg_lines.append(f"• Стоимость: {rent_price}₽ + залог (по договору)")
             elif is_mixing == 1:
                 user_msg_lines.append(f"• Стоимость: 2500₽")
             elif is_track_creation == 1:
@@ -21567,7 +21579,7 @@ async def process_booking_rejection(booking_id: int, admin_id: int, context: Con
         else:
             if is_12_hours == 1:
                 rent_price = 6500 if twelve_hours_type and 'Ночь' in twelve_hours_type else 7000
-                user_msg_lines.append(f"• Стоимость: {rent_price}₽")
+                user_msg_lines.append(f"• Стоимость: {rent_price}₽ + залог (по договору)")
             elif is_mixing == 1:
                 user_msg_lines.append(f"• Стоимость: 2500₽")
             elif is_track_creation == 1:
