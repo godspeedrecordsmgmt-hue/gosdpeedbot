@@ -10423,7 +10423,7 @@ async def get_mixing_type(update: Update, context):
     user_id = str(update.effective_user.id)
     
     if "Трек" in mixing_type:
-        context.user_data['mixing_type'] = "🎵 Трек"
+        context.user_data['mixing_type'] = "Трек"
         context.user_data['service'] = "Сведение/мастеринг"
         context.user_data['is_mixing'] = True
         
@@ -10432,7 +10432,7 @@ async def get_mixing_type(update: Update, context):
             service=context.user_data['service'],
             duration=1,
             is_mixing=True,
-            mixing_type="🎵 Трек",
+            mixing_type="Трек",
             user_id=user_id,
             consume_coupon=False
         )
@@ -10488,7 +10488,7 @@ async def get_mixing_type(update: Update, context):
         return CONFIRM
     
     else:
-        context.user_data['mixing_type'] = "💿 Альбом"
+        context.user_data['mixing_type'] = "Альбом"
         context.user_data['service'] = "Сведение/мастеринг"
         context.user_data['price'] = "Договорная"
         context.user_data['is_mixing'] = True
@@ -10576,7 +10576,7 @@ async def get_track_creation_type(update: Update, context):
             context.user_data.pop(key, None)
         
         context.user_data['is_track_creation'] = True
-        context.user_data['track_type'] = "🎵 Трек"
+        context.user_data['track_type'] = "Трек"
         context.user_data['service'] = "Создание трека"
         context.user_data['price'] = 9000
         context.user_data['with_engineer'] = True
@@ -10621,7 +10621,7 @@ async def get_track_creation_type(update: Update, context):
             context.user_data.pop(key, None)
         
         context.user_data['is_track_creation'] = True
-        context.user_data['track_type'] = "💿 Альбом"
+        context.user_data['track_type'] = "Альбом"
         context.user_data['price'] = "Договорная"
         context.user_data['date'] = "Не указана (договорная)"
         context.user_data['time'] = "Не указано (договорная)"
@@ -21870,7 +21870,7 @@ async def admin_cancel_confirm_handler(update: Update, context):
         try:
             service_type_display = ""
             if is_mixing_db:
-                service_type_display = f"\n• Тип: {mixing_type}" if mixing_type else "\n• Тип: 🎵 Трек"
+                service_type_display = f"\n• Тип: {mixing_type}" if mixing_type else "\n• Тип: Трек"
             elif is_track_creation_db:
                 service_type_display = "\n• Тип: 🎵 Создание трека"
             
