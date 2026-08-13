@@ -11812,6 +11812,18 @@ async def confirm_booking(update: Update, context):
         safe_name = SecurityUtils.safe_markdown_text(context.user_data.get('name', ''))
         safe_contact = SecurityUtils.safe_markdown_text(context.user_data.get('contact', ''))
         
+        # ===== ОЧИЩАЕМ СМАЙЛИКИ ИЗ УСЛУГИ =====
+        clean_service = service.replace('🎤', '').replace('🎸', '').replace('⏰', '').replace('🎚️', '').replace('🎛️', '').replace('🎵', '').replace('🎹', '').strip()
+        
+        # ===== ОЧИЩАЕМ ТИП ОТ СМАЙЛИКОВ =====
+        clean_type = ""
+        if is_track_creation and context.user_data.get('track_type'):
+            clean_type = context.user_data.get('track_type').replace('🎵', '').replace('💿', '').strip()
+        elif is_mixing and context.user_data.get('mixing_type'):
+            clean_type = context.user_data.get('mixing_type').replace('🎵', '').replace('💿', '').strip()
+        elif is_12_hours and context.user_data.get('12_hours_type'):
+            clean_type = context.user_data.get('12_hours_type').replace('☀️', '').replace('🌙', '').strip()
+        
         # ===== ФОРМИРУЕМ ТЕКСТ СКИДОК ДЛЯ ПОЛЬЗОВАТЕЛЯ =====
         discount_lines = []
         
@@ -11867,16 +11879,12 @@ async def confirm_booking(update: Update, context):
             f"• Номер заявки: #{booking_id}",
             f"• Имя: {safe_name}",
             f"• Контакт: {safe_contact}",
-            f"• Услуга: {service}"
+            f"• Услуга: {clean_service}"
         ]
         
-        # Добавляем тип услуги
-        if is_track_creation and context.user_data.get('track_type'):
-            user_msg_lines.append(f"• Тип: {context.user_data.get('track_type')}")
-        elif is_mixing and context.user_data.get('mixing_type'):
-            user_msg_lines.append(f"• Тип: {context.user_data.get('mixing_type')}")
-        elif is_12_hours and context.user_data.get('12_hours_type'):
-            user_msg_lines.append(f"• Тип: {context.user_data.get('12_hours_type')}")
+        # Добавляем тип услуги (без смайликов)
+        if clean_type:
+            user_msg_lines.append(f"• Тип: {clean_type}")
         
         if clean_date_display and 'Не указана' not in clean_date_display:
             user_msg_lines.append(f"• Дата: {clean_date_display}")
@@ -11925,16 +11933,12 @@ async def confirm_booking(update: Update, context):
             f"• Номер заявки: #{booking_id}",
             f"• Пользователь: {safe_name}",
             f"• Контакт: {safe_contact}",
-            f"• Услуга: {service}"
+            f"• Услуга: {clean_service}"
         ]
         
-        # Добавляем тип услуги для админа
-        if is_track_creation and context.user_data.get('track_type'):
-            admin_msg_lines.append(f"• Тип: {context.user_data.get('track_type')}")
-        elif is_mixing and context.user_data.get('mixing_type'):
-            admin_msg_lines.append(f"• Тип: {context.user_data.get('mixing_type')}")
-        elif is_12_hours and context.user_data.get('12_hours_type'):
-            admin_msg_lines.append(f"• Тип: {context.user_data.get('12_hours_type')}")
+        # Добавляем тип услуги для админа (без смайликов)
+        if clean_type:
+            admin_msg_lines.append(f"• Тип: {clean_type}")
         
         if clean_date_display and 'Не указана' not in clean_date_display:
             admin_msg_lines.append(f"• Дата: {clean_date_display}")
@@ -11950,7 +11954,7 @@ async def confirm_booking(update: Update, context):
             else:
                 admin_msg_lines.append(f"• Время: {display_time}")
         
-        # ===== ЦЕНА ДЛЯ АДМИНА (итоговая со скидкой + залог для аренды) =====
+        # ===== ЦЕНА ДЛЯ АДМИНА =====
         if is_12_hours == 1:
             rent_price = 6500 if context.user_data.get('12_hours_type') and 'Ночь' in context.user_data.get('12_hours_type') else 7000
             final_price = price_result.get('final_price', rent_price)
