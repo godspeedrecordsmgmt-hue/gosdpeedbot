@@ -21194,7 +21194,7 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
             
             conn.commit()
             
-            # ===== НАЧИСЛЯЕМ ПЛАСТИНКИ ДЛЯ ДОГОВОРНЫХ ЗАПИСЕЙ И СВЕДЕНИЯ/МАСТЕРИНГА =====
+            # ===== 1НАЧИСЛЯЕМ ПЛАСТИНКИ ДЛЯ ДОГОВОРНЫХ ЗАПИСЕЙ И СВЕДЕНИЯ/МАСТЕРИНГА =====
             if is_contractual == 1 or is_mixing == 1 or is_admin_booking == 1:
                 booking_data_for_vinyls = {
                     'id': booking_id,
