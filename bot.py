@@ -10455,11 +10455,11 @@ async def get_mixing_type(update: Update, context):
         safe_name = context.user_data.get('safe_name', context.user_data.get('name', ''))
         safe_contact = context.user_data.get('safe_contact', context.user_data.get('contact', ''))
         
-        # Очищаем услугу от смайликов
-        clean_service = context.user_data['service'].replace('🎛️', '').strip()
-        clean_type = context.user_data.get('mixing_type', 'Не указан').replace('🎵', '').strip()
+        # Очищаем услугу и тип от смайликов
+        clean_service = context.user_data['service'].replace('', '').strip()
+        clean_type = context.user_data.get('mixing_type', 'Не указан').replace('', '').strip()
         
-        # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
+        # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ (БЕЗ СМАЙЛИКОВ) =====
         confirmation_lines = [
             f"*✅ Шаг 5/5: Подтверждение*",
             "",
@@ -10497,10 +10497,10 @@ async def get_mixing_type(update: Update, context):
         safe_contact = context.user_data.get('safe_contact', context.user_data.get('contact', ''))
         
         # ===== ОЧИЩАЕМ УСЛУГУ И ТИП ОТ СМАЙЛИКОВ =====
-        clean_service = context.user_data['service'].replace('🎛️', '').strip()
-        clean_type = context.user_data.get('mixing_type', 'Не указан').replace('💿', '').strip()
+        clean_service = context.user_data['service'].replace('', '').strip()
+        clean_type = context.user_data.get('mixing_type', 'Не указан').replace('', '').strip()
         
-        # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
+        # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ (БЕЗ СМАЙЛИКОВ) =====
         confirmation_lines = [
             f"*✅ Шаг 5/5: Подтверждение*",
             "",
@@ -10630,8 +10630,8 @@ async def get_track_creation_type(update: Update, context):
         safe_contact = context.user_data.get('safe_contact', context.user_data.get('contact', ''))
         
         # ===== ОЧИЩАЕМ УСЛУГУ И ТИП ОТ СМАЙЛИКОВ =====
-        clean_service = context.user_data['service'].replace('🎵', '').strip()
-        clean_type = context.user_data.get('track_type', 'Не указан').replace('💿', '').strip()
+        clean_service = context.user_data['service'].replace('', '').strip()
+        clean_type = context.user_data.get('track_type', 'Не указан').replace('', '').strip()
         
         # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
         confirmation_lines = [
@@ -10682,8 +10682,8 @@ async def handle_no_date_option(update: Update, context):
         safe_contact = context.user_data.get('safe_contact', context.user_data.get('contact', ''))
         
         # Очищаем услугу от смайликов
-        clean_service = context.user_data['service'].replace('🎛️', '').strip()
-        clean_type = context.user_data.get('mixing_type', 'Не указан').replace('💿', '').strip()
+        clean_service = context.user_data['service'].replace('', '').strip()
+        clean_type = context.user_data.get('mixing_type', 'Не указан').replace('', '').strip()
         
         # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
         confirmation_lines = [
@@ -10715,8 +10715,8 @@ async def handle_no_date_option(update: Update, context):
         safe_contact = context.user_data.get('safe_contact', context.user_data.get('contact', ''))
         
         # Очищаем услугу и тип от смайликов
-        clean_service = context.user_data['service'].replace('🎵', '').strip()
-        clean_type = track_type.replace('💿', '').strip()
+        clean_service = context.user_data['service'].replace('', '').strip()
+        clean_type = track_type.replace('', '').strip()
         
         # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
         confirmation_lines = [
@@ -10751,7 +10751,7 @@ async def handle_no_date_option(update: Update, context):
         safe_contact = context.user_data.get('safe_contact', context.user_data.get('contact', ''))
         
         # Очищаем услугу от смайликов
-        clean_service = context.user_data['service'].replace('🎤', '').replace('🎸', '').replace('⏰', '').replace('🎚️', '').replace('🎛️', '').replace('🎵', '').replace('🎹', '').strip()
+        clean_service = context.user_data['service'].replace('', '').replace('', '').replace('', '').replace('', '').replace('', '').replace('', '').replace('', '').strip()
         
         # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
         confirmation_lines = [
@@ -11836,7 +11836,7 @@ async def confirm_booking(update: Update, context):
         safe_contact = SecurityUtils.safe_markdown_text(context.user_data.get('contact', ''))
         
         # ===== ОЧИЩАЕМ УСЛУГУ ОТ СМАЙЛИКОВ =====
-        clean_service = service.replace('🎤', '').replace('🎸', '').replace('⏰', '').replace('🎚️', '').replace('🎛️', '').replace('🎵', '').replace('🎹', '').strip()
+        clean_service = service.replace('', '').replace('', '').replace('', '').replace('', '').replace('', '').replace('', '').replace('', '').strip()
         
         # ===== ОЧИЩАЕМ ТИП ОТ СМАЙЛИКОВ (убираем всё до пробела) =====
         clean_type = ""
@@ -16409,7 +16409,7 @@ async def show_slots(update: Update, context):
         display_date = context.user_data.get('date_with_color', context.user_data['date'])
         
         # ===== ОЧИЩАЕМ УСЛУГУ ОТ СМАЙЛИКОВ =====
-        clean_service = context.user_data['service'].replace('⏰', '').strip()
+        clean_service = context.user_data['service'].replace('', '').strip()
         
         # ===== ОЧИЩАЕМ ТИП ОТ СМАЙЛИКОВ (убираем всё до пробела) =====
         twelve_hours_type_raw = context.user_data.get('12_hours_type', 'Не указан')
@@ -16613,7 +16613,7 @@ async def show_slots(update: Update, context):
         display_time = context.user_data.get('display_time', context.user_data['time'])
         
         # ===== ОЧИЩАЕМ УСЛУГУ ОТ СМАЙЛИКОВ =====
-        clean_service = context.user_data['service'].replace('🎵', '').strip()
+        clean_service = context.user_data['service'].replace('', '').strip()
         
         # ===== ОЧИЩАЕМ ТИП ОТ СМАЙЛИКОВ (убираем всё до пробела) =====
         track_type_raw = context.user_data.get('track_type', 'Один трек')
@@ -16822,7 +16822,7 @@ async def show_slots(update: Update, context):
     display_time = context.user_data.get('display_time', context.user_data['time'])
     
     # ===== ОЧИЩАЕМ УСЛУГУ ОТ СМАЙЛИКОВ (ВСЕ ВОЗМОЖНЫЕ) =====
-    clean_service = context.user_data['service'].replace('🎤', '').replace('🎸', '').replace('⏰', '').replace('🎚️', '').replace('🎛️', '').replace('🎵', '').replace('🎹', '').strip()
+    clean_service = context.user_data['service'].replace('', '').replace('', '').replace('', '').replace('', '').replace('', '').replace('', '').replace('', '').strip()
     
     # ===== ОЧИЩАЕМ ТИП ОТ СМАЙЛИКОВ (убираем всё до пробела) =====
     clean_type = ""
@@ -21314,7 +21314,7 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
             display_time = DateTimeUtils.format_time_for_display(time_slot)
         
         # ===== ОЧИЩАЕМ УСЛУГУ ОТ СМАЙЛИКОВ =====
-        clean_service = service.replace('🎤', '').replace('🎸', '').replace('⏰', '').replace('🎚️', '').replace('🎛️', '').replace('🎵', '').replace('🎹', '').strip()
+        clean_service = service.replace('', '').replace('', '').replace('', '').replace('', '').replace('', '').replace('', '').replace('', '').strip()
         
         # ===== ОЧИЩАЕМ ТИП ОТ СМАЙЛИКОВ (убираем всё до пробела) =====
         clean_type = ""
@@ -21578,7 +21578,7 @@ async def process_booking_rejection(booking_id: int, admin_id: int, context: Con
             display_time = DateTimeUtils.format_time_for_display(time_slot)
         
         # ===== ОЧИЩАЕМ УСЛУГУ ОТ СМАЙЛИКОВ =====
-        clean_service = service.replace('🎤', '').replace('🎸', '').replace('⏰', '').replace('🎚️', '').replace('🎛️', '').replace('🎵', '').replace('🎹', '').strip()
+        clean_service = service.replace('', '').replace('', '').replace('', '').replace('', '').replace('', '').replace('', '').replace('', '').strip()
         
         # ===== ОЧИЩАЕМ ТИП ОТ СМАЙЛИКОВ (убираем всё до пробела) =====
         clean_type = ""
