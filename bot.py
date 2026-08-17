@@ -16512,7 +16512,7 @@ async def show_slots(update: Update, context):
     if is_track_creation:
         if '-' not in normalized_input:
             await update.message.reply_text(
-                "*❌ Неверный формат времени! Используйте формат час-час (например, 14-18 или 22-2)!*",
+                "*❌ Неверный формат времени! Используйте формат час-час. Например, 14-18 или 22-2!*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_time_input()
             )
@@ -16721,14 +16721,14 @@ async def show_slots(update: Update, context):
                 return SHOW_SLOTS
             elif "Неверный формат" in error_msg:
                 await update.message.reply_text(
-                    "*❌ Неверный формат времени! Используйте формат час-час (например, 14-18 или 22-2)!*",
+                    "*❌ Неверный формат времени! Используйте формат час-час. Например, 14-18 или 22-2!*",
                     parse_mode="Markdown",
                     reply_markup=KeyboardManager.get_time_input()
                 )
                 return SHOW_SLOTS
             else:
                 await update.message.reply_text(
-                    "*❌ Неверный формат времени! Используйте формат час-час (например, 14-18 или 22-2)!*",
+                    "*❌ Неверный формат времени! Используйте формат час-час. Например, 14-18 или 22-2!*",
                     parse_mode="Markdown",
                     reply_markup=KeyboardManager.get_time_input()
                 )
