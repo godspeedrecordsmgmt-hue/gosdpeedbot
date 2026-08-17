@@ -10118,8 +10118,8 @@ async def get_service(update: Update, context):
         return MIXING_TYPE
     
     elif text == "🎵 Создание трека":
-        context.user_data['service'] = "🎵 Создание трека"
-        context.user_data['service_type'] = "🎵 Создание трека"
+        context.user_data['service'] = "Создание трека"
+        context.user_data['service_type'] = "Создание трека"
         context.user_data['is_track_creation'] = True
         context.user_data['with_engineer'] = True
         
