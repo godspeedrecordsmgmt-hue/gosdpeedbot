@@ -9681,8 +9681,13 @@ async def notifications_command(update: Update, context):
                 if display_time and '-' in display_time:
                     display_time = DateTimeUtils.format_time_for_display(display_time)
                 
+                # ===== УБИРАЕМ СМАЙЛИКИ ИЗ УСЛУГИ =====
+                clean_service = service
+                for emoji in ['🎤', '🎸', '⏰', '🎚️', '🎵', '🎹']:
+                    clean_service = clean_service.replace(emoji, '').strip()
+                
                 message += f"⏳ *Напоминание за {hours} часов*\n"
-                message += f"   • Услуга: {service}\n"
+                message += f"   • Услуга: {clean_service}\n"
                 
                 if clean_date and 'Не указана' not in clean_date and clean_date != 'Запись в студии':
                     message += f"   • Дата: {clean_date}\n"
