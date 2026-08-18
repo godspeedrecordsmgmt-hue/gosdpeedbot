@@ -11407,13 +11407,13 @@ async def handle_date_selection(update: Update, context, text: str):
     if not free_intervals:
         if is_track_creation:
             await update.message.reply_text(
-                f"*❌ Все слоты заняты на эту дату!*",
+                f"*❌ Все слоты заняты на эту дату! Выберите другое время или другую дату!*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_dates("track_creation", True)
             )
         else:
             await update.message.reply_text(
-                f"*❌ Все слоты заняты на эту дату!*",
+                f"*❌ Все слоты заняты на эту дату! Выберите другое время или другую дату!*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_dates("vocal", with_engineer)
             )
@@ -11491,7 +11491,7 @@ async def handle_date_selection(update: Update, context, text: str):
         
         if not has_direct_4h_slot and not has_cross_night_slot:
             await update.message.reply_text(
-                f"*❌ Все слоты заняты на эту дату!*",
+                f"*❌ Все слоты заняты на эту дату! Выберите другое время или другую дату!*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_dates("track_creation", True)
             )
