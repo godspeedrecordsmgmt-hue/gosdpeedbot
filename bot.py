@@ -9559,12 +9559,12 @@ async def handle_global_buttons(update: Update, context):
         await top_vinyls_handler(update, context)
         return ConversationHandler.END
     
-    # ===== ДОБАВИТЬ ЭТИ ДВЕ КНОПКИ =====
+    # ===== КНОПКИ ПОМОЩИ =====
     if text == "❓ Помощь":
         await help_handler(update, context)
         return ConversationHandler.END
     
-    if text == "❗️ Полезная информация":
+    if text == "❗️ Полезная информация":  # ← ДОБАВЛЕНО!
         await useful_info_handler(update, context)
         return ConversationHandler.END
     
@@ -22140,44 +22140,29 @@ def setup_handlers(application):
     application.add_handler(
         MessageHandler(filters.Regex('^(❓ Помощь)$'), help_handler)
     )
-    application.add_handler(
-        MessageHandler(filters.Regex('^(❗️ Полезная информация)$'), useful_info_handler)
-    )
+    # ❗️ ПОЛЕЗНАЯ ИНФОРМАЦИЯ УБРАНА ОТСЮДА!
     
     # ============================================================
-    # 3. CALLBACK QUERY HANDLERS (ДЛЯ INLINE КНОПОК)
+    # 3. CALLBACK QUERY HANDLERS
     # ============================================================
-    # Выручка
     application.add_handler(CallbackQueryHandler(handle_revenue_period_selection, pattern="^revenue_"))
-    
-    # Промокоды (пользовательские)
     application.add_handler(CallbackQueryHandler(promo_callback_handler, pattern="^promo_"))
-    
-    # Промокоды (админские - УДАЛЕНИЕ)
     application.add_handler(CallbackQueryHandler(admin_promo_delete_callback_handler, pattern="^admin_del_promo_"))
     application.add_handler(CallbackQueryHandler(admin_promo_delete_confirm_handler, pattern="^admin_confirm_del_"))
     application.add_handler(CallbackQueryHandler(admin_promo_delete_confirm_handler, pattern="^admin_cancel_del$"))
-    
-    # Рефералы
     application.add_handler(CallbackQueryHandler(enter_referral_code_callback, pattern="^enter_referral_code$"))
     application.add_handler(CallbackQueryHandler(show_my_referrals_callback, pattern="^show_my_referrals$"))
     application.add_handler(CallbackQueryHandler(back_to_referral_callback, pattern="^back_to_referral$"))
-    
-    # Админская отмена (конкретные callback)
     application.add_handler(CallbackQueryHandler(admin_cancel_confirm_handler, pattern="^admin_cancel_confirm_"))
     application.add_handler(CallbackQueryHandler(admin_cancel_keep_handler, pattern="^admin_cancel_keep$"))
     application.add_handler(CallbackQueryHandler(admin_cancel_callback_handler, pattern="^admin_cancel_\\d+$"))
-    
-    # Админское удаление достижений
     application.add_handler(CallbackQueryHandler(admin_remove_achievement_callback, pattern="^admin_remove_achievement_\\d+$"))
     application.add_handler(CallbackQueryHandler(admin_remove_achievement_confirm, pattern="^admin_remove_achievement_confirm_"))
     application.add_handler(CallbackQueryHandler(admin_remove_achievement_cancel, pattern="^admin_remove_achievement_cancel$"))
-    
-    # Основной callback (отмена записей пользователем, подтверждение и т.д.)
     application.add_handler(CallbackQueryHandler(button_callback_handler))
     
     # ============================================================
-    # 4. ПРОМОКОДЫ (ВВОД) - САМЫЙ ВЫСОКИЙ ПРИОРИТЕТ СРЕДИ MessageHandler
+    # 4. ПРОМОКОДЫ (ВВОД)
     # ============================================================
     application.add_handler(
         MessageHandler(
@@ -22188,7 +22173,7 @@ def setup_handlers(application):
     )
     
     # ============================================================
-    # 5. РЕФЕРАЛЬНЫЕ КОДЫ - ВТОРОЙ ПРИОРИТЕТ
+    # 5. РЕФЕРАЛЬНЫЕ КОДЫ
     # ============================================================
     application.add_handler(
         MessageHandler(
@@ -22203,10 +22188,10 @@ def setup_handlers(application):
     )
     
     # ============================================================
-    # 6. CONVERSATION HANDLERS (ДЛЯ МНОГОШАГОВЫХ ПРОЦЕССОВ)
+    # 6. CONVERSATION HANDLERS
     # ============================================================
     
-    # 6.1 Бронирование (основной процесс записи)
+    # 6.1 Бронирование
     booking_conv_handler = ConversationHandler(
         entry_points=[
             MessageHandler(filters.Regex('^(🎤 Записаться в студию)$'), start_booking),
