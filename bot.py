@@ -7273,6 +7273,9 @@ async def useful_info_handler(update: Update, context):
         reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
     )
     
+    # Небольшая задержка перед отправкой второго сообщения
+    await asyncio.sleep(0.5)
+    
     # Отправляем второе сообщение БЕЗ клавиатуры
     await update.message.reply_text(
         caption_part2,
