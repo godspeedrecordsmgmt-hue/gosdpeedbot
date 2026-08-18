@@ -10801,7 +10801,7 @@ async def handle_no_date_option(update: Update, context):
 
 @handle_errors_with_rate_limit
 async def pending_command(update: Update, context):
-    """Команда /pending - показать все ожидающие заявки (только для админов)"""
+    """Команда /pending - показать все ожидающие записи (только для админов)"""
     user_id = update.effective_user.id
     
     if user_id not in Config.ADMIN_IDS:
@@ -10813,7 +10813,7 @@ async def pending_command(update: Update, context):
         return
     
     await update.message.reply_text(
-        "*🔍 Ищу ожидающие подтверждения заявки...*",
+        "*🔍 Ищу ожидающие подтверждения записи...*",
         parse_mode="Markdown"
     )
     
@@ -11193,7 +11193,7 @@ async def handle_date_selection(update: Update, context, text: str):
             safe_contact = context.user_data.get('safe_contact', context.user_data.get('contact', ''))
             
             confirmation_text = (
-                "*✅ Шаг 5/5: Подтверждение заявки на сведение*\n\n"
+                "*✅ Шаг 5/5: Подтверждение записи на сведение*\n\n"
                 "*✨ Проверьте свои данные:*\n\n"
                 f"👤 Имя: {safe_name}\n"
                 f"📱 Контакт: {safe_contact}\n"
@@ -11554,7 +11554,7 @@ async def handle_date_selection(update: Update, context, text: str):
         
         if "Договорная" in str(context.user_data.get('price', '')):
             confirmation_text = (
-                "*✅ Шаг 5/5: Подтверждение заявки на сведение*\n\n"
+                "*✅ Шаг 5/5: Подтверждение записи на сведение*\n\n"
                 "*✨ Проверьте свои данные:*\n\n"
                 f"👤 Имя: {safe_name}\n"
                 f"📱 Контакт: {safe_contact}\n"
@@ -11566,7 +11566,7 @@ async def handle_date_selection(update: Update, context, text: str):
             )
         else:
             confirmation_text = (
-                "*✅ Шаг 5/5: Подтверждение заявки на сведение*\n\n"
+                "*✅ Шаг 5/5: Подтверждение записи на сведение*\n\n"
                 "*✨ Проверьте свои данные:*\n\n"
                 f"👤 Имя: {safe_name}\n"
                 f"📱 Контакт: {safe_contact}\n"
@@ -11591,7 +11591,7 @@ async def handle_date_selection(update: Update, context, text: str):
             safe_contact = context.user_data.get('safe_contact', context.user_data.get('contact', ''))
             
             confirmation_text = (
-                "*✅ Шаг 5/5: Подтверждение заявки на создание трека*\n\n"
+                "*✅ Шаг 5/5: Подтверждение записи на создание трека*\n\n"
                 "*✨ Проверьте свои данные:*\n\n"
                 f"👤 Имя: {safe_name}\n"
                 f"📱 Контакт: {safe_contact}\n"
@@ -11677,7 +11677,7 @@ async def handle_confirmation_text(update: Update, context):
 
 @handle_errors_with_rate_limit
 async def confirm_booking(update: Update, context):
-    """Подтверждение и отправка заявки (списываем купон при создании)"""
+    """Подтверждение и отправка записи (списываем купон при создании)"""
     if await check_user_blocked(update, context):
         return ConversationHandler.END
     
@@ -11924,8 +11924,8 @@ async def confirm_booking(update: Update, context):
             "",
             f"*✨ Ожидайте подтверждения от администратора!*",
             "",
-            f"*📋 Детали вашей заявки:*",
-            f"• Номер заявки: #{booking_id}",
+            f"*📋 Детали вашей записи:*",
+            f"• Номер записи: #{booking_id}",
             f"• Имя: {safe_name}",
             f"• Контакт: {safe_contact}",
             f"• Услуга: {clean_service}"
@@ -11978,8 +11978,8 @@ async def confirm_booking(update: Update, context):
         admin_msg_lines = [
             f"*🚨 Новая заявка!*",
             "",
-            f"*📋 Детали заявки:*",
-            f"• Номер заявки: #{booking_id}",
+            f"*📋 Детали записи:*",
+            f"• Номер записи: #{booking_id}",
             f"• Пользователь: {safe_name}",
             f"• Контакт: {safe_contact}",
             f"• Услуга: {clean_service}"
@@ -15279,7 +15279,7 @@ async def handle_admin_confirm(update: Update, context):
 
 @handle_errors_with_rate_limit
 async def pending_command(update: Update, context):
-    """Команда /pending - показать все ожидающие заявки (только для админов)"""
+    """Команда /pending - показать все ожидающие записи (только для админов)"""
     user_id = update.effective_user.id
     
     if user_id not in Config.ADMIN_IDS:
@@ -15291,7 +15291,7 @@ async def pending_command(update: Update, context):
         return
     
     await update.message.reply_text(
-        "*🔍 Ищу ожидающие подтверждения заявки...*",
+        "*🔍 Ищу ожидающие подтверждения записи...*",
         parse_mode="Markdown"
     )
     
@@ -21371,8 +21371,8 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
         user_msg_lines = [
             f"*✅ Ваша заявка подтверждена!*",
             "",
-            f"*📋 Детали вашей заявки:*",
-            f"• Номер заявки: #{booking_id}",
+            f"*📋 Детали вашей записи:*",
+            f"• Номер записи: #{booking_id}",
             f"• Имя: {name}",
             f"• Контакт: {contact}",
             f"• Услуга: {clean_service}"
@@ -21630,8 +21630,8 @@ async def process_booking_rejection(booking_id: int, admin_id: int, context: Con
         user_msg_lines = [
             f"*❌ Ваша заявка отклонена*",
             "",
-            f"*📋 Детали вашей заявки:*",
-            f"• Номер заявки: #{booking_id}",
+            f"*📋 Детали вашей записи:*",
+            f"• Номер записи: #{booking_id}",
             f"• Имя: {name}",
             f"• Контакт: {contact}",
             f"• Услуга: {clean_service}"
