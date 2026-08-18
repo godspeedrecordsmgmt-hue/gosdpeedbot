@@ -9557,16 +9557,44 @@ async def handle_global_buttons(update: Update, context):
         await top_vinyls_handler(update, context)
         return ConversationHandler.END
     
+    if text == "❓ Помощь":
+        await help_handler(update, context)
+        return ConversationHandler.END
+    
+    if text == "❗️ Полезная информация":
+        await useful_info_handler(update, context)
+        return ConversationHandler.END
+    
     # ===== АДМИНСКИЕ КНОПКИ =====
+    if text == "👑 Создать запись":
+        return await handle_admin_create_booking(update, context)
+    
+    if text == "👑 Отменить запись":
+        return await handle_admin_cancel_start(update, context)
+    
+    if text == "👑 Заблокировать":
+        return await handle_admin_block_start(update, context)
+    
+    if text == "👑 Выдать достижение":
+        return await handle_admin_award_achievement_start(update, context)
+    
+    if text == "👑 Удалить достижение":
+        return await handle_admin_remove_achievement_start(update, context)
+    
+    if text == "👑 Пластинки":
+        return await handle_admin_vinyl_start(update, context)
+    
+    if text == "👑 Профиль":
+        return await handle_admin_profile_start(update, context)
+    
     if text == "👑 Выручка":
         return await handle_revenue_menu(update, context)
     
+    if text == "👑 Создать промокод":
+        return await admin_promo_start(update, context)
+    
     if text == "👑 Удалить промокод":
         return await admin_promo_delete_start(update, context)
-    
-    # ===== КНОПКА "НАЗАД" - НЕ ОБРАБАТЫВАЕМ ЗДЕСЬ ВООБЩЕ =====
-    # Она должна обрабатываться в handle_back_button для пользовательских состояний
-    # и в админских функциях для админских состояний
     
     # Если ничего не подошло - игнорируем
     return None
