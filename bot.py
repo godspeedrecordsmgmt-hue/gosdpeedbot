@@ -9587,6 +9587,8 @@ async def handle_global_buttons(update: Update, context):
 
 @handle_errors_with_rate_limit
 async def notifications_command(update: Update, context):
+    """Показывает ожидающие уведомления пользователя"""
+    
     if await check_user_blocked(update, context):
         return ConversationHandler.END
     
@@ -9624,14 +9626,22 @@ async def notifications_command(update: Update, context):
                 )
                 return
             
-            response_lines = ["*🔔 Ваши ожидающие уведомления*"]
+            message = "*🔔 Ваши ожидающие уведомления*\n\n"
             
             for row in rows:
                 (notif_id, booking_id, notif_type, status, 
                  planned_time, actual_time, service, date_str, time_slot) = row
                 
-                status_emoji = "⏳"
+                # Получаем часы из типа уведомления
+                hours = 0
+                if 'h_before' in notif_type:
+                    try:
+                        hours = int(notif_type.replace('h_before', ''))
+                    except:
+                        hours = 0
                 
+                # Форматируем время отправки
+                time_text = ""
                 if planned_time:
                     try:
                         planned_datetime = datetime.strptime(planned_time, '%Y-%m-%d %H:%M:%S')
@@ -9640,63 +9650,61 @@ async def notifications_command(update: Update, context):
                         
                         if time_until.total_seconds() > 0:
                             days = time_until.days
-                            hours = time_until.seconds // 3600
+                            hours_left = time_until.seconds // 3600
                             minutes = (time_until.seconds % 3600) // 60
                             
-                            time_text = "через "
                             if days > 0:
-                                time_text += f"{days} д. "
-                            if hours > 0:
-                                time_text += f"{hours} ч. "
-                            if minutes > 0:
-                                time_text += f"{minutes} мин."
+                                time_text = f"через {days} д. {hours_left} ч."
+                            elif hours_left > 0 and minutes > 0:
+                                time_text = f"через {hours_left} ч. {minutes} мин."
+                            elif hours_left > 0:
+                                time_text = f"через {hours_left} ч."
+                            elif minutes > 0:
+                                time_text = f"через {minutes} мин."
+                            else:
+                                time_text = "скоро"
                         else:
                             time_text = "скоро"
                     except:
                         time_text = ""
-                else:
-                    time_text = ""
                 
-                if 'h_before' in notif_type:
-                    hours = notif_type.replace('h_before', '')
-                    try:
-                        hours_int = int(hours)
-                        notif_text = f"*Напоминание за {PriceCalculator.format_hours_ru(hours_int)}*"
-                    except:
-                        notif_text = notif_type
-                else:
-                    notif_text = notif_type
+                # Очищаем дату от эмодзи
+                clean_date = date_str
+                if clean_date and '(' in clean_date:
+                    clean_date = clean_date.split('(')[0].strip()
+                if clean_date and clean_date[0] in "🟢🟡🟠🔴⚪️":
+                    clean_date = clean_date[2:].strip()
                 
-                response_lines.append(f"\n{status_emoji} {notif_text}")
+                # Форматируем время
+                display_time = time_slot
+                if display_time and '-' in display_time:
+                    display_time = DateTimeUtils.format_time_for_display(display_time)
                 
-                if service:
-                    response_lines.append(f"   • Услуга: {service}")
+                message += f"⏳ *Напоминание за {hours} часов*\n"
+                message += f"   • Услуга: {service}\n"
                 
-                if date_str and 'Не указана' not in date_str:
-                    response_lines.append(f"   • Дата: {date_str}")
+                if clean_date and 'Не указана' not in clean_date and clean_date != 'Запись в студии':
+                    message += f"   • Дата: {clean_date}\n"
                 
-                if time_slot and 'Не указано' not in time_slot:
-                    display_time = DateTimeUtils.format_time_for_display(time_slot)
-                    response_lines.append(f"   • Время: {display_time}")
+                if display_time and display_time not in ['Не указано', 'Не указано (договорная)']:
+                    message += f"   • Время: {display_time}\n"
                 
                 if time_text:
-                    response_lines.append(f"   • Отправка: {time_text}")
+                    message += f"   • Отправка: {time_text}\n"
                 
-                response_lines.append(f"   • ID записи: #{booking_id}")
+                message += f"   • ID записи: #{booking_id}\n\n"
             
-            response = "\n".join(response_lines)
-        
-        await update.message.reply_text(
-            response,
-            parse_mode="Markdown",
-            reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
-        )
+            await update.message.reply_text(
+                message,
+                parse_mode="Markdown",
+                reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
+            )
         
     except Exception as e:
         logger.error(f"Ошибка показа уведомлений: {e}")
         await update.message.reply_text(
-            "🔔 Мои уведомления\n\n"
-            "⚠️ Не удалось загрузить информацию",
+            "*🔔 Мои уведомления*\n\n"
+            "*⚠️ Не удалось загрузить информацию*",
             parse_mode="Markdown",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
         )
