@@ -9564,7 +9564,7 @@ async def handle_global_buttons(update: Update, context):
         await help_handler(update, context)
         return ConversationHandler.END
     
-    if text == "❗️ Полезная информация":  # ← ДОБАВЛЕНО!
+    if text == "❗️ Полезная информация":
         await useful_info_handler(update, context)
         return ConversationHandler.END
     
@@ -22135,12 +22135,9 @@ def setup_handlers(application):
     application.add_handler(CommandHandler("debugadd", debug_add_vinyls))
     
     # ============================================================
-    # 2. НОВЫЕ КНОПКИ (ВЫСОКИЙ ПРИОРИТЕТ)
+    # 2. НОВЫЕ КНОПКИ (ВЫСОКИЙ ПРИОРИТЕТ) - ВСЁ УБРАНО!
     # ============================================================
-    application.add_handler(
-        MessageHandler(filters.Regex('^(❓ Помощь)$'), help_handler)
-    )
-    # ❗️ ПОЛЕЗНАЯ ИНФОРМАЦИЯ УБРАНА ОТСЮДА!
+    # ❓ Помощь и ❗️ Полезная информация обрабатываются в handle_global_buttons
     
     # ============================================================
     # 3. CALLBACK QUERY HANDLERS
