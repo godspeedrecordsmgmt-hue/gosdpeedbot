@@ -9217,11 +9217,11 @@ async def show_my_bookings(update: Update, context):
             contract_bookings.sort(key=lambda x: x['id'])
             
             message_parts = []
-            current_part = f"*📋 Мои записи*\n\n*👤 Профиль: {SecurityUtils.safe_markdown_text(current_user_display)}*\n\n"
+            current_part = f"*📅 Мои записи*\n\n*👤 Профиль: {SecurityUtils.safe_markdown_text(current_user_display)}*\n\n"
             
             # ===== ОБЫЧНЫЕ ЗАПИСИ =====
             if dated_bookings:
-                current_part += "*📅 Записи в студии:*\n\n"
+                current_part += "*📋 Записи в студии:*\n\n"
                 
                 for booking in dated_bookings:
                     booking_text = f"{booking['status_emoji']} *Запись #{booking['id']}*\n"
