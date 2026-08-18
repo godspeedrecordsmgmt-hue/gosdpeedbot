@@ -7557,9 +7557,9 @@ async def top_vinyls_handler(update: Update, context):
                         message += f"*💡 У вас пока нет пластинок*\n\n"
             
             message += "*✨ Как получить пластинки:*\n"
-            message += "• Запись в студии — *+25 пластинок*\n"
-            message += "• Пригласить друга — *+25 пластинок*\n"
-            message += "• Выполнить достижения — *от 1000+ пластинок*"
+            message += "• Запись в студии — +25 пластинок\n"
+            message += "• Пригласить друга — +25 пластинок\n"
+            message += "• Выполнить достижения — от 1000+ пластинок"
             
             await update.message.reply_text(
                 message,
