@@ -7175,37 +7175,37 @@ async def useful_info_handler(update: Update, context):
     
     file_path = "Полезная_информация.docx"
     
+    # ===== ТЕКСТОВОЕ СООБЩЕНИЕ (ПЕРВОЕ) =====
     message = (
         "*❗️ Полезная информация*\n\n"
         "*📋 В этом документе собрана вся полезная информация о студии:*\n\n"
         "*👇 Ознакомьтесь с документом:*"
     )
     
+    await update.message.reply_text(
+        message,
+        parse_mode="Markdown",
+        reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
+    )
+    
+    # ===== ФАЙЛ (ВТОРОЕ СООБЩЕНИЕ) =====
     try:
-        # Проверяем наличие файла
         if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
             with open(file_path, 'rb') as doc:
                 await update.message.reply_document(
                     document=doc,
-                    filename="Полезная_информация.docx",
-                    caption=message,
-                    parse_mode="Markdown",
-                    reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
+                    filename="Полезная_информация.docx"
                 )
         else:
-            # Если файл не найден, отправляем только текст
             await update.message.reply_text(
-                message,
-                parse_mode="Markdown",
-                reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
+                "❌ Файл с информацией временно недоступен.",
+                parse_mode="Markdown"
             )
     except Exception as e:
         logger.error(f"❌ Ошибка отправки файла: {e}")
-        # Если ошибка, отправляем только текст
         await update.message.reply_text(
-            message,
-            parse_mode="Markdown",
-            reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
+            "❌ Не удалось загрузить файл. Попробуйте позже.",
+            parse_mode="Markdown"
         )
 
 @handle_errors_with_rate_limit
