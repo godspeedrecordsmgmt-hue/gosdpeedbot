@@ -7168,41 +7168,70 @@ async def help_handler(update: Update, context):
 
 @handle_errors_with_rate_limit
 async def useful_info_handler(update: Update, context):
-    """Показывает полезную информацию с прикреплённым DOCX файлом"""
+    """Показывает полезную информацию (краткая версия)"""
     
     if await check_user_blocked(update, context):
         return ConversationHandler.END
     
     caption = (
         "*❗️ Полезная информация*\n\n"
-        "*📍 Адрес студии:* Садовая ул., 91\n\n"
+        "*📍 Адрес студии:*\n"
+        "Садовая ул., 91\n\n"
         "*⏰ Режим работы:*\n"
         "• Круглосуточно\n"
         "• По предварительной записи\n\n"
+        "*🎹 Оборудование:*\n"
+        "• Микрофон класса «Люкс» — Neumann TLM 103\n"
+        "• Аудиоинтерфейс — Audient iD4 MKII\n"
+        "• Студийные мониторы — Adam T7V\n"
+        "• Закрытые наушники — Beyerdynamic DT 770 Pro\n\n"
+        "*🎤 Услуги и цены:*\n\n"
+        "*Запись вокала и инструментов:*\n\n"
+        "*С инженером:*\n"
+        "• до 3 часов — 1500₽/час\n"
+        "• от 3 до 6 часов — 1300₽/час\n"
+        "• от 6 часов — 1100₽/час\n\n"
+        "*Без инженера:*\n"
+        "• до 3 часов — 1400₽/час\n"
+        "• от 3 до 6 часов — 1200₽/час\n"
+        "• от 6 часов — 1000₽/час\n\n"
+        "*🌙 Ночная надбавка (00:00–06:00):*\n"
+        "• С инженером: +200₽/час\n"
+        "• Без инженера: не применяется\n\n"
+        "*⏰ 12-часовая аренда:*\n"
+        "• День (9:00–21:00) — 7000₽\n"
+        "• Ночь (21:00–9:00) — 6500₽\n"
+        "• Залог — по договору\n\n"
+        "*🎚️ Сведение/мастеринг:*\n"
+        "• Трек — 2500₽\n"
+        "• Альбом — договорная\n\n"
+        "*🎵 Создание трека:*\n"
+        "• Трек — 9000₽ (4 часа)\n"
+        "• Альбом — договорная\n\n"
+        "*🎹 Аранжировка/Биты:*\n"
+        "• MP3 Leasing — 1500₽\n"
+        "• WAV Leasing — 2500₽\n"
+        "• WAV TRACK OUT — 5000₽\n"
+        "• EXCLUSIVE RIGHTS — от 10000₽\n\n"
+        "*💳 Способы оплаты:*\n"
+        "• Наличные\n"
+        "• Банковский перевод\n\n"
         "*📞 Контакты:*\n"
         "• Администратор: @mothman32\n"
         "• Telegram канал: @godspeed_records\n\n"
-        "*⬇️ Подробная информация в прикреплённом файле*"
+        "*⚠️ Внимание!*\n"
+        "• Сервис находится в бета-тестировании\n"
+        "• Возможны небольшие ошибки\n"
+        "• Мы постоянно улучшаем Сервис\n"
+        "• Ваши отзывы помогают нам стать лучше\n\n"
+        "*🛠 По техническим вопросам обращайтесь к @mothman32*"
     )
     
-    docx_path = "Полезная_информация.docx"
-    
-    try:
-        with open(docx_path, 'rb') as docx_file:
-            await update.message.reply_document(
-                document=docx_file,
-                filename="Полезная_информация.docx",
-                caption=caption,
-                parse_mode="Markdown",
-                reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
-            )
-    except FileNotFoundError:
-        await update.message.reply_text(
-            caption,
-            parse_mode="Markdown",
-            reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
-        )
-        logger.error("❌ Файл Полезная_информация.docx не найден")
+    await update.message.reply_text(
+        caption,
+        parse_mode="Markdown",
+        reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
+    )
 
 @handle_errors_with_rate_limit
 async def start(update: Update, context):
