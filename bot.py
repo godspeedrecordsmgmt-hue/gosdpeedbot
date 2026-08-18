@@ -7168,12 +7168,10 @@ async def help_handler(update: Update, context):
 
 @handle_errors_with_rate_limit
 async def useful_info_handler(update: Update, context):
-    """Показывает полезную информацию с фото студии"""
+    """Показывает полезную информацию"""
     
     if await check_user_blocked(update, context):
         return ConversationHandler.END
-    
-    photo_path = "photos/studio.jpg"
     
     caption = (
         "❗️ Полезная информация\n\n"
@@ -7208,28 +7206,11 @@ async def useful_info_handler(update: Update, context):
         "🛠 По техническим вопросам обращайтесь к администратору @mothman32"
     )
     
-    try:
-        if os.path.exists(photo_path) and os.path.getsize(photo_path) > 0:
-            with open(photo_path, 'rb') as photo:
-                await update.message.reply_photo(
-                    photo=photo,
-                    caption=caption,
-                    parse_mode=None,
-                    reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
-                )
-        else:
-            await update.message.reply_text(
-                caption,
-                parse_mode=None,
-                reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
-            )
-    except Exception as e:
-        logger.error(f"❌ Ошибка отправки: {e}")
-        await update.message.reply_text(
-            caption,
-            parse_mode=None,
-            reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
-        )
+    await update.message.reply_text(
+        caption,
+        parse_mode=None,
+        reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
+    )
 
 @handle_errors_with_rate_limit
 async def start(update: Update, context):
