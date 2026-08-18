@@ -7179,12 +7179,12 @@ async def useful_info_handler(update: Update, context):
     message = (
         "*❗️ Полезная информация*\n\n"
         "*📋 В этом документе собрана вся полезная информация о студии:*\n\n"
-        "• *📍 Адрес и контакты*\n"
-        "• *⏰ Режим работы*\n"
-        "• *🎧 Оборудование студии*\n"
-        "• *💰 Полный прайс-лист*\n"
-        "• *📅 Правила бронирования*\n"
-        "• *❌ Условия отмены*\n\n"
+        "• *Адрес и контакты*\n"
+        "• *Режим работы*\n"
+        "• *Оборудование студии*\n"
+        "• *Полный прайс-лист*\n"
+        "• *Правила бронирования*\n"
+        "• *Условия отмены*\n\n"
         "*👇 Ознакомьтесь с документом:*"
     )
     
@@ -7199,26 +7199,22 @@ async def useful_info_handler(update: Update, context):
             with open(file_path, 'rb') as doc:
                 await update.message.reply_document(
                     document=doc,
-                    filename="Полезная_информация.docx"
+                    filename="Полезная_информация.docx",
+                    reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)  # ← КЛАВИАТУРА ЗДЕСЬ!
                 )
         else:
             await update.message.reply_text(
                 "❌ Файл с информацией временно недоступен.",
-                parse_mode="Markdown"
+                parse_mode="Markdown",
+                reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
             )
     except Exception as e:
         logger.error(f"❌ Ошибка отправки файла: {e}")
         await update.message.reply_text(
             "❌ Не удалось загрузить файл. Попробуйте позже.",
-            parse_mode="Markdown"
+            parse_mode="Markdown",
+            reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
         )
-    
-    # ===== КЛАВИАТУРА =====
-    await update.message.reply_text(
-        "*👇 Выберите подходящий вариант:*",
-        parse_mode="Markdown",
-        reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
-    )
 
 @handle_errors_with_rate_limit
 async def start(update: Update, context):
