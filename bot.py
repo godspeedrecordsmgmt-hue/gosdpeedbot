@@ -7168,7 +7168,7 @@ async def help_handler(update: Update, context):
 
 @handle_errors_with_rate_limit
 async def useful_info_handler(update: Update, context):
-    """Показывает полезную информацию"""
+    """Показывает полезную информацию с прикреплённым DOCX файлом"""
     
     if await check_user_blocked(update, context):
         return ConversationHandler.END
@@ -7176,6 +7176,9 @@ async def useful_info_handler(update: Update, context):
     caption = (
         "*❗️ Полезная информация*\n\n"
         "*📍 Адрес студии:* Садовая ул., 91\n\n"
+        "*⏰ Режим работы:*\n"
+        "• Круглосуточно\n"
+        "• По предварительной записи\n\n"
         "*📞 Контакты:*\n"
         "• Администратор: @mothman32\n"
         "• Telegram канал: @godspeed_records\n\n"
