@@ -7166,14 +7166,17 @@ async def help_handler(update: Update, context):
         reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
     )
 
+import telegramify_markdown
+from telegramify_markdown import split_markdownv2
+
 @handle_errors_with_rate_limit
 async def useful_info_handler(update: Update, context):
-    """Показывает полезную информацию"""
+    """Показывает полезную информацию с жирным шрифтом"""
     
     if await check_user_blocked(update, context):
         return ConversationHandler.END
     
-    caption_part1 = (
+    long_text = (
         "*❗️ Полезная информация*\n\n"
         "*📍 Адрес студии:* Садовая ул., 91\n\n"
         "*⏰ Режим работы:*\n"
@@ -7215,10 +7218,7 @@ async def useful_info_handler(update: Update, context):
         "*💳 Способы оплаты:*\n"
         "• Наличные\n"
         "• Банковский перевод\n"
-        "• Перевод по СБП"
-    )
-    
-    caption_part2 = (
+        "• Перевод по СБП\n\n"
         "*📅 Правила бронирования:*\n\n"
         "*⏰ Минимальное время до записи:*\n"
         "• С инженером — от 48 часов\n"
@@ -7266,21 +7266,23 @@ async def useful_info_handler(update: Update, context):
         "*🛠 По техническим вопросам обращайтесь к администратору @mothman32*"
     )
     
-    # Отправляем первое сообщение с клавиатурой
-    await update.message.reply_text(
-        caption_part1,
-        parse_mode="Markdown",
-        reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
-    )
-    
-    # Небольшая задержка перед отправкой второго сообщения
-    await asyncio.sleep(0.5)
-    
-    # Отправляем второе сообщение БЕЗ клавиатуры
-    await update.message.reply_text(
-        caption_part2,
-        parse_mode="Markdown"
-    )
+    try:
+        # Разбиваем на безопасные части с сохранением MarkdownV2
+        for chunk in split_markdownv2(long_text, max_utf16_len=4096):
+            await update.message.reply_text(
+                chunk,
+                parse_mode="MarkdownV2",
+                reply_markup=KeyboardManager.get_main_keyboard(update.effective_user) if chunk == long_text[:4096] else None
+            )
+            await asyncio.sleep(0.3)  # небольшая задержка между сообщениями
+    except Exception as e:
+        logger.error(f"❌ Ошибка отправки полезной информации: {e}")
+        # Если MarkdownV2 не сработал, отправляем без форматирования
+        await update.message.reply_text(
+            long_text,
+            parse_mode=None,
+            reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
+        )
 
 @handle_errors_with_rate_limit
 async def start(update: Update, context):
