@@ -9611,8 +9611,7 @@ async def notifications_command(update: Update, context):
                 AND b.service NOT LIKE '%Админская%'
                 AND b.service NOT LIKE '%админская%'
                 ORDER BY n.planned_send_time ASC
-                LIMIT 20
-            ''', (user_id,))
+            ''', (user_id,))  # ← УБРАН ЛИМИТ
             
             rows = cursor.fetchall()
             
@@ -9681,7 +9680,7 @@ async def notifications_command(update: Update, context):
                 if display_time and '-' in display_time:
                     display_time = DateTimeUtils.format_time_for_display(display_time)
                 
-                # ===== УБИРАЕМ СМАЙЛИКИ ИЗ УСЛУГИ =====
+                # Убираем смайлики из услуги
                 clean_service = service
                 for emoji in ['🎤', '🎸', '⏰', '🎚️', '🎵', '🎹']:
                     clean_service = clean_service.replace(emoji, '').strip()
