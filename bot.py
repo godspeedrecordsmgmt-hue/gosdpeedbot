@@ -9626,7 +9626,8 @@ async def notifications_command(update: Update, context):
                 )
                 return
             
-            message = "*🔔 Ваши ожидающие уведомления*\n\n"
+            message = "*🔔 Напоминания*\n\n"
+            message += "*📋 Детали ваших заявок:*\n\n"
             
             for row in rows:
                 (notif_id, booking_id, notif_type, status, 
@@ -9703,7 +9704,7 @@ async def notifications_command(update: Update, context):
     except Exception as e:
         logger.error(f"Ошибка показа уведомлений: {e}")
         await update.message.reply_text(
-            "*🔔 Мои уведомления*\n\n"
+            "*🔔 Напоминания*\n\n"
             "*⚠️ Не удалось загрузить информацию*",
             parse_mode="Markdown",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
