@@ -7266,16 +7266,17 @@ async def useful_info_handler(update: Update, context):
         "*🛠 По техническим вопросам обращайтесь к администратору @mothman32*"
     )
     
+    # Отправляем первое сообщение с клавиатурой
     await update.message.reply_text(
         caption_part1,
         parse_mode="Markdown",
         reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
     )
     
+    # Отправляем второе сообщение БЕЗ клавиатуры
     await update.message.reply_text(
         caption_part2,
-        parse_mode="Markdown",
-        reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
+        parse_mode="Markdown"
     )
 
 @handle_errors_with_rate_limit
