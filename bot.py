@@ -7173,8 +7173,7 @@ async def useful_info_handler(update: Update, context):
     if await check_user_blocked(update, context):
         return ConversationHandler.END
     
-    # Текст БЕЗ Markdown (простой текст)
-    caption = (
+    message = (
         "*❗️ Полезная информация*\n\n"
         "*📍 Адрес студии:*\n"
         "Садовая ул., 91\n\n"
@@ -7218,8 +7217,8 @@ async def useful_info_handler(update: Update, context):
     )
     
     await update.message.reply_text(
-        caption,
-        parse_mode=None,
+        message,
+        parse_mode="Markdown",  # ← ИСПРАВЛЕНО!
         reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
     )
 
