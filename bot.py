@@ -7168,10 +7168,12 @@ async def help_handler(update: Update, context):
 
 @handle_errors_with_rate_limit
 async def useful_info_handler(update: Update, context):
-    """Показывает полезную информацию (краткая версия)"""
+    """Показывает полезную информацию с фото студии"""
     
     if await check_user_blocked(update, context):
         return ConversationHandler.END
+    
+    photo_path = "photos/studio.jpg"
     
     caption = (
         "*❗️ Полезная информация*\n\n"
@@ -7180,58 +7182,54 @@ async def useful_info_handler(update: Update, context):
         "*⏰ Режим работы:*\n"
         "• Круглосуточно\n"
         "• По предварительной записи\n\n"
-        "*🎹 Оборудование:*\n"
-        "• Микрофон класса «Люкс» — Neumann TLM 103\n"
-        "• Аудиоинтерфейс — Audient iD4 MKII\n"
-        "• Студийные мониторы — Adam T7V\n"
-        "• Закрытые наушники — Beyerdynamic DT 770 Pro\n\n"
-        "*🎤 Услуги и цены:*\n\n"
-        "*Запись вокала и инструментов:*\n\n"
-        "*С инженером:*\n"
-        "• до 3 часов — 1500₽/час\n"
-        "• от 3 до 6 часов — 1300₽/час\n"
-        "• от 6 часов — 1100₽/час\n\n"
-        "*Без инженера:*\n"
-        "• до 3 часов — 1400₽/час\n"
-        "• от 3 до 6 часов — 1200₽/час\n"
-        "• от 6 часов — 1000₽/час\n\n"
-        "*🌙 Ночная надбавка (00:00–06:00):*\n"
-        "• С инженером: +200₽/час\n"
-        "• Без инженера: не применяется\n\n"
-        "*⏰ 12-часовая аренда:*\n"
-        "• День (9:00–21:00) — 7000₽\n"
-        "• Ночь (21:00–9:00) — 6500₽\n"
-        "• Залог — по договору\n\n"
-        "*🎚️ Сведение/мастеринг:*\n"
-        "• Трек — 2500₽\n"
-        "• Альбом — договорная\n\n"
-        "*🎵 Создание трека:*\n"
-        "• Трек — 9000₽ (4 часа)\n"
-        "• Альбом — договорная\n\n"
-        "*🎹 Аранжировка/Биты:*\n"
-        "• MP3 Leasing — 1500₽\n"
-        "• WAV Leasing — 2500₽\n"
-        "• WAV TRACK OUT — 5000₽\n"
-        "• EXCLUSIVE RIGHTS — от 10000₽\n\n"
+        "*🎧 Оборудование:*\n"
+        "• Профессиональная акустика\n"
+        "• Конденсаторные микрофоны\n"
+        "• Звуковая карта высокого класса\n"
+        "• Мониторы для сведения\n\n"
+        "*🎤 Услуги и цены:*\n"
+        "• Запись вокала — от 1000₽/час\n"
+        "• Запись инструментов — от 1000₽/час\n"
+        "• 12-часовая аренда — 7000₽/день, 6500₽/ночь\n"
+        "• Сведение/мастеринг — 2500₽/трек\n"
+        "• Создание трека — 9000₽\n"
+        "• Аранжировка/Биты — от 1500₽\n\n"
         "*💳 Способы оплаты:*\n"
         "• Наличные\n"
-        "• Банковский перевод\n\n"
+        "• Банковский перевод\n"
+        "• Перевод по СБП\n\n"
         "*📞 Контакты:*\n"
         "• Администратор: @mothman32\n"
         "• Telegram канал: @godspeed_records\n\n"
-        "*⚠️ Внимание!*\n"
-        "• Сервис находится в бета-тестировании\n"
+        "*⚠️ Внимание! Бот находится в бета-тестировании*\n"
         "• Возможны небольшие ошибки\n"
-        "• Мы постоянно улучшаем Сервис\n"
+        "• Мы постоянно улучшаем бота\n"
         "• Ваши отзывы помогают нам стать лучше\n\n"
-        "*🛠 По техническим вопросам обращайтесь к @mothman32*"
+        "*🛠 По техническим вопросам обращайтесь к администратору @mothman32*"
     )
     
-    await update.message.reply_text(
-        caption,
-        parse_mode="Markdown",
-        reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
-    )
+    try:
+        if os.path.exists(photo_path) and os.path.getsize(photo_path) > 0:
+            with open(photo_path, 'rb') as photo:
+                await update.message.reply_photo(
+                    photo=photo,
+                    caption=caption,
+                    parse_mode="Markdown",
+                    reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
+                )
+        else:
+            await update.message.reply_text(
+                caption,
+                parse_mode="Markdown",
+                reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
+            )
+    except Exception as e:
+        logger.error(f"❌ Ошибка отправки: {e}")
+        await update.message.reply_text(
+            caption,
+            parse_mode="Markdown",
+            reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
+        )
 
 @handle_errors_with_rate_limit
 async def start(update: Update, context):
@@ -9550,7 +9548,7 @@ async def handle_global_buttons(update: Update, context):
     
     # ===== КНОПКИ, КОТОРЫЕ ДОЛЖЕН ОБРАБАТЫВАТЬ CONVERSATIONHANDLER =====
     if text in ["✅ Всё верно, отправить", "✏️ Исправить данные", "❌ Отменить", "↩️ Назад"]:
-        return None  # Пропускаем, чтобы обработал ConversationHandler
+        return None
     
     # ===== ОСНОВНЫЕ КНОПКИ ПОЛЬЗОВАТЕЛЯ =====
     if text == "📅 Мои записи":
@@ -9585,13 +9583,9 @@ async def handle_global_buttons(update: Update, context):
         await top_vinyls_handler(update, context)
         return ConversationHandler.END
     
-    if text == "❓ Помощь":
-        await help_handler(update, context)
-        return ConversationHandler.END
-    
-    if text == "❗️ Полезная информация":
-        await useful_info_handler(update, context)
-        return ConversationHandler.END
+    # ===== КНОПКА "ГЛАВНОЕ МЕНЮ" =====
+    if text == "↩️ Главное меню":
+        return await handle_main_menu_button(update, context)
     
     # ===== АДМИНСКИЕ КНОПКИ =====
     if text == "👑 Создать запись":
@@ -9624,7 +9618,14 @@ async def handle_global_buttons(update: Update, context):
     if text == "👑 Удалить промокод":
         return await admin_promo_delete_start(update, context)
     
-    # Если ничего не подошло - игнорируем
+    # ===== КНОПКИ ПОМОЩИ =====
+    if text == "❓ Помощь":
+        return await help_handler(update, context)
+    
+    if text == "❗️ Полезная информация":
+        return await useful_info_handler(update, context)
+    
+    # ===== ЕСЛИ НИЧЕГО НЕ ПОДОШЛО =====
     return None
 
 @handle_errors_with_rate_limit
@@ -22185,38 +22186,49 @@ def setup_handlers(application):
     application.add_handler(CommandHandler("debugadd", debug_add_vinyls))
     
     # ============================================================
-    # 2. НОВЫЕ КНОПКИ (ВЫСОКИЙ ПРИОРИТЕТ) - group=0
+    # 2. НОВЫЕ КНОПКИ (ВЫСОКИЙ ПРИОРИТЕТ)
     # ============================================================
     application.add_handler(
-        MessageHandler(filters.Regex('^(❓ Помощь)$'), help_handler),
-        group=0
+        MessageHandler(filters.Regex('^(❓ Помощь)$'), help_handler)
     )
     application.add_handler(
-        MessageHandler(filters.Regex('^(❗️ Полезная информация)$'), useful_info_handler),
-        group=0
+        MessageHandler(filters.Regex('^(❗️ Полезная информация)$'), useful_info_handler)
     )
     
     # ============================================================
     # 3. CALLBACK QUERY HANDLERS (ДЛЯ INLINE КНОПОК)
     # ============================================================
+    # Выручка
     application.add_handler(CallbackQueryHandler(handle_revenue_period_selection, pattern="^revenue_"))
+    
+    # Промокоды (пользовательские)
     application.add_handler(CallbackQueryHandler(promo_callback_handler, pattern="^promo_"))
+    
+    # Промокоды (админские - УДАЛЕНИЕ)
     application.add_handler(CallbackQueryHandler(admin_promo_delete_callback_handler, pattern="^admin_del_promo_"))
     application.add_handler(CallbackQueryHandler(admin_promo_delete_confirm_handler, pattern="^admin_confirm_del_"))
     application.add_handler(CallbackQueryHandler(admin_promo_delete_confirm_handler, pattern="^admin_cancel_del$"))
+    
+    # Рефералы
     application.add_handler(CallbackQueryHandler(enter_referral_code_callback, pattern="^enter_referral_code$"))
     application.add_handler(CallbackQueryHandler(show_my_referrals_callback, pattern="^show_my_referrals$"))
     application.add_handler(CallbackQueryHandler(back_to_referral_callback, pattern="^back_to_referral$"))
+    
+    # Админская отмена (конкретные callback)
     application.add_handler(CallbackQueryHandler(admin_cancel_confirm_handler, pattern="^admin_cancel_confirm_"))
     application.add_handler(CallbackQueryHandler(admin_cancel_keep_handler, pattern="^admin_cancel_keep$"))
     application.add_handler(CallbackQueryHandler(admin_cancel_callback_handler, pattern="^admin_cancel_\\d+$"))
+    
+    # Админское удаление достижений
     application.add_handler(CallbackQueryHandler(admin_remove_achievement_callback, pattern="^admin_remove_achievement_\\d+$"))
     application.add_handler(CallbackQueryHandler(admin_remove_achievement_confirm, pattern="^admin_remove_achievement_confirm_"))
     application.add_handler(CallbackQueryHandler(admin_remove_achievement_cancel, pattern="^admin_remove_achievement_cancel$"))
+    
+    # Основной callback (отмена записей пользователем, подтверждение и т.д.)
     application.add_handler(CallbackQueryHandler(button_callback_handler))
     
     # ============================================================
-    # 4. ПРОМОКОДЫ (ВВОД) - group=0
+    # 4. ПРОМОКОДЫ (ВВОД) - САМЫЙ ВЫСОКИЙ ПРИОРИТЕТ СРЕДИ MessageHandler
     # ============================================================
     application.add_handler(
         MessageHandler(
@@ -22227,7 +22239,7 @@ def setup_handlers(application):
     )
     
     # ============================================================
-    # 5. РЕФЕРАЛЬНЫЕ КОДЫ - group=1
+    # 5. РЕФЕРАЛЬНЫЕ КОДЫ - ВТОРОЙ ПРИОРИТЕТ
     # ============================================================
     application.add_handler(
         MessageHandler(
@@ -22242,9 +22254,10 @@ def setup_handlers(application):
     )
     
     # ============================================================
-    # 6. CONVERSATION HANDLERS
+    # 6. CONVERSATION HANDLERS (ДЛЯ МНОГОШАГОВЫХ ПРОЦЕССОВ)
     # ============================================================
     
+    # 6.1 Бронирование (основной процесс записи)
     booking_conv_handler = ConversationHandler(
         entry_points=[
             MessageHandler(filters.Regex('^(🎤 Записаться в студию)$'), start_booking),
@@ -22277,6 +22290,7 @@ def setup_handlers(application):
     )
     application.add_handler(booking_conv_handler)
     
+    # 6.2 Админская запись
     admin_booking_conv_handler = ConversationHandler(
         entry_points=[
             MessageHandler(filters.Regex('^(👑 Создать запись)$'), handle_admin_create_booking),
@@ -22296,6 +22310,7 @@ def setup_handlers(application):
     )
     application.add_handler(admin_booking_conv_handler)
     
+    # 6.3 Админская отмена записи
     admin_cancel_conv_handler = ConversationHandler(
         entry_points=[
             MessageHandler(filters.Regex('^(👑 Отменить запись)$'), handle_admin_cancel_start),
@@ -22316,6 +22331,7 @@ def setup_handlers(application):
     )
     application.add_handler(admin_cancel_conv_handler)
     
+    # 6.4 Админская блокировка
     admin_block_conv_handler = ConversationHandler(
         entry_points=[
             MessageHandler(filters.Regex('^(👑 Заблокировать)$'), handle_admin_block_start),
@@ -22335,6 +22351,7 @@ def setup_handlers(application):
     )
     application.add_handler(admin_block_conv_handler)
     
+    # 6.5 Админская выдача достижения
     admin_achievement_conv_handler = ConversationHandler(
         entry_points=[
             MessageHandler(filters.Regex('^(👑 Выдать достижение)$'), handle_admin_award_achievement_start),
@@ -22353,6 +22370,7 @@ def setup_handlers(application):
     )
     application.add_handler(admin_achievement_conv_handler)
     
+    # 6.6 Админское удаление достижения
     admin_remove_achievement_conv_handler = ConversationHandler(
         entry_points=[
             MessageHandler(filters.Regex('^(👑 Удалить достижение)$'), handle_admin_remove_achievement_start),
@@ -22373,6 +22391,7 @@ def setup_handlers(application):
     )
     application.add_handler(admin_remove_achievement_conv_handler)
     
+    # 6.7 Админское управление пластинками
     admin_vinyl_conv_handler = ConversationHandler(
         entry_points=[
             MessageHandler(filters.Regex('^(👑 Пластинки)$'), handle_admin_vinyl_start),
@@ -22392,6 +22411,7 @@ def setup_handlers(application):
     )
     application.add_handler(admin_vinyl_conv_handler)
     
+    # 6.8 Админский просмотр профиля
     admin_profile_conv_handler = ConversationHandler(
         entry_points=[
             MessageHandler(filters.Regex('^(👑 Профиль)$'), handle_admin_profile_start),
@@ -22408,6 +22428,7 @@ def setup_handlers(application):
     )
     application.add_handler(admin_profile_conv_handler)
     
+    # 6.9 Админское создание промокода
     admin_promo_conv_handler = ConversationHandler(
         entry_points=[
             MessageHandler(filters.Regex('^(👑 Создать промокод)$'), admin_promo_start),
@@ -22442,7 +22463,7 @@ def setup_handlers(application):
     )
     
     # ============================================================
-    # 8. ГЛОБАЛЬНЫЙ ОБРАБОТЧИК КНОПОК (НИЗКИЙ ПРИОРИТЕТ) - group=2
+    # 8. ГЛОБАЛЬНЫЙ ОБРАБОТЧИК КНОПОК (НИЗКИЙ ПРИОРИТЕТ)
     # ============================================================
     application.add_handler(
         MessageHandler(filters.TEXT & ~filters.COMMAND, handle_global_buttons),
