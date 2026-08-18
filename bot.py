@@ -7173,7 +7173,7 @@ async def useful_info_handler(update: Update, context):
     if await check_user_blocked(update, context):
         return ConversationHandler.END
     
-    caption = (
+    caption_part1 = (
         "*❗️ Полезная информация*\n\n"
         "*📍 Адрес студии:* Садовая ул., 91\n\n"
         "*⏰ Режим работы:*\n"
@@ -7215,7 +7215,10 @@ async def useful_info_handler(update: Update, context):
         "*💳 Способы оплаты:*\n"
         "• Наличные\n"
         "• Банковский перевод\n"
-        "• Перевод по СБП\n\n"
+        "• Перевод по СБП"
+    )
+    
+    caption_part2 = (
         "*📅 Правила бронирования:*\n\n"
         "*⏰ Минимальное время до записи:*\n"
         "• С инженером — от 48 часов\n"
@@ -7264,7 +7267,13 @@ async def useful_info_handler(update: Update, context):
     )
     
     await update.message.reply_text(
-        caption,
+        caption_part1,
+        parse_mode="Markdown",
+        reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
+    )
+    
+    await update.message.reply_text(
+        caption_part2,
         parse_mode="Markdown",
         reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
     )
