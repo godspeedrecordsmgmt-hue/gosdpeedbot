@@ -7168,52 +7168,45 @@ async def help_handler(update: Update, context):
 
 @handle_errors_with_rate_limit
 async def useful_info_handler(update: Update, context):
-    """Показывает полезную информацию"""
+    """Показывает полезную информацию с файлом"""
     
     if await check_user_blocked(update, context):
         return ConversationHandler.END
     
+    file_path = "Полезная_информация.docx"
+    
     message = (
         "*❗️ Полезная информация*\n\n"
-        "*📍 Адрес студии:*\n"
-        "Садовая ул., 91\n\n"
-        "*⏰ Режим работы:*\n"
-        "• Круглосуточно\n"
-        "• По предварительной записи\n\n"
-        "*🎤 Цены на услуги:*\n\n"
-        "🎤 *Запись вокала и 🎸 *Запись инструментов:*\n"
-        "• С инженером:\n"
-        "  • до 3 часов — *1500₽/час*\n"
-        "  • от 3 часов — *1300₽/час*\n"
-        "  • от 6 часов — *1100₽/час*\n"
-        "• Без инженера:\n"
-        "  • до 3 часов — *1400₽/час*\n"
-        "  • от 3 часов — *1200₽/час*\n"
-        "  • от 6 часов — *1000₽/час*\n\n"
-        "⏰ *12-часовая аренда:*\n"
-        "• День (9:00-21:00) — *7000₽* + залог(\n"
-        "• Ночь (21:00-9:00) — *6500₽*\n\n"
-        "🎚️ *Сведение/мастеринг:*\n"
-        "• Трек — *2500₽*\n"
-        "• Альбом — договорная\n\n"
-        "🎵 *Создание трека:*\n"
-        "• Трек — *9000₽*\n"
-        "• Альбом — договорная\n\n"
-        "*📞 Контакты:*\n"
-        "• Администратор: @mothman32\n"
-        "• Telegram канал: @godspeed_records\n\n"
-        "*⚠️ Сервис находится в бета-тестировании*\n"
-        "• Возможны небольшие ошибки\n"
-        "• Мы постоянно улучшаем сервис\n"
-        "• Ваши отзывы помогают нам стать лучше\n\n"
-        "*🛠 По техническим вопросам обращайтесь к администратору @mothman32*"
+        "*📋 В этом документе собрана вся полезная информация о студии:*\n\n"
+        "*👇 Ознакомьтесь с документом:*"
     )
     
-    await update.message.reply_text(
-        message,
-        parse_mode="Markdown",
-        reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
-    )
+    try:
+        # Проверяем наличие файла
+        if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
+            with open(file_path, 'rb') as doc:
+                await update.message.reply_document(
+                    document=doc,
+                    filename="Полезная_информация.docx",
+                    caption=message,
+                    parse_mode="Markdown",
+                    reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
+                )
+        else:
+            # Если файл не найден, отправляем только текст
+            await update.message.reply_text(
+                message,
+                parse_mode="Markdown",
+                reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
+            )
+    except Exception as e:
+        logger.error(f"❌ Ошибка отправки файла: {e}")
+        # Если ошибка, отправляем только текст
+        await update.message.reply_text(
+            message,
+            parse_mode="Markdown",
+            reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
+        )
 
 @handle_errors_with_rate_limit
 async def start(update: Update, context):
@@ -9524,7 +9517,6 @@ async def handle_main_menu(update: Update, context):
     # Если ничего не подошло - игнорируем
     return None
 
-@handle_errors_with_rate_limit
 async def handle_global_buttons(update: Update, context):
     text = update.message.text.strip()
     
@@ -9532,7 +9524,7 @@ async def handle_global_buttons(update: Update, context):
     
     # ===== КНОПКИ, КОТОРЫЕ ДОЛЖЕН ОБРАБАТЫВАТЬ CONVERSATIONHANDLER =====
     if text in ["✅ Всё верно, отправить", "✏️ Исправить данные", "❌ Отменить", "↩️ Назад"]:
-        return None  # Пропускаем, чтобы обработал ConversationHandler
+        return None
     
     # ===== ОСНОВНЫЕ КНОПКИ ПОЛЬЗОВАТЕЛЯ =====
     if text == "📅 Мои записи":
@@ -9567,6 +9559,15 @@ async def handle_global_buttons(update: Update, context):
         await top_vinyls_handler(update, context)
         return ConversationHandler.END
     
+    # ===== ДОБАВИТЬ ЭТИ ДВЕ КНОПКИ =====
+    if text == "❓ Помощь":
+        await help_handler(update, context)
+        return ConversationHandler.END
+    
+    if text == "❗️ Полезная информация":
+        await useful_info_handler(update, context)
+        return ConversationHandler.END
+    
     # ===== АДМИНСКИЕ КНОПКИ =====
     if text == "👑 Выручка":
         return await handle_revenue_menu(update, context)
@@ -9574,11 +9575,6 @@ async def handle_global_buttons(update: Update, context):
     if text == "👑 Удалить промокод":
         return await admin_promo_delete_start(update, context)
     
-    # ===== КНОПКА "НАЗАД" - НЕ ОБРАБАТЫВАЕМ ЗДЕСЬ ВООБЩЕ =====
-    # Она должна обрабатываться в handle_back_button для пользовательских состояний
-    # и в админских функциях для админских состояний
-    
-    # Если ничего не подошло - игнорируем
     return None
 
 @handle_errors_with_rate_limit
