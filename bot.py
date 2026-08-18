@@ -9388,7 +9388,7 @@ async def show_my_bookings(update: Update, context):
         import traceback
         traceback.print_exc()
         await update.message.reply_text(
-            "*📋 Мои записи*\n\n"
+            "*📅 Мои записи*\n\n"
             "*⚠️ Не удалось загрузить информацию*",
             parse_mode="Markdown",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
@@ -12382,11 +12382,11 @@ async def show_my_bookings_in_message(message_obj, context, user_id):
             dated_bookings.sort(key=lambda x: x['id'])
             contract_bookings.sort(key=lambda x: x['id'])
             
-            message = f"*📋 Мои записи*\n\n*👤 Профиль: {SecurityUtils.safe_markdown_text(current_user_display)}*\n\n"
+            message = f"*📅 Мои записи*\n\n*👤 Профиль: {SecurityUtils.safe_markdown_text(current_user_display)}*\n\n"
             
             # ===== ОБЫЧНЫЕ ЗАПИСИ =====
             if dated_bookings:
-                message += "*📅 Записи в студии:*\n\n"
+                message += "*📋 Записи в студии:*\n\n"
                 for booking in dated_bookings:
                     message += f"{booking['status_emoji']} *Запись #{booking['id']}*\n"
                     message += f"• Имя: {booking['name']}\n"
