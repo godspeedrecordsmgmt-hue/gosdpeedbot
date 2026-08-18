@@ -7141,7 +7141,7 @@ async def help_handler(update: Update, context):
     
     message = (
         "*❓ Помощь*\n\n"
-        "*📋 Как пользоваться ботом:*\n\n"
+        "*📋 Как пользоваться сервисом:*\n\n"
         "• *🎤 Записаться в студию* — создание новой записи\n"
         "• *📅 Мои записи* — просмотр и отмена записей\n"
         "• *👤 Мой профиль* — информация о пользователе\n"
@@ -7151,9 +7151,9 @@ async def help_handler(update: Update, context):
         "• *👥 Рефералы* — реферальная программа\n"
         "• *📈 Мой уровень* — прогресс и скидки\n"
         "• *🏆 Топ пользователей* — рейтинг по пластинкам\n\n"
-        "*⚠️ Бот находится в бета-тестировании*\n"
+        "*⚠️ Сервис находится в бета-тестировании*\n"
         "• Возможны небольшие ошибки\n"
-        "• Мы постоянно улучшаем бота\n"
+        "• Мы постоянно улучшаем сервис\n"
         "• Ваши отзывы помогают нам стать лучше\n\n"
         "*🛠 По техническим вопросам:* @mothman32\n"
         "*📞 Администратор:* @mothman32\n\n"
@@ -7175,20 +7175,25 @@ async def useful_info_handler(update: Update, context):
     
     file_path = "Полезная_информация.docx"
     
-    # ===== ТЕКСТОВОЕ СООБЩЕНИЕ (ПЕРВОЕ) =====
+    # ===== ТЕКСТОВОЕ СООБЩЕНИЕ =====
     message = (
         "*❗️ Полезная информация*\n\n"
         "*📋 В этом документе собрана вся полезная информация о студии:*\n\n"
+        "• *📍 Адрес и контакты*\n"
+        "• *⏰ Режим работы*\n"
+        "• *🎧 Оборудование студии*\n"
+        "• *💰 Полный прайс-лист*\n"
+        "• *📅 Правила бронирования*\n"
+        "• *❌ Условия отмены*\n\n"
         "*👇 Ознакомьтесь с документом:*"
     )
     
     await update.message.reply_text(
         message,
-        parse_mode="Markdown",
-        reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
+        parse_mode="Markdown"
     )
     
-    # ===== ФАЙЛ (ВТОРОЕ СООБЩЕНИЕ) =====
+    # ===== ФАЙЛ =====
     try:
         if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
             with open(file_path, 'rb') as doc:
@@ -7207,6 +7212,13 @@ async def useful_info_handler(update: Update, context):
             "❌ Не удалось загрузить файл. Попробуйте позже.",
             parse_mode="Markdown"
         )
+    
+    # ===== КЛАВИАТУРА =====
+    await update.message.reply_text(
+        "*👇 Выберите подходящий вариант:*",
+        parse_mode="Markdown",
+        reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
+    )
 
 @handle_errors_with_rate_limit
 async def start(update: Update, context):
