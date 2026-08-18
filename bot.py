@@ -7175,59 +7175,61 @@ async def useful_info_handler(update: Update, context):
     
     photo_path = "photos/studio.jpg"
     
+    # Текст БЕЗ Markdown (простой текст)
     caption = (
-        "*❗️ Полезная информация*\n\n"
-        "*📍 Адрес студии:*\n"
+        "❗️ Полезная информация\n\n"
+        "📍 Адрес студии:\n"
         "Садовая ул., 91\n\n"
-        "*⏰ Режим работы:*\n"
+        "⏰ Режим работы:\n"
         "• Круглосуточно\n"
         "• По предварительной записи\n\n"
-        "*🎧 Оборудование:*\n"
+        "🎧 Оборудование:\n"
         "• Профессиональная акустика\n"
         "• Конденсаторные микрофоны\n"
         "• Звуковая карта высокого класса\n"
         "• Мониторы для сведения\n\n"
-        "*🎤 Услуги и цены:*\n"
+        "🎤 Услуги и цены:\n"
         "• Запись вокала — от 1000₽/час\n"
         "• Запись инструментов — от 1000₽/час\n"
         "• 12-часовая аренда — 7000₽/день, 6500₽/ночь\n"
         "• Сведение/мастеринг — 2500₽/трек\n"
         "• Создание трека — 9000₽\n"
         "• Аранжировка/Биты — от 1500₽\n\n"
-        "*💳 Способы оплаты:*\n"
+        "💳 Способы оплаты:\n"
         "• Наличные\n"
         "• Банковский перевод\n"
         "• Перевод по СБП\n\n"
-        "*📞 Контакты:*\n"
+        "📞 Контакты:\n"
         "• Администратор: @mothman32\n"
         "• Telegram канал: @godspeed_records\n\n"
-        "*⚠️ Внимание! Бот находится в бета-тестировании*\n"
+        "⚠️ Внимание! Бот находится в бета-тестировании\n"
         "• Возможны небольшие ошибки\n"
         "• Мы постоянно улучшаем бота\n"
         "• Ваши отзывы помогают нам стать лучше\n\n"
-        "*🛠 По техническим вопросам обращайтесь к администратору @mothman32*"
+        "🛠 По техническим вопросам обращайтесь к администратору @mothman32"
     )
     
     try:
+        # Проверяем наличие фото
         if os.path.exists(photo_path) and os.path.getsize(photo_path) > 0:
             with open(photo_path, 'rb') as photo:
                 await update.message.reply_photo(
                     photo=photo,
                     caption=caption,
-                    parse_mode="Markdown",
+                    parse_mode=None,  # ← БЕЗ Markdown!
                     reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
                 )
         else:
             await update.message.reply_text(
                 caption,
-                parse_mode="Markdown",
+                parse_mode=None,
                 reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
             )
     except Exception as e:
         logger.error(f"❌ Ошибка отправки: {e}")
         await update.message.reply_text(
             caption,
-            parse_mode="Markdown",
+            parse_mode=None,
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
         )
 
@@ -9548,7 +9550,7 @@ async def handle_global_buttons(update: Update, context):
     
     # ===== КНОПКИ, КОТОРЫЕ ДОЛЖЕН ОБРАБАТЫВАТЬ CONVERSATIONHANDLER =====
     if text in ["✅ Всё верно, отправить", "✏️ Исправить данные", "❌ Отменить", "↩️ Назад"]:
-        return None
+        return None  # Пропускаем, чтобы обработал ConversationHandler
     
     # ===== ОСНОВНЫЕ КНОПКИ ПОЛЬЗОВАТЕЛЯ =====
     if text == "📅 Мои записи":
@@ -9583,49 +9585,18 @@ async def handle_global_buttons(update: Update, context):
         await top_vinyls_handler(update, context)
         return ConversationHandler.END
     
-    # ===== КНОПКА "ГЛАВНОЕ МЕНЮ" =====
-    if text == "↩️ Главное меню":
-        return await handle_main_menu_button(update, context)
-    
     # ===== АДМИНСКИЕ КНОПКИ =====
-    if text == "👑 Создать запись":
-        return await handle_admin_create_booking(update, context)
-    
-    if text == "👑 Отменить запись":
-        return await handle_admin_cancel_start(update, context)
-    
-    if text == "👑 Заблокировать":
-        return await handle_admin_block_start(update, context)
-    
-    if text == "👑 Выдать достижение":
-        return await handle_admin_award_achievement_start(update, context)
-    
-    if text == "👑 Удалить достижение":
-        return await handle_admin_remove_achievement_start(update, context)
-    
-    if text == "👑 Пластинки":
-        return await handle_admin_vinyl_start(update, context)
-    
-    if text == "👑 Профиль":
-        return await handle_admin_profile_start(update, context)
-    
     if text == "👑 Выручка":
         return await handle_revenue_menu(update, context)
-    
-    if text == "👑 Создать промокод":
-        return await admin_promo_start(update, context)
     
     if text == "👑 Удалить промокод":
         return await admin_promo_delete_start(update, context)
     
-    # ===== КНОПКИ ПОМОЩИ =====
-    if text == "❓ Помощь":
-        return await help_handler(update, context)
+    # ===== КНОПКА "НАЗАД" - НЕ ОБРАБАТЫВАЕМ ЗДЕСЬ ВООБЩЕ =====
+    # Она должна обрабатываться в handle_back_button для пользовательских состояний
+    # и в админских функциях для админских состояний
     
-    if text == "❗️ Полезная информация":
-        return await useful_info_handler(update, context)
-    
-    # ===== ЕСЛИ НИЧЕГО НЕ ПОДОШЛО =====
+    # Если ничего не подошло - игнорируем
     return None
 
 @handle_errors_with_rate_limit
@@ -22471,15 +22442,7 @@ def setup_handlers(application):
     )
     
     # ============================================================
-    # 9. ОБРАБОТЧИК НЕИЗВЕСТНЫХ СООБЩЕНИЙ (САМЫЙ НИЗКИЙ ПРИОРИТЕТ)
-    # ============================================================
-    application.add_handler(
-        MessageHandler(filters.TEXT & ~filters.COMMAND, handle_unknown),
-        group=3
-    )
-    
-    # ============================================================
-    # 10. ОБРАБОТЧИК ОШИБОК
+    # 9. ОБРАБОТЧИК ОШИБОК
     # ============================================================
     application.add_error_handler(error_callback)
     
