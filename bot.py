@@ -7173,11 +7173,33 @@ async def useful_info_handler(update: Update, context):
     if await check_user_blocked(update, context):
         return ConversationHandler.END
     
-    # ПРОСТОЙ ТЕСТОВЫЙ ТЕКСТ
-    await update.message.reply_text(
-        "✅ ТЕСТ: функция полезной информации работает!",
-        reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
+    caption = (
+        "*❗️ Полезная информация*\n\n"
+        "*📍 Адрес студии:* Садовая ул., 91\n\n"
+        "*📞 Контакты:*\n"
+        "• Администратор: @mothman32\n"
+        "• Telegram канал: @godspeed_records\n\n"
+        "*⬇️ Подробная информация в прикреплённом файле*"
     )
+    
+    docx_path = "Полезная_информация.docx"
+    
+    try:
+        with open(docx_path, 'rb') as docx_file:
+            await update.message.reply_document(
+                document=docx_file,
+                filename="Полезная_информация.docx",
+                caption=caption,
+                parse_mode="Markdown",
+                reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
+            )
+    except FileNotFoundError:
+        await update.message.reply_text(
+            caption,
+            parse_mode="Markdown",
+            reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
+        )
+        logger.error("❌ Файл Полезная_информация.docx не найден")
 
 @handle_errors_with_rate_limit
 async def start(update: Update, context):
