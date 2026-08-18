@@ -7168,42 +7168,16 @@ async def help_handler(update: Update, context):
 
 @handle_errors_with_rate_limit
 async def useful_info_handler(update: Update, context):
-    """Показывает краткую информацию с прикреплённым DOCX файлом"""
+    """Показывает полезную информацию"""
     
     if await check_user_blocked(update, context):
         return ConversationHandler.END
     
-    caption = (
-        "*❗️ Полезная информация*\n\n"
-        "*📍 Адрес студии:*\n"
-        "Садовая ул., 91\n\n"
-        "*⏰ Режим работы:*\n"
-        "• Круглосуточно\n"
-        "• По предварительной записи\n\n"
-        "*📞 Контакты:*\n"
-        "• Администратор: @mothman32\n"
-        "• Telegram канал: @godspeed_records\n\n"
-        "*⬇️ Подробная информация в прикреплённом файле*"
+    # ПРОСТОЙ ТЕСТОВЫЙ ТЕКСТ
+    await update.message.reply_text(
+        "✅ ТЕСТ: функция полезной информации работает!",
+        reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
     )
-    
-    docx_path = "Полезная_информация.docx"
-    
-    try:
-        with open(docx_path, 'rb') as docx_file:
-            await update.message.reply_document(
-                document=docx_file,
-                filename="Полезная_информация.docx",
-                caption=caption,
-                parse_mode="Markdown",
-                reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
-            )
-    except FileNotFoundError:
-        await update.message.reply_text(
-            caption,
-            parse_mode="Markdown",
-            reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
-        )
-        logger.error("❌ Файл Полезная_информация.docx не найден")
 
 @handle_errors_with_rate_limit
 async def start(update: Update, context):
