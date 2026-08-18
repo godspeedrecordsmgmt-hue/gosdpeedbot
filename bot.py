@@ -9611,7 +9611,8 @@ async def notifications_command(update: Update, context):
                 AND b.service NOT LIKE '%Админская%'
                 AND b.service NOT LIKE '%админская%'
                 ORDER BY n.planned_send_time ASC
-            ''', (user_id,))  # ← УБРАН ЛИМИТ
+                LIMIT 20
+            ''', (user_id,))
             
             rows = cursor.fetchall()
             
