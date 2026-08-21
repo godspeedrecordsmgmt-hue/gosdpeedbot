@@ -6857,7 +6857,7 @@ async def get_booking_info(booking_id: int):
 async def send_notification_message(context, user_id: str, booking_info: dict, hours_before: int):
     """
     Отправляет уведомление о предстоящей записи в студию.
-    booking_info должен содержать: booking_id, service, date, time, price
+    booking_info должен содержать: booking_id, service, date, time, price, with_engineer
     """
     try:
         booking_id = booking_info.get('booking_id', 'N/A')
@@ -6865,6 +6865,7 @@ async def send_notification_message(context, user_id: str, booking_info: dict, h
         date_str = booking_info.get('date', '')
         time_str = booking_info.get('time', '')
         price = booking_info.get('price', '')
+        with_engineer = booking_info.get('with_engineer', False)
         
         hours_text = PriceCalculator.format_hours_ru(hours_before)
         
@@ -6880,8 +6881,8 @@ async def send_notification_message(context, user_id: str, booking_info: dict, h
                 f"• Услуга: 12-часовая аренда\n"
                 f"• Дата: {date_str}\n"
                 f"• Время: {time_str}\n"
+                f"• До начала осталось: {hours_text}\n\n"
                 f"• ID записи: #{int(booking_id)}\n\n"
-                f"*⏰ До начала осталось: {hours_text}*\n\n"
                 f"*📍 Адрес студии: Садовая ул., 91*\n"
                 f"*📱 Контакты: @mothman32*\n\n"
                 f"*❓ Если у вас изменились планы, пожалуйста, свяжитесь с администратором*"
@@ -6895,53 +6896,68 @@ async def send_notification_message(context, user_id: str, booking_info: dict, h
                 f"• Услуга: Создание трека\n"
                 f"• Дата: {date_str}\n"
                 f"• Время: {time_str}\n"
+                f"• До начала осталось: {hours_text}\n\n"
                 f"• ID записи: #{int(booking_id)}\n\n"
-                f"*⏰ До начала осталось: {hours_text}*\n\n"
                 f"*📍 Адрес студии: Садовая ул., 91*\n"
                 f"*📱 Контакты: @mothman32*\n\n"
                 f"*❓ Если у вас изменились планы, пожалуйста, свяжитесь с администратором*"
             )
         
-        # 3. ЗАПИСЬ ВОКАЛА
-        elif 'вокал' in service_lower:
+        # 3. ЗАПИСЬ ВОКАЛА (С ИНЖЕНЕРОМ)
+        elif 'вокал' in service_lower and with_engineer:
             message = (
                 f"*🔔 Напоминание о записи*\n\n"
                 f"*📋 Детали записи:*\n"
-                f"• Услуга: Запись вокала\n"
+                f"• Услуга: Запись вокала (с инженером)\n"
                 f"• Дата: {date_str}\n"
                 f"• Время: {time_str}\n"
+                f"• До начала осталось: {hours_text}\n\n"
                 f"• ID записи: #{int(booking_id)}\n\n"
-                f"*⏰ До начала осталось: {hours_text}*\n\n"
                 f"*📍 Адрес студии: Садовая ул., 91*\n"
                 f"*📱 Контакты: @mothman32*\n\n"
                 f"*❓ Если у вас изменились планы, пожалуйста, свяжитесь с администратором*"
             )
         
-        # 4. ЗАПИСЬ ИНСТРУМЕНТОВ
-        elif 'инструмент' in service_lower:
+        # 4. ЗАПИСЬ ВОКАЛА (БЕЗ ИНЖЕНЕРА)
+        elif 'вокал' in service_lower and not with_engineer:
             message = (
                 f"*🔔 Напоминание о записи*\n\n"
                 f"*📋 Детали записи:*\n"
-                f"• Услуга: Запись инструментов\n"
+                f"• Услуга: Запись вокала (без инженера)\n"
                 f"• Дата: {date_str}\n"
                 f"• Время: {time_str}\n"
+                f"• До начала осталось: {hours_text}\n\n"
                 f"• ID записи: #{int(booking_id)}\n\n"
-                f"*⏰ До начала осталось: {hours_text}*\n\n"
                 f"*📍 Адрес студии: Садовая ул., 91*\n"
                 f"*📱 Контакты: @mothman32*\n\n"
                 f"*❓ Если у вас изменились планы, пожалуйста, свяжитесь с администратором*"
             )
         
-        # 5. ВСЁ ОСТАЛЬНОЕ (на всякий случай)
-        else:
+        # 5. ЗАПИСЬ ИНСТРУМЕНТОВ (С ИНЖЕНЕРОМ)
+        elif 'инструмент' in service_lower and with_engineer:
             message = (
                 f"*🔔 Напоминание о записи*\n\n"
                 f"*📋 Детали записи:*\n"
-                f"• Услуга: Запись в студию\n"
+                f"• Услуга: Запись инструментов (с инженером)\n"
                 f"• Дата: {date_str}\n"
                 f"• Время: {time_str}\n"
+                f"• До начала осталось: {hours_text}\n\n"
                 f"• ID записи: #{int(booking_id)}\n\n"
-                f"*⏰ До начала осталось: {hours_text}*\n\n"
+                f"*📍 Адрес студии: Садовая ул., 91*\n"
+                f"*📱 Контакты: @mothman32*\n\n"
+                f"*❓ Если у вас изменились планы, пожалуйста, свяжитесь с администратором*"
+            )
+        
+        # 6. ЗАПИСЬ ИНСТРУМЕНТОВ (БЕЗ ИНЖЕНЕРА)
+        elif 'инструмент' in service_lower and not with_engineer:
+            message = (
+                f"*🔔 Напоминание о записи*\n\n"
+                f"*📋 Детали записи:*\n"
+                f"• Услуга: Запись инструментов (без инженера)\n"
+                f"• Дата: {date_str}\n"
+                f"• Время: {time_str}\n"
+                f"• До начала осталось: {hours_text}\n\n"
+                f"• ID записи: #{int(booking_id)}\n\n"
                 f"*📍 Адрес студии: Садовая ул., 91*\n"
                 f"*📱 Контакты: @mothman32*\n\n"
                 f"*❓ Если у вас изменились планы, пожалуйста, свяжитесь с администратором*"
@@ -9637,7 +9653,7 @@ async def notifications_command(update: Update, context):
             cursor.execute('''
                 SELECT n.id, n.booking_id, n.notification_type, n.status, 
                        n.planned_send_time, n.actual_send_time,
-                       b.service, b.date_str, b.time_slot
+                       b.service, b.date_str, b.time_slot, b.with_engineer
                 FROM notifications n
                 LEFT JOIN bookings b ON n.booking_id = b.id
                 WHERE n.user_id = ?
@@ -9662,11 +9678,11 @@ async def notifications_command(update: Update, context):
                 return
             
             message = "*🔔 Напоминания*\n\n"
-            message += "*📋 Детали ваших записей:*\n\n"
+            message += "*📋 Детали ваших заявок:*\n\n"
             
             for row in rows:
                 (notif_id, booking_id, notif_type, status, 
-                 planned_time, actual_time, service, date_str, time_slot) = row
+                 planned_time, actual_time, service, date_str, time_slot, with_engineer) = row
                 
                 # Получаем часы из типа уведомления
                 hours = 0
@@ -9690,13 +9706,13 @@ async def notifications_command(update: Update, context):
                             minutes = (time_until.seconds % 3600) // 60
                             
                             if days > 0:
-                                time_text = f"через {days} д. {hours_left} ч."
+                                time_text = f"{days} д. {hours_left} ч."
                             elif hours_left > 0 and minutes > 0:
-                                time_text = f"через {hours_left} ч. {minutes} мин."
+                                time_text = f"{hours_left} ч. {minutes} мин."
                             elif hours_left > 0:
-                                time_text = f"через {hours_left} ч."
+                                time_text = f"{hours_left} ч."
                             elif minutes > 0:
-                                time_text = f"через {minutes} мин."
+                                time_text = f"{minutes} мин."
                             else:
                                 time_text = "скоро"
                         else:
@@ -9721,19 +9737,39 @@ async def notifications_command(update: Update, context):
                 for emoji in ['🎤', '🎸', '⏰', '🎚️', '🎵', '🎹']:
                     clean_service = clean_service.replace(emoji, '').strip()
                 
+                # ===== ФОРМИРУЕМ НАЗВАНИЕ УСЛУГИ ДЛЯ ОТОБРАЖЕНИЯ =====
+                service_lower = clean_service.lower() if clean_service else ""
+                with_engineer_bool = with_engineer == 1
+                
+                if 'аренд' in service_lower or '12-час' in service_lower:
+                    service_display = "12-часовая аренда"
+                elif 'создание трека' in service_lower or 'трек' in service_lower:
+                    service_display = "Создание трека"
+                elif 'вокал' in service_lower and with_engineer_bool:
+                    service_display = "Запись вокала (с инженером)"
+                elif 'вокал' in service_lower and not with_engineer_bool:
+                    service_display = "Запись вокала (без инженера)"
+                elif 'инструмент' in service_lower and with_engineer_bool:
+                    service_display = "Запись инструментов (с инженером)"
+                elif 'инструмент' in service_lower and not with_engineer_bool:
+                    service_display = "Запись инструментов (без инженера)"
+                else:
+                    service_display = clean_service
+                
                 message += f"⏳ *Напоминание за {hours} часов*\n"
-                message += f"   • Услуга: {clean_service}\n"
+                message += f"• Услуга: {service_display}\n"
                 
                 if clean_date and 'Не указана' not in clean_date and clean_date != 'Запись в студии':
-                    message += f"   • Дата: {clean_date}\n"
+                    message += f"• Дата: {clean_date}\n"
                 
                 if display_time and display_time not in ['Не указано', 'Не указано (договорная)']:
-                    message += f"   • Время: {display_time}\n"
+                    message += f"• Время: {display_time}\n"
                 
+                # ===== ИСПРАВЛЕНО: убрано слово "через" =====
                 if time_text:
-                    message += f"   • Отправка: {time_text}\n"
+                    message += f"• Отправка через: {time_text}\n"
                 
-                message += f"   • ID записи: #{booking_id}\n\n"
+                message += f"• ID записи: #{booking_id}\n\n"
             
             await update.message.reply_text(
                 message,
