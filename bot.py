@@ -3718,8 +3718,6 @@ async def update_completed_bookings(context: ContextTypes.DEFAULT_TYPE):
                                 MemoryCache.invalidate_date(clean_date)
                             
                             logger.info(f"✅ Запись #{booking_id} завершена")
-                        else:
-                            logger.warning(f"⚠️ Не удалось начислить пластинки для записи #{booking_id}")
                             
                     except Exception as e:
                         logger.error(f"❌ Ошибка обработки записи #{booking_id}: {e}")
