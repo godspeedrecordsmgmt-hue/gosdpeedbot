@@ -6855,6 +6855,10 @@ async def get_booking_info(booking_id: int):
         return None
 
 async def send_notification_message(context, user_id: str, booking_info: dict, hours_before: int):
+    """
+    Отправляет уведомление о предстоящей записи в студию.
+    booking_info должен содержать: booking_id, service, date, time, price
+    """
     try:
         booking_id = booking_info.get('booking_id', 'N/A')
         service = booking_info.get('service', '')
@@ -6866,15 +6870,14 @@ async def send_notification_message(context, user_id: str, booking_info: dict, h
         
         service_lower = service.lower() if service else ""
         
+        # ===== ТОЛЬКО ЗАПИСИ В СТУДИЮ =====
+        
+        # 1. АРЕНДА
         if 'аренд' in service_lower or '12-час' in service_lower:
-            rent_price = 7000 if '9-21' in str(time_str) else 6500
-            deposit = 7000
-            total = rent_price + deposit
-            
             message = (
-                f"*🔔 Напоминание о 12-часовой аренде студии*\n\n"
-                f"*📋 Детали аренды:*\n"
-                f"• Услуга: ⏰ 12-часовая аренда\n"
+                f"*🔔 Напоминание о записи*\n\n"
+                f"*📋 Детали записи:*\n"
+                f"• Услуга: 12-часовая аренда\n"
                 f"• Дата: {date_str}\n"
                 f"• Время: {time_str}\n"
                 f"• ID записи: #{int(booking_id)}\n\n"
@@ -6883,28 +6886,62 @@ async def send_notification_message(context, user_id: str, booking_info: dict, h
                 f"*📱 Контакты: @mothman32*\n\n"
                 f"*❓ Если у вас изменились планы, пожалуйста, свяжитесь с администратором*"
             )
-        elif 'создание трека' in service_lower and 'альбом' not in service_lower:
+        
+        # 2. СОЗДАНИЕ ТРЕКА
+        elif 'создание трека' in service_lower:
             message = (
-                f"*🔔 Напоминание о создании трека*\n\n"
+                f"*🔔 Напоминание о записи*\n\n"
                 f"*📋 Детали записи:*\n"
-                f"• Услуга: {service}\n"
+                f"• Услуга: Создание трека\n"
                 f"• Дата: {date_str}\n"
-                f"• Время: {time_str} (4 часа)\n"
+                f"• Время: {time_str}\n"
                 f"• ID записи: #{int(booking_id)}\n\n"
                 f"*⏰ До начала осталось: {hours_text}*\n\n"
                 f"*📍 Адрес студии: Садовая ул., 91*\n"
                 f"*📱 Контакты: @mothman32*\n\n"
                 f"*❓ Если у вас изменились планы, пожалуйста, свяжитесь с администратором*"
             )
+        
+        # 3. ЗАПИСЬ ВОКАЛА
+        elif 'вокал' in service_lower:
+            message = (
+                f"*🔔 Напоминание о записи*\n\n"
+                f"*📋 Детали записи:*\n"
+                f"• Услуга: Запись вокала\n"
+                f"• Дата: {date_str}\n"
+                f"• Время: {time_str}\n"
+                f"• ID записи: #{int(booking_id)}\n\n"
+                f"*⏰ До начала осталось: {hours_text}*\n\n"
+                f"*📍 Адрес студии: Садовая ул., 91*\n"
+                f"*📱 Контакты: @mothman32*\n\n"
+                f"*❓ Если у вас изменились планы, пожалуйста, свяжитесь с администратором*"
+            )
+        
+        # 4. ЗАПИСЬ ИНСТРУМЕНТОВ
+        elif 'инструмент' in service_lower:
+            message = (
+                f"*🔔 Напоминание о записи*\n\n"
+                f"*📋 Детали записи:*\n"
+                f"• Услуга: Запись инструментов\n"
+                f"• Дата: {date_str}\n"
+                f"• Время: {time_str}\n"
+                f"• ID записи: #{int(booking_id)}\n\n"
+                f"*⏰ До начала осталось: {hours_text}*\n\n"
+                f"*📍 Адрес студии: Садовая ул., 91*\n"
+                f"*📱 Контакты: @mothman32*\n\n"
+                f"*❓ Если у вас изменились планы, пожалуйста, свяжитесь с администратором*"
+            )
+        
+        # 5. ВСЁ ОСТАЛЬНОЕ (на всякий случай)
         else:
             message = (
                 f"*🔔 Напоминание о записи*\n\n"
                 f"*📋 Детали записи:*\n"
-                f"• Услуга: {service}\n"
+                f"• Услуга: Запись в студию\n"
                 f"• Дата: {date_str}\n"
                 f"• Время: {time_str}\n"
                 f"• ID записи: #{int(booking_id)}\n\n"
-                f"*⏰ До начала осталось: {hours_text}\n\n*"
+                f"*⏰ До начала осталось: {hours_text}*\n\n"
                 f"*📍 Адрес студии: Садовая ул., 91*\n"
                 f"*📱 Контакты: @mothman32*\n\n"
                 f"*❓ Если у вас изменились планы, пожалуйста, свяжитесь с администратором*"
@@ -9625,7 +9662,7 @@ async def notifications_command(update: Update, context):
                 return
             
             message = "*🔔 Напоминания*\n\n"
-            message += "*📋 Детали ваших заявок:*\n\n"
+            message += "*📋 Детали ваших записей:*\n\n"
             
             for row in rows:
                 (notif_id, booking_id, notif_type, status, 
