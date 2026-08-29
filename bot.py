@@ -7095,9 +7095,7 @@ async def handle_main_menu_button(update: Update, context):
     context.user_data.pop('_conversation_state', None)
     
     menu_message = (
-        '*🏠 Возвращаемся в главное меню...*\n\n'
-        '*✨ Процесс записи завершён*\n'  # <-- ИСПРАВЛЕНО: было "Процесс отмены записи завершён"
-        '*💾 Все введенные данные очищены*\n\n'
+        '*🏠 Возвращаемся в главное меню*\n\n'
         '*👇 Выберите подходящий вариант:*'
     )
     
@@ -8212,7 +8210,7 @@ async def handle_custom_revenue_period_inline(update: Update, context):
     if text == "↩️ Главное меню":
         context.user_data.clear()
         await update.message.reply_text(
-            "*🏠 Возвращаемся в главное меню...*\n\n"
+            "*🏠 Возвращаемся в главное меню*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -8278,9 +8276,7 @@ async def handle_custom_revenue_period(update: Update, context):
     if text == "↩️ Главное меню":
         context.user_data.clear()
         await update.message.reply_text(
-            "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс создания промокода завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*🏠 Возвращаемся в главное меню*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -9469,9 +9465,7 @@ async def handle_main_menu(update: Update, context):
         else:
             context.user_data.clear()
             await update.message.reply_text(
-                "*🏠 Возвращаемся в главное меню...*\n\n"
-                "*✨ Процесс записи завершён*\n"
-                "*💾 Все введенные данные очищены*\n\n"
+                "*🏠 Возвращаемся в главное меню*\n\n"
                 "*👇 Выберите подходящий вариант:*",
                 reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
                 parse_mode="Markdown"
@@ -9957,9 +9951,7 @@ async def get_contact_input(update: Update, context):
     if text == "↩️ Главное меню":
         context.user_data.clear()
         await update.message.reply_text(
-            "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс записи завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*🏠 Возвращаемся в главное меню*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -12641,9 +12633,7 @@ async def handle_admin_cancel_user_id(update: Update, context):
     if text == "↩️ Главное меню":
         context.user_data.clear()
         await update.message.reply_text(
-            "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс отмены записи завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*🏠 Возвращаемся в главное меню*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -12738,9 +12728,7 @@ async def handle_admin_cancel_user_id(update: Update, context):
                 )
                 
                 await update.message.reply_text(
-                    "*🏠 Возвращаемся в главное меню...*\n\n"
-                    "*✨ Процесс отмены записи завершён*\n"
-                    "*💾 Все введенные данные очищены*\n\n"
+                    "*🏠 Возвращаемся в главное меню*\n\n"
                     "*👇 Выберите подходящий вариант:*",
                     reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
                     parse_mode="Markdown"
@@ -13111,9 +13099,7 @@ async def admin_show_user_bookings(update: Update, context, target_user_id: int,
                     )
                 
                 menu_message = (
-                    "*🏠 Возвращаемся в главное меню...*\n\n"
-                    "*✨ Процесс отмены записи завершён*\n"
-                    "*💾 Все введенные данные очищены*\n\n"
+                    "*🏠 Возвращаемся в главное меню*\n\n"
                     "*👇 Выберите подходящий вариант:*"
                 )
                 
@@ -13628,9 +13614,7 @@ async def admin_show_user_bookings(update: Update, context, target_user_id: int,
                 )
             
             menu_message = (
-                "*🏠 Возвращаемся в главное меню...*\n\n"
-                "*✨ Процесс отмены записи завершён*\n"
-                "*💾 Все введенные данные очищены*\n\n"
+                "*🏠 Возвращаемся в главное меню*\n\n"
                 "*👇 Выберите подходящий вариант:*"
             )
             
@@ -13841,9 +13825,7 @@ async def handle_admin_cancel_back(update: Update, context):
     if text == "↩️ Главное меню":
         context.user_data.clear()
         await update.message.reply_text(
-            "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс отмены записи завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*🏠 Возвращаемся в главное меню*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -13920,9 +13902,7 @@ async def handle_admin_achievement_user_id(update: Update, context):
     if text == "↩️ Главное меню":
         context.user_data.clear()
         await update.message.reply_text(
-            "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс выдачи достижения завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*🏠 Возвращаемся в главное меню*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -14025,9 +14005,7 @@ async def handle_admin_achievement_name(update: Update, context):
     if text == "↩️ Главное меню":
         context.user_data.clear()
         await update.message.reply_text(
-            "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс выдачи достижения завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*🏠 Возвращаемся в главное меню*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -14195,9 +14173,7 @@ async def handle_admin_achievement_confirm(update: Update, context):
     if text == "↩️ Главное меню" or text == "❌ Отменить":
         context.user_data.clear()
         await update.message.reply_text(
-            "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс выдачи достижения завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*🏠 Возвращаемся в главное меню*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -14297,9 +14273,7 @@ async def handle_admin_remove_achievement_user_id(update: Update, context):
     if text == "↩️ Главное меню":
         context.user_data.clear()
         await update.message.reply_text(
-            "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс выдачи достижения завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*🏠 Возвращаемся в главное меню*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -14446,9 +14420,7 @@ async def admin_show_user_achievements(update: Update, context, target_user_id: 
                     )
                 
                 menu_message = (
-                    "*🏠 Возвращаемся в главное меню...*\n\n"
-                    "*✨ Процесс удаления достижения завершён*\n"
-                    "*💾 Все введенные данные очищены*\n\n"
+                    "*🏠 Возвращаемся в главное меню*\n\n"
                     "*👇 Выберите подходящий вариант:*"
                 )
                 
@@ -14716,9 +14688,7 @@ async def admin_remove_achievement_confirm(update: Update, context):
             )
             
             menu_message = (
-                "*🏠 Возвращаемся в главное меню...*\n\n"
-                "*✨ Процесс удаления достижения завершён*\n"
-                "*💾 Все введенные данные очищены*\n\n"
+                "*🏠 Возвращаемся в главное меню*\n\n"
                 "*👇 Выберите подходящий вариант:*"
             )
             
@@ -14816,9 +14786,7 @@ async def handle_admin_remove_achievement_back(update: Update, context):
     if text == "↩️ Главное меню":
         context.user_data.clear()
         await update.message.reply_text(
-            "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс отмены достижения завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*🏠 Возвращаемся в главное меню*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -14894,9 +14862,7 @@ async def handle_admin_user_id(update: Update, context):
     if text == "↩️ Главное меню":
         context.user_data.clear()
         await update.message.reply_text(
-            "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс записи завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*🏠 Возвращаемся в главное меню*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -14990,9 +14956,7 @@ async def handle_admin_record_type(update: Update, context):
     if text == "↩️ Главное меню":
         context.user_data.clear()
         await update.message.reply_text(
-            "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс записи завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*🏠 Возвращаемся в главное меню*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -15049,9 +15013,7 @@ async def handle_admin_price(update: Update, context):
     if text == "↩️ Главное меню":
         context.user_data.clear()
         await update.message.reply_text(
-            "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс записи завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*🏠 Возвращаемся в главное меню*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -15159,9 +15121,7 @@ async def handle_admin_confirm(update: Update, context):
     if text == "↩️ Главное меню":
         context.user_data.clear()
         await update.message.reply_text(
-            "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс записи завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*🏠 Возвращаемся в главное меню*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -15185,9 +15145,7 @@ async def handle_admin_confirm(update: Update, context):
     if text == "❌ Отменить":
         context.user_data.clear()
         await update.message.reply_text(
-            "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс записи завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*🏠 Возвращаемся в главное меню*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -15654,9 +15612,7 @@ async def handle_admin_block_user_id(update: Update, context):
     if text == "↩️ Главное меню":
         context.user_data.clear()
         await update.message.reply_text(
-            "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс блокировки завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*🏠 Возвращаемся в главное меню*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -15810,9 +15766,7 @@ async def handle_admin_block_type(update: Update, context):
     if text == "↩️ Главное меню":
         context.user_data.clear()
         await update.message.reply_text(
-            "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс блокировки завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*🏠 Возвращаемся в главное меню*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -15902,9 +15856,7 @@ async def handle_admin_block_duration(update: Update, context):
     if text == "↩️ главное меню":
         context.user_data.clear()
         await update.message.reply_text(
-            "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс блокировки завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*🏠 Возвращаемся в главное меню*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -16023,9 +15975,7 @@ async def handle_admin_block_confirm(update: Update, context):
     if text == "↩️ Главное меню" or text == "❌ Отменить":
         context.user_data.clear()
         await update.message.reply_text(
-            "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс блокировки завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*🏠 Возвращаемся в главное меню*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -17627,9 +17577,7 @@ async def admin_promo_select_type(update: Update, context):
     if text == "↩️ Главное меню":
         context.user_data.clear()
         await update.message.reply_text(
-            "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс создания промокода завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*🏠 Возвращаемся в главное меню*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -17694,9 +17642,7 @@ async def admin_promo_find_user(update: Update, context):
     if text == "↩️ Главное меню":
         context.user_data.clear()
         await update.message.reply_text(
-            "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс создания промокода завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*🏠 Возвращаемся в главное меню*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -17815,9 +17761,7 @@ async def admin_promo_duration(update: Update, context):
     if text == "↩️ Главное меню":
         context.user_data.clear()
         await update.message.reply_text(
-            "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс создания промокода завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*🏠 Возвращаемся в главное меню*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -17991,9 +17935,7 @@ async def admin_promo_duration_input(update: Update, context):
     if text == "↩️ главное меню":
         context.user_data.clear()
         await update.message.reply_text(
-            "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс создания промокода завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*🏠 Возвращаемся в главное меню*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -18128,9 +18070,7 @@ async def admin_promo_type(update: Update, context):
     if text == "↩️ Главное меню":
         context.user_data.clear()
         await update.message.reply_text(
-            "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс создания промокода завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*🏠 Возвращаемся в главное меню*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -18442,9 +18382,7 @@ async def admin_promo_service(update: Update, context):
     if text == "↩️ Главное меню":
         context.user_data.clear()
         await update.message.reply_text(
-            "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс создания промокода завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*🏠 Возвращаемся в главное меню*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -18682,9 +18620,7 @@ async def admin_promo_value(update: Update, context):
     if text == "↩️ Главное меню":
         context.user_data.clear()
         await update.message.reply_text(
-            "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс создания промокода завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*🏠 Возвращаемся в главное меню*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -18966,9 +18902,7 @@ async def admin_promo_confirm(update: Update, context):
     if text == "↩️ Главное меню" or text == "❌ Отменить":
         context.user_data.clear()
         await update.message.reply_text(
-            "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс создания промокода завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*🏠 Возвращаемся в главное меню*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -19554,9 +19488,7 @@ async def admin_promo_delete_confirm_handler(update: Update, context):
             
             await context.bot.send_message(
                 chat_id=update.effective_user.id,
-                text=("*🏠 Возвращаемся в главное меню...*\n\n"
-                      "*✨ Процесс удаления промокода завершён*\n"
-                      "*💾 Все введенные данные очищены*\n\n"
+                text=("*🏠 Возвращаемся в главное меню*\n\n"
                       "*👇 Выберите подходящий вариант:*"),
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
@@ -19612,9 +19544,7 @@ async def handle_admin_vinyl_user_id(update: Update, context):
     if text == "↩️ Главное меню":
         context.user_data.clear()
         await update.message.reply_text(
-            "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс управления пластинками завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*🏠 Возвращаемся в главное меню*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -19745,9 +19675,7 @@ async def handle_admin_vinyl_action(update: Update, context):
     if text == "↩️ Главное меню":
         context.user_data.clear()
         await update.message.reply_text(
-            "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс управления пластинками завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*🏠 Возвращаемся в главное меню*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -19807,9 +19735,7 @@ async def handle_admin_vinyl_amount(update: Update, context):
     if text == "↩️ Главное меню":
         context.user_data.clear()
         await update.message.reply_text(
-            "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс управления пластинками завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*🏠 Возвращаемся в главное меню*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -19915,9 +19841,7 @@ async def handle_admin_vinyl_confirm(update: Update, context):
     if text == "↩️ Главное меню" or text == "❌ Отменить":
         context.user_data.clear()
         await update.message.reply_text(
-            "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс управления пластинками завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*🏠 Возвращаемся в главное меню*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -20073,9 +19997,7 @@ async def handle_admin_profile_user_id(update: Update, context):
     if text == "↩️ Главное меню":
         context.user_data.clear()
         await update.message.reply_text(
-            "*🏠 Возвращаемся в главное меню...*\n\n"
-            "*✨ Процесс просмотра профиля завершён*\n"
-            "*💾 Все введенные данные очищены*\n\n"
+            "*🏠 Возвращаемся в главное меню*\n\n"
             "*👇 Выберите подходящий вариант:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -22028,9 +21950,7 @@ async def admin_cancel_confirm_handler(update: Update, context):
                 )
             
             menu_message = (
-                "*🏠 Возвращаемся в главное меню...*\n\n"
-                "*✨ Процесс отмены записи завершён*\n"
-                "*💾 Все введенные данные очищены*\n\n"
+                "*🏠 Возвращаемся в главное меню*\n\n"
                 "*👇 Выберите подходящий вариант:*"
             )
             
