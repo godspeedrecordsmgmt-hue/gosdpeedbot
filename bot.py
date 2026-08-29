@@ -10237,7 +10237,7 @@ async def get_service(update: Update, context):
             "• Индивидуальный подход\n\n"
             "[BEATS](t.me/godspeedbeats) — готовые биты\n"
             "[LOOPS](https://t.me/simweyloops) — лупы и сэмплы\n\n"
-            "*👇 Для заказа свяжитесь с продюсером:*",
+            "*👇 Выберите подходящий вариант:*",
             parse_mode="Markdown",
             disable_web_page_preview=True,
             reply_markup=keyboard
