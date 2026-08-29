@@ -11570,11 +11570,10 @@ async def handle_date_selection(update: Update, context, text: str):
             context.user_data['suitable_intervals'] = suitable_intervals
             logger.info(f"✅ Найдены подходящие интервалы для трека: {len(suitable_intervals)}")
             
-            # ============================================================
             # ===== ИСПРАВЛЕННОЕ СООБЩЕНИЕ ДЛЯ ШАГА 6 ТРЕКА =====
-            # ============================================================
             message = f"*🎵 Шаг 6/7: Выбор времени*\n\n"
             
+            message += f"*✨ Во сколько для Вас забронировать студию?*\n\n"
             message += f"*Свободное время:*\n"
             if suitable_intervals:
                 for interval in suitable_intervals:
@@ -11692,6 +11691,7 @@ async def handle_date_selection(update: Update, context, text: str):
         else:
             message += f"*🎵 Шаг 6/7: Выбор времени*\n\n"
         
+        message += f"*✨ Во сколько для Вас забронировать студию?*\n\n"
         message += f"*Свободное время:*\n"
         
         for interval in free_intervals:
