@@ -5303,7 +5303,6 @@ class BookingManager:
                 
                 if "day" in service_type:
                     target_type = "День"
-                    target_time_slot = "9-21"
                     logger.info(f"🔍 Ищем ДНЕВНУЮ аренду (9-21)")
                     
                     # Проверяем, есть ли уже дневная аренда на эту дату
@@ -5319,19 +5318,15 @@ class BookingManager:
                         logger.info(f"🔍 ❌ Дневная аренда на {clean_date} уже существует")
                         return False
                     
-                    # Проверяем, не заняты ли часы 9-21 обычными записями
+                    # ===== ИСПРАВЛЕНО: используем get_all_time_slots_for_date =====
+                    booked_slots = BookingManager.get_all_time_slots_for_date(clean_date)
+                    logger.info(f"🔍 Занятые слоты на {clean_date}: {booked_slots}")
+                    
+                    # Проверяем часы 9-21
                     for hour in range(9, 21):
                         hour_slot = f"{hour}-{hour+1}"
-                        
-                        cursor.execute('''
-                            SELECT id FROM bookings 
-                            WHERE date_str LIKE ? || '%' 
-                            AND time_slot LIKE ? 
-                            AND status NOT IN ('rejected', 'отклонен', 'cancelled_by_user', 'cancelled', 'отменен')
-                        ''', (clean_date, f'{hour}-%'))
-                        
-                        if cursor.fetchone():
-                            logger.info(f"🔍 ❌ Час {hour_slot} занят обычной записью")
+                        if hour_slot in booked_slots:
+                            logger.info(f"🔍 ❌ Час {hour_slot} на {clean_date} занят")
                             return False
                     
                     logger.info(f"🔍 ✅ Дневная аренда на {clean_date} доступна")
@@ -5339,7 +5334,6 @@ class BookingManager:
                     
                 else:  # night
                     target_type = "Ночь"
-                    target_time_slot = "21-9"
                     logger.info(f"🔍 Ищем НОЧНУЮ аренду (21-9)")
                     
                     # Проверяем, есть ли уже ночная аренда на эту дату
@@ -5355,22 +5349,18 @@ class BookingManager:
                         logger.info(f"🔍 ❌ Ночная аренда на {clean_date} уже существует")
                         return False
                     
-                    # Проверяем часы 21-24 на выбранную дату
+                    # ===== ИСПРАВЛЕНО: проверяем ТЕКУЩИЙ день через get_all_time_slots_for_date =====
+                    booked_slots = BookingManager.get_all_time_slots_for_date(clean_date)
+                    logger.info(f"🔍 Занятые слоты на {clean_date} (текущий день): {booked_slots}")
+                    
+                    # Проверяем часы 21-24 на текущую дату
                     for hour in range(21, 24):
                         hour_slot = f"{hour}-{hour+1}"
-                        
-                        cursor.execute('''
-                            SELECT id FROM bookings 
-                            WHERE date_str LIKE ? || '%' 
-                            AND time_slot LIKE ? 
-                            AND status NOT IN ('rejected', 'отклонен', 'cancelled_by_user', 'cancelled', 'отменен')
-                        ''', (clean_date, f'{hour}-%'))
-                        
-                        if cursor.fetchone():
+                        if hour_slot in booked_slots:
                             logger.info(f"🔍 ❌ Час {hour_slot} на {clean_date} занят")
                             return False
                     
-                    # Проверяем следующий день (часы 0-9)
+                    # ===== ИСПРАВЛЕНО: проверяем СЛЕДУЮЩИЙ день через get_all_time_slots_for_date =====
                     try:
                         day, month, year = map(int, clean_date.split('.'))
                         current_date = datetime(year, month, day)
@@ -5379,17 +5369,12 @@ class BookingManager:
                         
                         logger.info(f"🔍 Проверяем следующий день: {next_date_str}")
                         
+                        booked_slots_next = BookingManager.get_all_time_slots_for_date(next_date_str)
+                        logger.info(f"🔍 Занятые слоты на {next_date_str} (следующий день): {booked_slots_next}")
+                        
                         for hour in range(0, 9):
                             hour_slot = f"{hour}-{hour+1}"
-                            
-                            cursor.execute('''
-                                SELECT id FROM bookings 
-                                WHERE date_str LIKE ? || '%' 
-                                AND time_slot LIKE ? 
-                                AND status NOT IN ('rejected', 'отклонен', 'cancelled_by_user', 'cancelled', 'отменен')
-                            ''', (next_date_str, f'{hour}-%'))
-                            
-                            if cursor.fetchone():
+                            if hour_slot in booked_slots_next:
                                 logger.info(f"🔍 ❌ Час {hour_slot} на {next_date_str} занят")
                                 return False
                                 
