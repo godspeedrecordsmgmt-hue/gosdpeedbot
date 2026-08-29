@@ -10148,8 +10148,8 @@ async def get_service(update: Update, context):
         context.user_data['with_engineer'] = False
         
         await update.message.reply_text(
-            "*⏰ Шаг 4/6: Выбор аренды*\n\n"
-            "*✨ Когда Вам забронировать студию?*\n\n"
+            "*⏰ Шаг 4/6: Выбор формата*\n\n"
+            "*✨ Когда для Вас забронировать студию?*\n\n"
             "*День — 7000₽ + залог (по договору)*\n"  
             "• Работа с 9:00 до 21:00\n"
             "• Полный контроль студии\n\n"
@@ -10354,7 +10354,7 @@ async def get_engineer_option(update: Update, context):
     
     await update.message.reply_text(
         "*📅 Шаг 5/7: Выбор даты*\n\n"
-        "*✨ Когда Вы планируете записаться?*\n\n"
+        "*✨ Когда для Вас забронировать студию?*\n\n"
         f"{rules_text}\n"
         "*🎨 Легенда цветов:*\n"
         "🟢 — Свободно более 18 часов \n"
@@ -10459,7 +10459,7 @@ async def get_twelve_hours_option(update: Update, context):
     
     await update.message.reply_text(
         "*📅 Шаг 5/6: Выбор даты*\n\n"
-        "*✨ Когда Вам забронировать студию?*\n\n"
+        "*✨ Когда для Вас забронировать студию?*\n\n"
         "*⏰ Правила для аренды студии:*\n"
         "• Аренда минимально за 72 часа\n"
         "• Ровно 12 часов работы в студии\n"
@@ -10554,7 +10554,7 @@ async def get_mixing_type(update: Update, context):
         confirmation_lines = [
             f"*✅ Шаг 5/5: Подтверждение*",
             "",
-            f"*✨ Проверьте правильность введённых данных:*",
+            f"*✨ ✨ Проверьте правильность Ваших данных:*",
             "",
             f"• Имя: {safe_name}",
             f"• Контакт: {safe_contact}",
@@ -10595,7 +10595,7 @@ async def get_mixing_type(update: Update, context):
         confirmation_lines = [
             f"*✅ Шаг 5/5: Подтверждение*",
             "",
-            f"*✨ Проверьте правильность введённых данных:*",
+            f"*✨ ✨ Проверьте правильность Ваших данных:*",
             "",
             f"• Имя: {safe_name}",
             f"• Контакт: {safe_contact}",
@@ -10675,7 +10675,7 @@ async def get_track_creation_type(update: Update, context):
         
         await update.message.reply_text(
             "*📅 Шаг 5/7: Выбор даты*\n\n"
-            "*✨ Когда Вы планируете записать трек?*\n\n"
+            "*✨ Когда для Вас забронировать студию?*\n\n"
             "*⏰ Правила для создания трека:*\n"
             "• Запись минимально за 72 часа\n"
             "• От 4 часов работы в студии\n"
@@ -10729,7 +10729,7 @@ async def get_track_creation_type(update: Update, context):
         confirmation_lines = [
             f"*✅ Шаг 5/5: Подтверждение*",
             "",
-            f"*✨ Проверьте правильность введённых данных:*",
+            f"*✨ ✨ Проверьте правильность Ваших данных:*",
             "",
             f"• Имя: {safe_name}",
             f"• Контакт: {safe_contact}",
@@ -10781,7 +10781,7 @@ async def handle_no_date_option(update: Update, context):
         confirmation_lines = [
             f"*✅ Шаг 5/5: Подтверждение*",
             "",
-            f"*✨ Проверьте правильность введённых данных:*",
+            f"*✨ ✨ Проверьте правильность Ваших данных:*",
             "",
             f"• Имя: {safe_name}",
             f"• Контакт: {safe_contact}",
@@ -10814,7 +10814,7 @@ async def handle_no_date_option(update: Update, context):
         confirmation_lines = [
             f"*✅ Шаг 5/5: Подтверждение*",
             "",
-            f"*✨ Проверьте правильность введённых данных:*",
+            f"*✨ ✨ Проверьте правильность Ваших данных:*",
             "",
             f"• Имя: {safe_name}",
             f"• Контакт: {safe_contact}",
@@ -10849,7 +10849,7 @@ async def handle_no_date_option(update: Update, context):
         confirmation_lines = [
             f"*✅ Шаг 5/5: Подтверждение*",
             "",
-            f"*✨ Проверьте правильность введённых данных:*",
+            f"*✨ ✨ Проверьте правильность Ваших данных:*",
             "",
             f"• Имя: {safe_name}",
             f"• Контакт: {safe_contact}",
@@ -11112,8 +11112,8 @@ async def get_date(update: Update, context):
             
         elif is_12_hours:
             await update.message.reply_text(
-                "*⏰ Шаг 4/6: Выбор аренды*\n\n"
-                "*✨ Когда Вам забронировать студию?*\n\n"
+                "*⏰ Шаг 4/6: Выбор формата*\n\n"
+                "*✨ Когда для Вас забронировать студию?*\n\n"
                 "*День — 7000₽ + залог (по договору)*\n"  
                 "• Работа с 9:00 до 21:00\n"
                 "• Полный контроль студии\n\n"
@@ -15080,7 +15080,7 @@ async def handle_admin_price(update: Update, context):
     confirmation_lines = [
         f"*👑 Шаг 4/4: Подтверждение*",
         "",
-        f"*✨ Проверьте правильность введённых данных:*",
+        f"*✨ ✨ Проверьте правильность Ваших данных:*",
         "",
         f"• Уникальный ID: {unique_id}",
         f"• Тип записи: {clean_record_type}",
@@ -15274,7 +15274,7 @@ async def handle_admin_confirm(update: Update, context):
         confirmation_lines = [
             f"*👑 Шаг 4/4: Подтверждение*",
             "",
-            f"*✨ Проверьте правильность введённых данных:*",
+            f"*✨ ✨ Проверьте правильность Ваших данных:*",
             "",
             f"• Уникальный ID: {unique_id}",
             f"• Тип записи: {clean_record_type}",
@@ -16184,8 +16184,8 @@ async def handle_back_to_previous_step(update: Update, context):
         
     elif is_12_hours:
         await update.message.reply_text(
-            "*⏰ Шаг 4/6: Выбор аренды*\n\n"
-            "*✨ Когда Вам забронировать студию?*\n\n"
+            "*⏰ Шаг 4/6: Выбор формата*\n\n"
+            "*✨ Когда для Вас забронировать студию?*\n\n"
             "*День — 7000₽ + залог (по договору)*\n"  
             "• Работа с 9:00 до 21:00\n"
             "• Полный контроль студии\n\n"
@@ -16319,7 +16319,7 @@ async def show_slots(update: Update, context):
         if is_track_creation:
             await update.message.reply_text(
                 "*📅 Шаг 5/7: Выбор даты*\n\n"
-                "*✨ Когда Вы планируете записать трек?*\n\n"
+                "*✨ Когда для Вас забронировать студию?*\n\n"
                 "*⏰ Правила для создания трека:*\n"
                 "• Запись минимально за 72 часа\n"
                 "• От 4 часов работы в студии\n"
@@ -16338,7 +16338,7 @@ async def show_slots(update: Update, context):
             service_type = "12_hours_day" if context.user_data.get('12_hours_type', '').startswith('День') else "12_hours_night"
             await update.message.reply_text(
                 "*📅 Шаг 5/6: Выбор даты*\n\n"
-                "*✨ Когда Вам забронировать студию?*\n\n"
+                "*✨ Когда для Вас забронировать студию?*\n\n"
                 "*⏰ Правила для аренды студии:*\n"
                 "• Аренда минимально за 72 часа\n"
                 "• Ровно 12 часов работы в студии\n"
@@ -16494,7 +16494,7 @@ async def show_slots(update: Update, context):
         confirmation_lines = [
             f"*✅ Шаг 6/6: Подтверждение*",
             "",
-            f"*✨ Проверьте правильность введённых данных:*",
+            f"*✨ ✨ Проверьте правильность Ваших данных:*",
             "",
             f"• Имя: {safe_name}",
             f"• Контакт: {safe_contact}",
@@ -16700,7 +16700,7 @@ async def show_slots(update: Update, context):
         confirmation_lines = [
             f"*✅ Шаг 7/7: Подтверждение*",
             "",
-            f"*✨ Проверьте правильность введённых данных:*",
+            f"*✨ ✨ Проверьте правильность Ваших данных:*",
             "",
             f"• Имя: {safe_name}",
             f"• Контакт: {safe_contact}",
@@ -16956,7 +16956,7 @@ async def show_slots(update: Update, context):
     confirmation_lines = [
         f"*✅ {step_text}: Подтверждение*",
         "",
-        f"*✨ Проверьте правильность введённых данных:*",
+        f"*✨ ✨ Проверьте правильность Ваших данных:*",
         "",
         f"• Имя: {safe_name}",
         f"• Контакт: {safe_contact}",
@@ -17027,7 +17027,7 @@ async def handle_back_button(update: Update, context):
         if is_track_creation:
             await update.message.reply_text(
                 "*📅 Шаг 5/7: Выбор даты*\n\n"
-                "*✨ Когда Вы планируете записать трек?*\n\n"
+                "*✨ Когда для Вас забронировать студию?*\n\n"
                 "*⏰ Правила для создания трека:*\n"
                 "• Запись минимально за 72 часа\n"
                 "• От 4 часов работы в студии\n"
@@ -17046,7 +17046,7 @@ async def handle_back_button(update: Update, context):
             service_type = "12_hours_day" if context.user_data.get('12_hours_type', '').startswith('День') else "12_hours_night"
             await update.message.reply_text(
                 "*📅 Шаг 5/6: Выбор даты*\n\n"
-                "*✨ Когда Вам забронировать студию?*\n\n"
+                "*✨ Когда для Вас забронировать студию?*\n\n"
                 "*⏰ Правила для аренды студии:*\n"
                 "• Аренда минимально за 72 часа\n"
                 "• Ровно 12 часов работы в студии\n"
@@ -17118,8 +17118,8 @@ async def handle_back_button(update: Update, context):
             return ENGINEER_OPTION
         elif service == "⏰ 12-часовая аренда":
             await update.message.reply_text(
-                "*⏰ Шаг 4/6: Выбор аренды*\n\n"
-                "*✨ Когда Вам забронировать студию?*\n\n"
+                "*⏰ Шаг 4/6: Выбор формата*\n\n"
+                "*✨ Когда для Вас забронировать студию?*\n\n"
                 "*День — 7000₽ + залог (по договору)*\n"  
                 "• Работа с 9:00 до 21:00\n"
                 "• Полный контроль студии\n\n"
@@ -17444,7 +17444,7 @@ async def handle_back_in_date(update: Update, context):
         else:
             await update.message.reply_text(
                 "*📅 Шаг 5/7: Выбор даты*\n\n"
-                "*✨ Когда Вы планируете записать трек?*\n\n"
+                "*✨ Когда для Вас забронировать студию?*\n\n"
                 "*⏰ Правила для создания трека:*\n"
                 "• Запись минимально за 72 часа\n"
                 "• От 4 часов работы в студии\n"
@@ -17462,7 +17462,7 @@ async def handle_back_in_date(update: Update, context):
     elif is_12_hours:
         await update.message.reply_text(
             "*📅 Шаг 5/6: Выбор даты*\n\n"
-            "*✨ Когда Вам забронировать студию?*\n\n"
+            "*✨ Когда для Вас забронировать студию?*\n\n"
             "*⏰ Правила для аренды студии:*\n"
             "• Аренда минимально за 72 часа\n"
             "• Ровно 12 часов работы в студии\n"
