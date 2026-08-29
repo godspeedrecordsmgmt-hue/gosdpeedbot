@@ -9881,7 +9881,7 @@ async def get_contact(update: Update, context):
         
         if text == "✏️ Ввести вручную":
             await update.message.reply_text(
-                "*✏️ Введите ваши контактные данные:*",
+                "*✏️ Введите ваши контакты:*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_text_contact_input()
             )
