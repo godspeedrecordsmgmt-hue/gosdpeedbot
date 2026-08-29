@@ -9827,7 +9827,7 @@ async def get_name(update: Update, context):
     context.user_data['safe_name'] = SecurityUtils.safe_markdown_text(text)
     
     await update.message.reply_text(
-        "*📱 Шаг 2/7: Ввод контактных данных*\n\n"
+        "*📱 Шаг 2/7: Ввод контактов*\n\n"
         "*✨ Как с Вами связаться?*\n\n"
         "*Вы можете выбрать:*\n"
         "• Нажать кнопку \"Отправить контакт\"\n"
@@ -9924,7 +9924,7 @@ async def get_contact(update: Update, context):
         return SERVICE
     
     await update.message.reply_text(
-        "*📱 Шаг 2/7: Ввод контактных данных*\n\n"
+        "*📱 Шаг 2/7: Ввод контактов*\n\n"
         "*✨ Как с Вами связаться?*\n\n"
         "*Вы можете выбрать:*\n"
         "• Нажать кнопку \"Отправить контакт\"\n"
@@ -9963,7 +9963,7 @@ async def get_contact_input(update: Update, context):
         safe_name = SecurityUtils.safe_markdown_text(name)
         
         await update.message.reply_text(
-            "*📱 Шаг 2/7: Ввод контактных данных*\n\n"
+            "*📱 Шаг 2/7: Ввод контактов*\n\n"
             "*✨ Как с Вами связаться?*\n\n"
             "*Вы можете выбрать:*\n"
             "• Нажать кнопку \"Отправить контакт\"\n"
@@ -10029,7 +10029,7 @@ async def get_service(update: Update, context):
         safe_name = SecurityUtils.safe_markdown_text(name)
         
         await update.message.reply_text(
-            "*📱 Шаг 2/7: Ввод контактных данных*\n\n"
+            "*📱 Шаг 2/7: Ввод контактов*\n\n"
             "*✨ Как с Вами связаться?*\n\n"
             "*Вы можете выбрать:*\n"
             "• Нажать кнопку \"Отправить контакт\"\n"
@@ -10169,7 +10169,7 @@ async def get_service(update: Update, context):
         
         await update.message.reply_text(
             "*🎚️ Шаг 4/5: Выбор сведения*\n\n"
-            "*✨ Что Вам нужно свести?*\n\n"
+            "*✨ Что Вам требуется свести?*\n\n"
             "*Трек — 2500₽*\n"
             "• Профессиональное сведение\n"
             "• Мастеринг готового микса\n\n"
@@ -10203,7 +10203,7 @@ async def get_service(update: Update, context):
         
         await update.message.reply_text(
             "*🎵 Шаг 4/7: Выбор формата*\n\n"
-            "*✨ Что Вы хотите создать?*\n\n"
+            "*✨ Что Вам требуется создать?*\n\n"
             "*Трек — 9000₽:*\n"
             "• Работа с инженером звукозаписи\n"
             "• Создание трека с нуля\n"
@@ -11095,7 +11095,7 @@ async def get_date(update: Update, context):
         if is_track_creation:
             await update.message.reply_text(
                 "*🎵 Шаг 4/7: Выбор формата*\n\n"
-                "*✨ Что Вы хотите создать?*\n\n"
+                "*✨ Что Вам требуется создать?*\n\n"
                 "*Трек — 9000₽:*\n"
                 "• Работа с инженером звукозаписи\n"
                 "• Создание трека с нуля\n"
@@ -11129,7 +11129,7 @@ async def get_date(update: Update, context):
         elif is_mixing:
             await update.message.reply_text(
                 "🎚️ Шаг 4/5: Тип сведения\n\n"
-                "✨ Что Вам нужно свести?\n\n"
+                "✨ Что Вам требуется свести?\n\n"
                 "Трек — 2 500₽\n"
                 "• Профессиональное сведение\n"
                 "• Мастеринг готового микса\n\n"
@@ -11575,7 +11575,7 @@ async def handle_date_selection(update: Update, context, text: str):
             # ============================================================
             message = f"*🎵 Шаг 6/7: Выбор времени*\n\n"
             
-            message += f"*✨ Свободное время:*\n"
+            message += f"*Свободное время:*\n"
             if suitable_intervals:
                 for interval in suitable_intervals:
                     if interval['end'] == 24 and interval['start'] >= 20:
@@ -11692,7 +11692,7 @@ async def handle_date_selection(update: Update, context, text: str):
         else:
             message += f"*🎵 Шаг 6/7: Выбор времени*\n\n"
         
-        message += f"*✨ Свободное время:*\n"
+        message += f"*Свободное время:*\n"
         
         for interval in free_intervals:
             display_text = FreeIntervalCalculator.format_interval_for_display(interval)
@@ -16167,7 +16167,7 @@ async def handle_back_to_previous_step(update: Update, context):
     if is_track_creation:
         await update.message.reply_text(
             "*🎵 Шаг 4/7: Выбор формата*\n\n"
-            "*✨ Что Вы хотите создать?*\n\n"
+            "*✨ Что Вам требуется создать?*\n\n"
             "*Трек — 9000₽:*\n"
             "• Работа с инженером звукозаписи\n"
             "• Создание трека с нуля\n"
@@ -17137,7 +17137,7 @@ async def handle_back_button(update: Update, context):
         elif service == "🎚️ Сведение/мастеринг":
             await update.message.reply_text(
                 "*🎚️ Шаг 4/5: Выбор сведения*\n\n"
-                "*✨ Что Вам нужно свести?*\n\n"
+                "*✨ Что Вам требуется свести?*\n\n"
                 "*Трек — 2500₽*\n"
                 "• Профессиональное сведение\n"
                 "• Мастеринг готового микса\n\n"
@@ -17155,7 +17155,7 @@ async def handle_back_button(update: Update, context):
         elif service == "🎵 Создание трека":
             await update.message.reply_text(
                 "*🎵 Шаг 4/7: Выбор формата*\n\n"
-                "*✨ Что Вы хотите создать?*\n\n"
+                "*✨ Что Вам требуется создать?*\n\n"
                 "*Трек — 9000₽:*\n"
                 "• Работа с инженером звукозаписи\n"
                 "• Создание трека с нуля\n"
@@ -17427,7 +17427,7 @@ async def handle_back_in_date(update: Update, context):
         if "Альбом" in track_type or "Договорная" in str(track_type):
             await update.message.reply_text(
             "*🎵 Шаг 4/7: Выбор формата*\n\n"
-            "*✨ Что Вы хотите создать?*\n\n"
+            "*✨ Что Вам требуется создать?*\n\n"
             "*Трек — 9000₽:*\n"
             "• Работа с инженером звукозаписи\n"
             "• Создание трека с нуля\n"
@@ -17479,7 +17479,7 @@ async def handle_back_in_date(update: Update, context):
     elif is_mixing:
         await update.message.reply_text(
             "*🎚️ Шаг 4/5: Выбор сведения*\n\n"
-            "*✨ Что Вам нужно свести?*\n\n"
+            "*✨ Что Вам требуется свести?*\n\n"
             "*Трек — 2500₽*\n"
             "• Профессиональное сведение\n"
             "• Мастеринг готового микса\n\n"
