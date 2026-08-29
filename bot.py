@@ -11347,20 +11347,20 @@ async def handle_date_selection(update: Update, context, text: str):
         
         if is_track_creation:
             await update.message.reply_text(
-                f"*❌ Дата уже прошла! Выберите будущую дату для записи!*",
+                f"*❌ Дата уже прошла! Выберите доступную дату!*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_dates("track_creation", True)
             )
         elif is_12_hours:
             service_type = "12_hours_day" if context.user_data.get('12_hours_type', '').startswith('День') else "12_hours_night"
             await update.message.reply_text(
-                f"*❌ Дата уже прошла! Выберите будущую дату для записи!*",
+                f"*❌ Дата уже прошла! Выберите доступную дату!*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_dates(service_type, False)
             )
         else:
             await update.message.reply_text(
-                f"*❌ Дата уже прошла! Выберите будущую дату для записи!*",
+                f"*❌ Дата уже прошла! Выберите доступную дату!*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_dates("vocal", with_engineer)
             )
@@ -11375,20 +11375,20 @@ async def handle_date_selection(update: Update, context, text: str):
         
         if is_track_creation:
             await update.message.reply_text(
-                f"*❌ Слишком поздно! Выберите дату в пределах {Config.MAX_BOOKING_DAYS} дней от текущей!*",
+                f"*❌ Слишком поздно! Выберите доступную дату!*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_dates("track_creation", True)
             )
         elif is_12_hours:
             service_type = "12_hours_day" if context.user_data.get('12_hours_type', '').startswith('День') else "12_hours_night"
             await update.message.reply_text(
-                f"*❌ Слишком поздно! Выберите дату в пределах {Config.MAX_BOOKING_DAYS} дней от текущей!*",
+                f"*❌ Слишком поздно! Выберите доступную дату!*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_dates(service_type, False)
             )
         else:
             await update.message.reply_text(
-                f"*❌ Слишком поздно! Выберите дату в пределах {Config.MAX_BOOKING_DAYS} дней от текущей!*",
+                f"*❌ Слишком поздно! Выберите доступную дату!*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_dates("vocal", with_engineer)
             )
@@ -11418,7 +11418,7 @@ async def handle_date_selection(update: Update, context, text: str):
         booking_datetime = DateTimeUtils.get_booking_datetime(date_str, target_time_slot)
         if not booking_datetime:
             await update.message.reply_text(
-                f"*❌ Этот слот занят на эту дату! Выберите другое время или другую дату!*",
+                f"*❌ Этот слот занят на эту дату! Выберите доступную дату!*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_dates(service_type, False)
             )
@@ -11432,7 +11432,7 @@ async def handle_date_selection(update: Update, context, text: str):
         
         if hours_until_booking < 72:
             await update.message.reply_text(
-                f"*❌ Этот слот занят на эту дату! Выберите другое время или другую дату!*",
+                f"*❌ Этот слот занят на эту дату! Выберите доступную дату!*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_dates(service_type, False)
             )
@@ -11444,7 +11444,7 @@ async def handle_date_selection(update: Update, context, text: str):
         
         if not is_available:
             await update.message.reply_text(
-                f"*❌ Этот слот занят на эту дату! Выберите другое время или другую дату!*",
+                f"*❌ Этот слот занят на эту дату! Выберите доступную дату!*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_dates(service_type, False)
             )
@@ -11477,13 +11477,13 @@ async def handle_date_selection(update: Update, context, text: str):
     if not free_intervals:
         if is_track_creation:
             await update.message.reply_text(
-                f"*❌ Все слоты заняты на эту дату! Выберите другое время или другую дату!*",
+                f"*❌ Все слоты заняты на эту дату! Выберите доступную дату!*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_dates("track_creation", True)
             )
         else:
             await update.message.reply_text(
-                f"*❌ Все слоты заняты на эту дату! Выберите другое время или другую дату!*",
+                f"*❌ Все слоты заняты на эту дату! Выберите доступную дату!*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_dates("vocal", with_engineer)
             )
@@ -11561,7 +11561,7 @@ async def handle_date_selection(update: Update, context, text: str):
         
         if not has_direct_4h_slot and not has_cross_night_slot:
             await update.message.reply_text(
-                f"*❌ Все слоты заняты на эту дату! Выберите другое время или другую дату!*",
+                f"*❌ Все слоты заняты на эту дату! Выберите доступную дату!*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_dates("track_creation", True)
             )
