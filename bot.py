@@ -16598,6 +16598,26 @@ async def show_slots(update: Update, context):
             )
             return SHOW_SLOTS
         
+        # ================================================================
+        # ===== НОВАЯ ПРОВЕРКА ДОСТУПНОСТИ ДЛЯ ТРЕКА =====
+        # ================================================================
+        is_available = BookingManager.check_time_slot_available(
+            selected_date, 
+            normalized_input, 
+            "track_creation"
+        )
+        
+        if not is_available:
+            await update.message.reply_text(
+                "*❌ Этот слот занят! Выберите другое время из предложенных свободных слотов!*",
+                parse_mode="Markdown",
+                reply_markup=KeyboardManager.get_time_input()
+            )
+            return SHOW_SLOTS
+        
+        # ================================================================
+        # ===== ПРОВЕРКА ЧЕРЕЗ SUITABLE_INTERVALS =====
+        # ================================================================
         is_in_any_interval = False
         
         for interval in suitable_intervals:
