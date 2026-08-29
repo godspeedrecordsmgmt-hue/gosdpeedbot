@@ -5868,7 +5868,11 @@ class BookingManager:
             
             affected_dates = [clean_date]
 
+            # ================================================================
+            # ===== ИСПРАВЛЕННАЯ ОЧИСТКА КЭША =====
+            # ================================================================
             if clean_date and 'Не указана' not in clean_date and clean_date != 'Запись в студии':
+                # Очищаем текущую дату
                 MemoryCache.invalidate_date(clean_date)
                 
                 if time_slot and '-' in time_slot and time_slot != 'Не указано':
@@ -5877,14 +5881,24 @@ class BookingManager:
                         start_hour_check = int(start_str.strip())
                         end_hour_check = int(end_str.strip())
                         
+                        # ===== ЕСЛИ СЛОТ ПЕРЕСЕКАЕТ ПОЛНОЧЬ =====
                         if end_hour_check <= start_hour_check or time_slot == '21-9':
                             day, month, year = map(int, clean_date.split('.'))
                             current_date = datetime(year, month, day)
+                            
+                            # Очищаем кэш для следующего дня
                             next_date = current_date + timedelta(days=1)
                             next_date_str = next_date.strftime("%d.%m.%Y")
-                            
                             MemoryCache.invalidate_date(next_date_str)
                             affected_dates.append(next_date_str)
+                            
+                            # ===== НОВОЕ: ОЧИЩАЕМ КЭШ ДЛЯ ПРЕДЫДУЩЕГО ДНЯ =====
+                            # Это нужно, потому что ночная аренда на предыдущий день зависит от этого дня
+                            prev_date = current_date - timedelta(days=1)
+                            prev_date_str = prev_date.strftime("%d.%m.%Y")
+                            MemoryCache.invalidate_date(prev_date_str)
+                            affected_dates.append(prev_date_str)
+                            
                     except ValueError as e:
                         logger.error(f"Ошибка парсинга времени для сброса кэша: {e}")
             
@@ -20944,12 +20958,37 @@ async def button_callback_handler(update: Update, context):
                     cursor.execute('UPDATE bookings SET status = "cancelled_by_user" WHERE id = ?', (booking_id,))
                     cursor.execute('DELETE FROM notifications WHERE booking_id = ?', (booking_id,))
                     
-                    # Очищаем кэш даты
+                    # ================================================================
+                    # ===== ИСПРАВЛЕННАЯ ОЧИСТКА КЭША =====
+                    # ================================================================
                     if date_str:
                         clean_date = date_str.split('(')[0].strip()
                         if clean_date and clean_date[0] in "🟢🟡🟠🔴⚪️":
                             clean_date = clean_date[2:].strip()
+                        
+                        # Очищаем текущую дату
                         MemoryCache.invalidate_date(clean_date)
+                        
+                        # Если запись кросс-ночная - очищаем предыдущий и следующий день
+                        if time_slot and '-' in time_slot:
+                            try:
+                                start_str, end_str = time_slot.split('-')
+                                start_hour_check = int(start_str.strip())
+                                end_hour_check = int(end_str.strip())
+                                
+                                if end_hour_check <= start_hour_check:
+                                    day, month, year = map(int, clean_date.split('.'))
+                                    current_date = datetime(year, month, day)
+                                    
+                                    # Следующий день
+                                    next_date = current_date + timedelta(days=1)
+                                    MemoryCache.invalidate_date(next_date.strftime("%d.%m.%Y"))
+                                    
+                                    # Предыдущий день
+                                    prev_date = current_date - timedelta(days=1)
+                                    MemoryCache.invalidate_date(prev_date.strftime("%d.%m.%Y"))
+                            except:
+                                pass
                     
                     conn.commit()
                     await AchievementSystem.check_and_award_achievements(str(user_id), context, None)
@@ -21253,6 +21292,38 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
                 return
             
             cursor.execute('UPDATE bookings SET status = "confirmed" WHERE id = ?', (booking_id,))
+            
+            # ================================================================
+            # ===== ОЧИЩАЕМ КЭШ ДЛЯ ВСЕХ ЗАТРОНУТЫХ ДАТ =====
+            # ================================================================
+            if date_str and 'Не указана' not in date_str:
+                clean_date = date_str.split('(')[0].strip()
+                if clean_date and clean_date[0] in "🟢🟡🟠🔴⚪️":
+                    clean_date = clean_date[2:].strip()
+                
+                # Очищаем текущую дату
+                MemoryCache.invalidate_date(clean_date)
+                
+                # Если запись кросс-ночная - очищаем предыдущий и следующий день
+                if time_slot and '-' in time_slot:
+                    try:
+                        start_str, end_str = time_slot.split('-')
+                        start_hour_check = int(start_str.strip())
+                        end_hour_check = int(end_str.strip())
+                        
+                        if end_hour_check <= start_hour_check:
+                            day, month, year = map(int, clean_date.split('.'))
+                            current_date = datetime(year, month, day)
+                            
+                            # Следующий день
+                            next_date = current_date + timedelta(days=1)
+                            MemoryCache.invalidate_date(next_date.strftime("%d.%m.%Y"))
+                            
+                            # Предыдущий день
+                            prev_date = current_date - timedelta(days=1)
+                            MemoryCache.invalidate_date(prev_date.strftime("%d.%m.%Y"))
+                    except:
+                        pass
             
             # ===== СЖИГАЕМ КУПОН ДЛЯ СВЕДЕНИЯ (трек 2500₽) =====
             if is_mixing == 1 and not is_contractual and level_coupon_id:
@@ -21576,6 +21647,38 @@ async def process_booking_rejection(booking_id: int, admin_id: int, context: Con
                     text="❌ Запись уже отклонена!", parse_mode="Markdown"
                 )
                 return
+            
+            # ================================================================
+            # ===== ОЧИЩАЕМ КЭШ ДЛЯ ВСЕХ ЗАТРОНУТЫХ ДАТ =====
+            # ================================================================
+            if date_str and 'Не указана' not in date_str:
+                clean_date = date_str.split('(')[0].strip()
+                if clean_date and clean_date[0] in "🟢🟡🟠🔴⚪️":
+                    clean_date = clean_date[2:].strip()
+                
+                # Очищаем текущую дату
+                MemoryCache.invalidate_date(clean_date)
+                
+                # Если запись кросс-ночная - очищаем предыдущий и следующий день
+                if time_slot and '-' in time_slot:
+                    try:
+                        start_str, end_str = time_slot.split('-')
+                        start_hour_check = int(start_str.strip())
+                        end_hour_check = int(end_str.strip())
+                        
+                        if end_hour_check <= start_hour_check:
+                            day, month, year = map(int, clean_date.split('.'))
+                            current_date = datetime(year, month, day)
+                            
+                            # Следующий день
+                            next_date = current_date + timedelta(days=1)
+                            MemoryCache.invalidate_date(next_date.strftime("%d.%m.%Y"))
+                            
+                            # Предыдущий день
+                            prev_date = current_date - timedelta(days=1)
+                            MemoryCache.invalidate_date(prev_date.strftime("%d.%m.%Y"))
+                    except:
+                        pass
             
             # ===== ВОЗВРАЩАЕМ ПРОМОКОД (ЕСЛИ БЫЛ) =====
             if promo_code_used:
