@@ -5860,6 +5860,27 @@ class BookingManager:
                 # Очищаем текущую дату
                 MemoryCache.invalidate_date(clean_date)
                 
+                # ===== НОВОЕ: ВСЕГДА ОЧИЩАЕМ ПРЕДЫДУЩИЙ И СЛЕДУЮЩИЙ ДЕНЬ =====
+                try:
+                    day, month, year = map(int, clean_date.split('.'))
+                    current_date = datetime(year, month, day)
+                    
+                    # Предыдущий день
+                    prev_date = current_date - timedelta(days=1)
+                    MemoryCache.invalidate_date(prev_date.strftime("%d.%m.%Y"))
+                    affected_dates.append(prev_date.strftime("%d.%m.%Y"))
+                    logger.info(f"🗑️ Очищен кэш для предыдущего дня: {prev_date.strftime('%d.%m.%Y')}")
+                    
+                    # Следующий день
+                    next_date = current_date + timedelta(days=1)
+                    MemoryCache.invalidate_date(next_date.strftime("%d.%m.%Y"))
+                    affected_dates.append(next_date.strftime("%d.%m.%Y"))
+                    logger.info(f"🗑️ Очищен кэш для следующего дня: {next_date.strftime('%d.%m.%Y')}")
+                    
+                except Exception as e:
+                    logger.error(f"Ошибка очистки кэша для соседних дат: {e}")
+                
+                # Старая логика для дополнительных дат (если слот пересекает полночь)
                 if time_slot and '-' in time_slot and time_slot != 'Не указано':
                     start_str, end_str = time_slot.split('-')
                     try:
@@ -5877,8 +5898,7 @@ class BookingManager:
                             MemoryCache.invalidate_date(next_date_str)
                             affected_dates.append(next_date_str)
                             
-                            # ===== НОВОЕ: ОЧИЩАЕМ КЭШ ДЛЯ ПРЕДЫДУЩЕГО ДНЯ =====
-                            # Это нужно, потому что ночная аренда на предыдущий день зависит от этого дня
+                            # Очищаем кэш для предыдущего дня
                             prev_date = current_date - timedelta(days=1)
                             prev_date_str = prev_date.strftime("%d.%m.%Y")
                             MemoryCache.invalidate_date(prev_date_str)
