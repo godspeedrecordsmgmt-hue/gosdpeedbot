@@ -7687,8 +7687,7 @@ async def promo_main_menu(update: Update, context, edit_mode: bool = False, quer
     else:
         message = (
             f"*🎁 Доступные промокоды*\n\n"
-            f"*📭 Нет доступных промокодов*\n\n"
-            f"*✨ Все доступные промокоды уже использованы или истекли*"
+            f"*📭 У Вас нет доступных промокодов*\n\n"
         )
     
     if edit_mode and query:
@@ -7737,8 +7736,7 @@ async def promo_callback_handler(update: Update, context):
         if not active_promo:
             message = (
                 "*📋 Ваш активированный промокод*\n\n"
-                "*📭 У вас нет активированного промокода*\n\n"
-                "*✨ Нажмите \"Ввести промокод\", чтобы активировать*"
+                "*📭 У Вас нет активированного промокода*"
             )
         else:
             promo_text = PromoCodeManager.format_promo_info(active_promo)
@@ -7747,8 +7745,7 @@ async def promo_callback_handler(update: Update, context):
             message = (
                 f"*📋 Ваш активированный промокод*\n\n"
                 f"*✅ Активный промокод:*\n"
-                f"• `{active_promo['code']}` — {promo_text}{expiry_text}\n\n"
-                f"*✨ Скидка будет применена автоматически при следующей записи!*"
+                f"• `{active_promo['code']}` — {promo_text}{expiry_text}"
             )
         
         await query.edit_message_text(
