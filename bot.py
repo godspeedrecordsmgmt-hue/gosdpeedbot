@@ -7515,6 +7515,13 @@ async def top_vinyls_handler(update: Update, context):
             
             message += "\n"
             
+            # ===== СНАЧАЛА КАК ПОЛУЧИТЬ ПЛАСТИНКИ =====
+            message += "*Как получить пластинки:*\n"
+            message += "• Запись в студии — +25 пластинок\n"
+            message += "• Пригласить друга — +25 пластинок\n"
+            message += "• Выполнить достижения — от 1000+ пластинок\n\n"
+            
+            # ===== ПОТОМ СТАТИСТИКА =====
             if current_user_display:
                 cursor.execute('''
                     SELECT vinyls, level,
@@ -7530,14 +7537,9 @@ async def top_vinyls_handler(update: Update, context):
                     if user_vinyls > 0:
                         message += f"*Статистика:*\n"
                         message += f"• Место: {user_rank}\n"
-                        message += f"• Пластинок: {user_vinyls}\n\n"
+                        message += f"• Пластинок: {user_vinyls}\n"
                     else:
-                        message += f"*💡 У вас пока нет пластинок*\n\n"
-            
-            message += "*Как получить пластинки:*\n"
-            message += "• Запись в студии — +25 пластинок\n"
-            message += "• Пригласить друга — +25 пластинок\n"
-            message += "• Выполнить достижения — от 1000+ пластинок"
+                        message += f"*💡 У вас пока нет пластинок*\n"
             
             await update.message.reply_text(
                 message,
