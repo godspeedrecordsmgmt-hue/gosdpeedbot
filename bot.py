@@ -586,24 +586,24 @@ def format_number(num: int) -> str:
 class AchievementSystem:
     ACHIEVEMENTS = {
         # ===== ЗАПИСИ В СТУДИИ =====
-        'first_booking': {'name': 'Добро пожаловать', 'desc': 'Отправил первую заявку на запись', 'vinyls': 10, 'hidden': False, 'category': 'bookings', 'emoji': '🥉'},
-        'novice': {'name': 'Новичок', 'desc': '3 завершенные записи', 'vinyls': 20, 'hidden': False, 'category': 'bookings', 'emoji': '🥈'},
-        'amateur': {'name': 'Любитель', 'desc': '10 завершенных записей', 'vinyls': 30, 'hidden': False, 'category': 'bookings', 'emoji': '🥇'},
-        'pro': {'name': 'Профи', 'desc': '25 завершенных записей', 'vinyls': 40, 'hidden': False, 'category': 'bookings', 'emoji': '🏅'},
-        'veteran': {'name': 'Ветеран', 'desc': '50 завершенных записей', 'vinyls': 50, 'hidden': False, 'category': 'bookings', 'emoji': '🎖'},
-        'studio_legend': {'name': 'Легенда студии', 'desc': '100 завершенных записей', 'vinyls': 60, 'hidden': False, 'category': 'bookings', 'emoji': '👑'},
+        'first_booking': {'name': '🥉 Добро пожаловать', 'desc': 'Отправил первую заявку на запись', 'vinyls': 10, 'hidden': False, 'category': 'bookings', 'emoji': '🥉'},
+        'novice': {'name': '🥈 Новичок', 'desc': '3 завершенные записи', 'vinyls': 20, 'hidden': False, 'category': 'bookings', 'emoji': '🥈'},
+        'amateur': {'name': '🥇 Любитель', 'desc': '10 завершенных записей', 'vinyls': 30, 'hidden': False, 'category': 'bookings', 'emoji': '🥇'},
+        'pro': {'name': '🏅 Профи', 'desc': '25 завершенных записей', 'vinyls': 40, 'hidden': False, 'category': 'bookings', 'emoji': '🏅'},
+        'veteran': {'name': '🎖 Ветеран', 'desc': '50 завершенных записей', 'vinyls': 50, 'hidden': False, 'category': 'bookings', 'emoji': '🎖'},
+        'studio_legend': {'name': '👑 Легенда студии', 'desc': '100 завершенных записей', 'vinyls': 60, 'hidden': False, 'category': 'bookings', 'emoji': '👑'},
         
         # ===== РЕФЕРАЛЫ =====
-        'friend_inviter': {'name': 'Позвал друга', 'desc': '1 друг сделал запись', 'vinyls': 30, 'hidden': False, 'category': 'referrals', 'emoji': '🤝'},
-        'social': {'name': 'Социальный', 'desc': '3 друга сделали запись', 'vinyls': 50, 'hidden': False, 'category': 'referrals', 'emoji': '🗣'},
-        'star': {'name': 'Звезда', 'desc': '5 друзей сделали запись', 'vinyls': 70, 'hidden': False, 'category': 'referrals', 'emoji': '⭐'},
-        'magnate': {'name': 'Магнат', 'desc': '10 друзей сделали запись', 'vinyls': 100, 'hidden': False, 'category': 'referrals', 'emoji': '💰'},
-        'network_giant': {'name': 'Сетевой гигант', 'desc': '20 друзей сделали запись', 'vinyls': 150, 'hidden': False, 'category': 'referrals', 'emoji': '🌐'},
+        'friend_inviter': {'name': '🤝 Позвал друга', 'desc': '1 друг сделал запись', 'vinyls': 30, 'hidden': False, 'category': 'referrals', 'emoji': '🤝'},
+        'social': {'name': '🗣 Социальный', 'desc': '3 друга сделали запись', 'vinyls': 50, 'hidden': False, 'category': 'referrals', 'emoji': '🗣'},
+        'star': {'name': '⭐️ Звезда', 'desc': '5 друзей сделали запись', 'vinyls': 70, 'hidden': False, 'category': 'referrals', 'emoji': '⭐️'},
+        'magnate': {'name': '💰 Магнат', 'desc': '10 друзей сделали запись', 'vinyls': 100, 'hidden': False, 'category': 'referrals', 'emoji': '💰'},
+        'network_giant': {'name': '🌐 Сетевой гигант', 'desc': '20 друзей сделали запись', 'vinyls': 150, 'hidden': False, 'category': 'referrals', 'emoji': '🌐'},
         
-        # ===== ОСОБЫЕ НАГРАДЫ =====
-        'name_on_wall': {'name': 'Имя на стене', 'desc': 'Самый преданный клиент года', 'vinyls': 100, 'hidden': False, 'category': 'special', 'emoji': '📜'},
-        'godspeed_legend': {'name': 'Godspeed Legend', 'desc': 'За вклад в развитие студии', 'vinyls': 200, 'hidden': False, 'category': 'special', 'emoji': '🎖'},
-        'golden_mic': {'name': 'Золотой микрофон', 'desc': 'Популярный артист', 'vinyls': 150, 'hidden': False, 'category': 'special', 'emoji': '🎤'},
+        # ===== ОСОБЫЕ НАГРАДЫ (ТОЛЬКО АДМИН) =====
+        'name_on_wall': {'name': '📜 Имя на стене', 'desc': 'Самый преданный клиент года', 'vinyls': 100, 'hidden': False, 'category': 'special', 'emoji': '📜'},
+        'godspeed_legend': {'name': '🎖 Godspeed Legend', 'desc': 'За вклад в развитие студии', 'vinyls': 200, 'hidden': False, 'category': 'special', 'emoji': '🎖'},
+        'golden_mic': {'name': '🎤 Золотой микрофон', 'desc': 'Популярный артист', 'vinyls': 150, 'hidden': False, 'category': 'special', 'emoji': '🎤'},
     }
     
     LEVELS = [
@@ -620,67 +620,6 @@ class AchievementSystem:
     }
     
     @staticmethod
-    async def notify_level_change(user_id: str, old_vinyls: int, new_vinyls: int, context=None):
-        """Отправляет отдельное уведомление об изменении уровня"""
-        try:
-            old_level_info = AchievementSystem.get_level_info(old_vinyls)
-            new_level_info = AchievementSystem.get_level_info(new_vinyls)
-            
-            if new_level_info['current_level'] == old_level_info['current_level']:
-                logger.info(f"ℹ️ Уровень пользователя {user_id} не изменился")
-                return False
-            
-            if not context:
-                logger.warning(f"⚠️ context отсутствует, уведомление об изменении уровня не отправлено")
-                return False
-            
-            if new_level_info['current_level'] > old_level_info['current_level']:
-                message = (
-                    f"*🎉 Повышение уровня!*\n\n"
-                    f"*📈 Был уровень: {old_level_info['current_level_name']}*\n"
-                    f"*📈 Стал уровень: {new_level_info['current_level_name']}*\n\n"
-                    f"*🎁 Вы получили новые купоны на скидку!*\n"
-                    f"*💰 Проверьте раздел «Мой уровень»*\n\n"
-                    f"*💪 Продолжайте в том же духе! 🔥*"
-                )
-            else:
-                message = (
-                    f"*📉 Понижение уровня!*\n\n"
-                    f"*📉 Был уровень: {old_level_info['current_level_name']}*\n"
-                    f"*📉 Стал уровень: {new_level_info['current_level_name']}*\n\n"
-                    f"*💪 Не расстраивайтесь! Запишитесь снова и верните уровень! 🔥*"
-                )
-            
-            message += f"\n\n*📊 Пластинки: {old_vinyls} 💿 → {new_vinyls} 💿*"
-            
-            try:
-                await context.bot.send_message(
-                    chat_id=int(user_id),
-                    text=message,
-                    parse_mode="Markdown"
-                )
-                logger.info(f"✅ Уведомление об изменении уровня отправлено пользователю {user_id}")
-                return True
-            except Exception as e:
-                logger.error(f"❌ Не удалось отправить уведомление об изменении уровня: {e}")
-                return False
-                    
-        except Exception as e:
-            logger.error(f"❌ Ошибка в notify_level_change: {e}")
-            import traceback
-            traceback.print_exc()
-            return False
-    
-    @staticmethod
-    def generate_referral_code(telegram_id: str) -> str:
-        import random
-        import string
-        
-        id_part = telegram_id[-4:] if len(telegram_id) >= 4 else telegram_id.zfill(4)
-        letters = ''.join(random.choices(string.ascii_uppercase, k=4))
-        return f"{letters}{id_part}"
-    
-    @staticmethod
     async def check_and_award_achievements(user_id: str, context=None, update=None):
         """Проверяет и выдает достижения"""
         try:
@@ -689,21 +628,48 @@ class AchievementSystem:
             with db.get_connection() as conn:
                 cursor = conn.cursor()
                 
+                # Получаем текущие достижения пользователя
                 cursor.execute('SELECT achievement_id FROM user_achievements WHERE user_id = ?', (user_id,))
                 user_achievements = {row[0] for row in cursor.fetchall()}
                 
+                # ===== 1. ВСЕ ЗАПИСИ (для first_booking) =====
+                cursor.execute('''
+                    SELECT COUNT(*) FROM bookings 
+                    WHERE telegram_id = ?
+                ''', (user_id,))
+                total_row = cursor.fetchone()
+                total_bookings = total_row[0] if total_row and total_row[0] else 0
+                
+                # ===== 2. ЗАВЕРШЁННЫЕ ЗАПИСИ =====
                 cursor.execute('''
                     SELECT COUNT(*) FROM bookings 
                     WHERE telegram_id = ? 
-                    AND status IN ('confirmed', 'подтвержден', 'completed')
+                    AND (
+                        -- Обычные записи: статус completed
+                        (status = 'completed' AND is_admin_booking = 0 AND is_contractual = 0)
+                        OR
+                        -- Админские записи: статус confirmed
+                        (is_admin_booking = 1 AND status IN ('confirmed', 'подтвержден'))
+                        OR
+                        -- Договорные записи: статус confirmed
+                        (is_contractual = 1 AND status IN ('confirmed', 'подтвержден'))
+                        OR
+                        -- Сведение/мастеринг: статус confirmed
+                        (is_mixing = 1 AND status IN ('confirmed', 'подтвержден'))
+                        OR
+                        -- Создание альбома: статус confirmed
+                        (is_track_creation = 1 AND track_type = 'Альбом' AND status IN ('confirmed', 'подтвержден'))
+                    )
                 ''', (user_id,))
-                total_row = cursor.fetchone()
-                completed_bookings = total_row[0] if total_row and total_row[0] else 0
-                logger.info(f"📊 Всего записей: {completed_bookings}")
+                completed_row = cursor.fetchone()
+                completed_bookings = completed_row[0] if completed_row and completed_row[0] else 0
+                
+                logger.info(f"📊 Всего записей: {total_bookings}, завершённых: {completed_bookings}")
                 
                 awarded = []
                 total_vinyls = 0
                 
+                # ===== ДОСТИЖЕНИЯ ЗА ЗАПИСИ =====
                 achievements_list = [
                     ('first_booking', 1, 10, '🥉 Добро пожаловать'),
                     ('novice', 3, 20, '🥈 Новичок'),
@@ -714,16 +680,75 @@ class AchievementSystem:
                 ]
                 
                 for ach_id, need, vinyls, name in achievements_list:
-                    if completed_bookings >= need and ach_id not in user_achievements:
-                        logger.info(f"🎯 Выдаём {ach_id}")
-                        cursor.execute('''
-                            INSERT INTO user_achievements 
-                            (user_id, achievement_id, achievement_name, achievement_type) 
-                            VALUES (?, ?, ?, 'auto')
-                        ''', (user_id, ach_id, name))
-                        cursor.execute('UPDATE users SET vinyls = vinyls + ? WHERE telegram_id = ?', (vinyls, user_id))
-                        awarded.append(ach_id)
-                        total_vinyls += vinyls
+                    if ach_id not in user_achievements:
+                        if ach_id == 'first_booking':
+                            # first_booking — от всех записей (включая pending)
+                            if total_bookings >= need:
+                                logger.info(f"🎯 Выдаём {ach_id} (всего записей: {total_bookings})")
+                                cursor.execute('''
+                                    INSERT INTO user_achievements 
+                                    (user_id, achievement_id, achievement_name, achievement_type) 
+                                    VALUES (?, ?, ?, 'auto')
+                                ''', (user_id, ach_id, name))
+                                cursor.execute('UPDATE users SET vinyls = vinyls + ? WHERE telegram_id = ?', (vinyls, user_id))
+                                awarded.append(ach_id)
+                                total_vinyls += vinyls
+                        else:
+                            # Остальные — только от завершённых записей
+                            if completed_bookings >= need:
+                                logger.info(f"🎯 Выдаём {ach_id} (завершённых: {completed_bookings})")
+                                cursor.execute('''
+                                    INSERT INTO user_achievements 
+                                    (user_id, achievement_id, achievement_name, achievement_type) 
+                                    VALUES (?, ?, ?, 'auto')
+                                ''', (user_id, ach_id, name))
+                                cursor.execute('UPDATE users SET vinyls = vinyls + ? WHERE telegram_id = ?', (vinyls, user_id))
+                                awarded.append(ach_id)
+                                total_vinyls += vinyls
+                
+                # ===== РЕФЕРАЛЬНЫЕ ДОСТИЖЕНИЯ =====
+                cursor.execute('SELECT referral_code FROM users WHERE telegram_id = ?', (user_id,))
+                user_data = cursor.fetchone()
+                
+                if user_data and user_data[0]:
+                    referral_code = user_data[0]
+                    
+                    cursor.execute('''
+                        SELECT COUNT(DISTINCT u.telegram_id)
+                        FROM users u
+                        JOIN bookings b ON u.telegram_id = b.telegram_id
+                        WHERE u.referred_by = ? 
+                        AND (
+                            b.service LIKE '%Админ%' OR b.service LIKE '%админ%' OR
+                            (b.is_contractual = 1 AND b.status IN ('confirmed', 'подтвержден')) OR
+                            (b.date_str NOT LIKE '%Не указана%' AND 
+                             b.date_str NOT LIKE '%договорная%' AND 
+                             b.status = 'completed')
+                        )
+                    ''', (referral_code,))
+                    
+                    active_referrals = cursor.fetchone()[0] or 0
+                    logger.info(f"👥 Активных рефералов у {user_id}: {active_referrals}")
+                    
+                    referral_achievements_list = [
+                        ('friend_inviter', '🤝 Позвал друга', 1, 30),
+                        ('social', '🗣 Социальный', 3, 50),
+                        ('star', '⭐️ Звезда', 5, 70),
+                        ('magnate', '💰 Магнат', 10, 100),
+                        ('network_giant', '🌐 Сетевой гигант', 20, 150),
+                    ]
+                    
+                    for ach_id, name, need, vinyls in referral_achievements_list:
+                        if active_referrals >= need and ach_id not in user_achievements:
+                            logger.info(f"🎯 Выдаём реферальное достижение {ach_id} (нужно {need}, есть {active_referrals})")
+                            cursor.execute('''
+                                INSERT INTO user_achievements 
+                                (user_id, achievement_id, achievement_name, achievement_type) 
+                                VALUES (?, ?, ?, 'auto')
+                            ''', (user_id, ach_id, name))
+                            cursor.execute('UPDATE users SET vinyls = vinyls + ? WHERE telegram_id = ?', (vinyls, user_id))
+                            awarded.append(ach_id)
+                            total_vinyls += vinyls
                 
                 vinyl_row = cursor.execute('SELECT vinyls FROM users WHERE telegram_id = ?', (user_id,)).fetchone()
                 new_vinyls = vinyl_row[0] if vinyl_row and vinyl_row[0] else 0
@@ -736,7 +761,7 @@ class AchievementSystem:
                         for ach_id2, need, vinyls, name in achievements_list:
                             if ach_id2 == ach_id:
                                 try:
-                                    # ===== ИСПРАВЛЕНО: name уже содержит эмодзи =====
+                                    # name уже содержит эмодзи, например "🥉 Добро пожаловать"
                                     message = (
                                         f"*🎉 Добавлено {vinyls} пластинок за достижение «{name}»!*\n\n"
                                         f"*✨ Гордимся, что Вы с нами!*\n\n"
@@ -752,6 +777,27 @@ class AchievementSystem:
                                 except Exception as e:
                                     logger.error(f"❌ Ошибка отправки уведомления: {e}")
                                 break
+                    
+                    # Отдельно для реферальных достижений
+                    for ach_id in awarded:
+                        for ach_id2, name, need, vinyls in referral_achievements_list:
+                            if ach_id2 == ach_id:
+                                try:
+                                    message = (
+                                        f"*🎉 Добавлено {vinyls} пластинок за достижение «{name}»!*\n\n"
+                                        f"*✨ Гордимся, что Вы с нами!*\n\n"
+                                        f"*💰 Пластинок после достижения: {new_vinyls} 💿*"
+                                    )
+                                    
+                                    await context.bot.send_message(
+                                        chat_id=int(user_id),
+                                        text=message,
+                                        parse_mode="Markdown"
+                                    )
+                                    logger.info(f"✅ Уведомление о реферальном достижении отправлено пользователю {user_id}")
+                                except Exception as e:
+                                    logger.error(f"❌ Ошибка отправки уведомления: {e}")
+                                break
                 
                 return awarded, total_vinyls
                 
@@ -760,7 +806,7 @@ class AchievementSystem:
             import traceback
             traceback.print_exc()
             return [], 0
-                    
+    
     @staticmethod
     async def award_manual_achievement(user_id: str, achievement_id: str, admin_id: str, context=None):
         """Выдаёт достижение вручную с уведомлением о повышении уровня"""
@@ -771,7 +817,6 @@ class AchievementSystem:
             with db.get_connection() as conn:
                 cursor = conn.cursor()
                 
-                # Проверяем, нет ли уже такого достижения
                 cursor.execute('''
                     SELECT id FROM user_achievements 
                     WHERE user_id = ? AND achievement_id = ?
@@ -782,38 +827,31 @@ class AchievementSystem:
                 
                 ach = AchievementSystem.ACHIEVEMENTS[achievement_id]
                 
-                # Получаем текущее количество пластинок ДО выдачи
                 cursor.execute('SELECT vinyls FROM users WHERE telegram_id = ?', (user_id,))
                 result = cursor.fetchone()
                 old_vinyls = result[0] if result else 0
                 
-                # Добавляем достижение
                 cursor.execute('''
                     INSERT INTO user_achievements 
                     (user_id, achievement_id, achievement_name, achievement_type, awarded_by)
                     VALUES (?, ?, ?, 'manual', ?)
                 ''', (user_id, achievement_id, ach['name'], admin_id))
                 
-                # Начисляем пластинки
                 cursor.execute('''
                     UPDATE users SET vinyls = vinyls + ? WHERE telegram_id = ?
                 ''', (ach['vinyls'], user_id))
                 
                 conn.commit()
                 
-                # Получаем новое количество пластинок
                 cursor.execute('SELECT vinyls FROM users WHERE telegram_id = ?', (user_id,))
                 result = cursor.fetchone()
                 new_vinyls = result[0] if result else 0
                 
-                # Проверяем изменение уровня
                 old_level_info = AchievementSystem.get_level_info(old_vinyls)
                 new_level_info = AchievementSystem.get_level_info(new_vinyls)
                 
-                # Обновляем уровень в базе (БЕЗ отправки уведомления!)
                 await AchievementSystem.update_user_level(user_id, None, send_notification=False)
                 
-                # Отправляем ОДНО уведомление о повышении уровня, если уровень изменился
                 if context and new_level_info['current_level'] > old_level_info['current_level']:
                     try:
                         message = (
@@ -834,11 +872,10 @@ class AchievementSystem:
                     except Exception as e:
                         logger.error(f"❌ Не удалось отправить уведомление о повышении уровня: {e}")
                 
-                # ===== НОВОЕ ФОРМАТИРОВАННОЕ УВЕДОМЛЕНИЕ О ДОСТИЖЕНИИ =====
                 if context:
                     try:
                         message = (
-                            f"*🎉 Добавлено {ach['vinyls']} пластинок за достижение «{ach['emoji']} {ach['name']}»!*\n\n"
+                            f"*🎉 Добавлено {ach['vinyls']} пластинок за достижение «{ach['name']}»!*\n\n"
                             f"*✨ Гордимся, что Вы с нами!*\n\n"
                             f"*💰 Пластинок после достижения: {new_vinyls} 💿*"
                         )
@@ -865,7 +902,6 @@ class AchievementSystem:
             with db.get_connection() as conn:
                 cursor = conn.cursor()
                 
-                # Получаем информацию о достижении
                 cursor.execute('''
                     SELECT achievement_name, achievement_type FROM user_achievements 
                     WHERE user_id = ? AND achievement_id = ?
@@ -880,18 +916,15 @@ class AchievementSystem:
                 ach = AchievementSystem.ACHIEVEMENTS.get(achievement_id, {})
                 vinyls_to_remove = ach.get('vinyls', 0)
                 
-                # Получаем текущее количество пластинок ДО удаления
                 cursor.execute('SELECT vinyls FROM users WHERE telegram_id = ?', (user_id,))
                 user_result = cursor.fetchone()
                 old_vinyls = user_result[0] if user_result else 0
                 
-                # Удаляем достижение
                 cursor.execute('''
                     DELETE FROM user_achievements 
                     WHERE user_id = ? AND achievement_id = ?
                 ''', (user_id, achievement_id))
                 
-                # Списываем пластинки
                 new_vinyls = max(0, old_vinyls - vinyls_to_remove)
                 cursor.execute('''
                     UPDATE users SET vinyls = ? WHERE telegram_id = ?
@@ -899,10 +932,8 @@ class AchievementSystem:
                 
                 conn.commit()
                 
-                # Обновляем уровень в базе (БЕЗ отправки уведомления)
                 await AchievementSystem.update_user_level(user_id, None, send_notification=False)
                 
-                # ===== НОВОЕ ФОРМАТИРОВАННОЕ УВЕДОМЛЕНИЕ ОБ УДАЛЕНИИ =====
                 if context:
                     try:
                         emoji = ach.get('emoji', '🏆')
@@ -1040,6 +1071,15 @@ class AchievementSystem:
             return "❌ Ошибка загрузки достижений"
     
     @staticmethod
+    def generate_referral_code(telegram_id: str) -> str:
+        import random
+        import string
+        
+        id_part = telegram_id[-4:] if len(telegram_id) >= 4 else telegram_id.zfill(4)
+        letters = ''.join(random.choices(string.ascii_uppercase, k=4))
+        return f"{letters}{id_part}"
+    
+    @staticmethod
     async def add_vinyls_for_booking(user_id: str, context=None, booking_data: dict = None):
         """Начисляет пластинки за запись с защитой от дублей"""
         try:
@@ -1099,16 +1139,11 @@ class AchievementSystem:
                 date_str = booking_data.get('date_str', db_date_str)
                 time_slot = booking_data.get('time_slot', db_time_slot)
                 
-                logger.info(f"📋 Данные записи #{booking_id}: status={status}, is_admin={is_admin_booking}, is_contractual={is_contractual}, date={date_str}, time={time_slot}")
+                logger.info(f"📋 Данные записи #{booking_id}: status={status}, is_admin={is_admin_booking}, is_contractual={is_contractual}")
                 
                 # ===== ПРОВЕРКА НА ОТМЕНЕННЫЕ =====
                 if status in ['cancelled_by_user', 'cancelled', 'rejected', 'отклонен', 'отменен']:
                     logger.info(f"❌ Запись отменена/отклонена, пластинки не начисляются")
-                    return False, 0
-                
-                # ===== ПРОВЕРКА НА PENDING =====
-                if status in ['pending', 'ожидает'] and not is_admin_booking:
-                    logger.info(f"❌ Обычная запись в статусе ожидания, пластинки НЕ начисляются")
                     return False, 0
                 
                 # ===== УСЛОВИЯ ДЛЯ НАЧИСЛЕНИЯ =====
@@ -1123,66 +1158,10 @@ class AchievementSystem:
                     should_award = True
                     award_reason = "подтвержденная договорная запись"
                     logger.info(f"✅ Условие: договорная подтвержденная запись")
-                elif 'сведение' in str(service).lower() or 'мастеринг' in str(service).lower():
-                    if status in ['confirmed', 'подтвержден']:
-                        should_award = True
-                        award_reason = "сведение/мастеринг"
-                        logger.info(f"✅ Условие: сведение/мастеринг подтвержден")
                 elif status == 'completed' and date_str and 'Не указана' not in date_str:
                     should_award = True
                     award_reason = "завершенная запись"
                     logger.info(f"✅ Условие: завершенная запись")
-                elif status in ['confirmed', 'подтвержден'] and date_str and 'Не указана' not in date_str:
-                    try:
-                        clean_date = date_str
-                        if '(' in clean_date:
-                            clean_date = clean_date.split('(')[0].strip()
-                        if clean_date and clean_date[0] in "🟢🟡🟠🔴⚪️":
-                            clean_date = clean_date[2:].strip()
-                        
-                        day, month, year = map(int, clean_date.split('.'))
-                        
-                        # ===== ИСПРАВЛЕНО: ПАРСИМ ВРЕМЯ ОКОНЧАНИЯ =====
-                        if time_slot and '-' in time_slot:
-                            norm_time = DateTimeUtils.normalize_time_input(time_slot)
-                            start_str, end_str = norm_time.split('-')
-                            end_hour = int(end_str)
-                            
-                            # Нормализуем для datetime
-                            if end_hour == 24:
-                                end_hour = 0
-                            # 0 - это полночь того же дня
-                            elif end_hour == 0:
-                                end_hour = 0
-                        else:
-                            end_hour = 0
-                        
-                        logger.info(f"🔍 add_vinyls: end_hour={end_hour}, date={day}.{month}.{year}")
-                        
-                        # Создаем datetime окончания
-                        end_datetime = datetime(year, month, day, end_hour, 0, 0)
-                        end_datetime = Config.TIMEZONE.localize(end_datetime)
-                        
-                        # ===== ЕСЛИ ВРЕМЯ 00:00 - ЭТО СЛЕДУЮЩИЙ ДЕНЬ =====
-                        # Проверяем, пересекает ли слот полночь (start_hour > end_hour)
-                        start_hour = int(start_str)
-                        if start_hour > end_hour and end_hour == 0:
-                            # Слот 23-0, 22-0 и т.д. - добавляем день
-                            end_datetime = end_datetime + timedelta(days=1)
-                            logger.info(f"🔍 add_vinyls: кросс-ночной слот, добавляем день -> {end_datetime}")
-                        
-                        # Сравниваем с текущим временем
-                        now = DateTimeUtils.now()
-                        
-                        if now >= end_datetime:
-                            should_award = True
-                            award_reason = "подтвержденная запись с прошедшим временем"
-                            logger.info(f"✅ Условие: подтвержденная запись с прошедшим временем")
-                        
-                    except Exception as e:
-                        logger.error(f"Ошибка парсинга даты: {e}")
-                        import traceback
-                        traceback.print_exc()
                 
                 if not should_award:
                     logger.info(f"❌ Запись не подходит для начисления пластинок. status={status}")
@@ -1224,14 +1203,6 @@ class AchievementSystem:
                         logger.info(f"✅ Уведомление о +25 пластинках отправлено пользователю {user_id}")
                     except Exception as e:
                         logger.error(f"❌ Ошибка отправки уведомления: {e}")
-                        try:
-                            await context.bot.send_message(
-                                chat_id=int(user_id),
-                                text="🎉 Вам начислены пластинки за запись! Проверьте /level",
-                                parse_mode="Markdown"
-                            )
-                        except:
-                            pass
                 
                 logger.info(f"✅ УСПЕШНО начислено +25 пластинок для записи #{booking_id}")
                 return True, new_vinyls
@@ -1241,7 +1212,7 @@ class AchievementSystem:
             import traceback
             traceback.print_exc()
             return False, 0
-                        
+    
     @staticmethod
     async def update_user_level(user_id: str, context=None, send_notification: bool = True):
         """Обновляет уровень пользователя (БЕЗ отправки уведомлений)"""
@@ -1257,7 +1228,6 @@ class AchievementSystem:
                 
                 vinyls, current_level = result[0] or 0, result[1] or 1
                 
-                # Определяем новый уровень
                 new_level = 1
                 for level_info in AchievementSystem.LEVELS:
                     if vinyls >= level_info['vinyls_needed']:
@@ -1265,14 +1235,11 @@ class AchievementSystem:
                     else:
                         break
                 
-                # Порядок уровней
                 level_order = [1, 2, 3, 4]
                 
-                # Если уровень повысился
                 if new_level > current_level:
                     cursor.execute('UPDATE users SET level = ? WHERE telegram_id = ?', (new_level, user_id))
                     
-                    # Добавляем купоны за каждый новый уровень
                     for level in level_order:
                         if current_level < level <= new_level:
                             CouponManager.add_level_coupons(user_id, level, conn)
@@ -1281,11 +1248,9 @@ class AchievementSystem:
                     conn.commit()
                     logger.info(f"✅ Пользователь {user_id} повысил уровень с {current_level} до {new_level}")
                 
-                # Если уровень понизился
                 elif new_level < current_level:
                     cursor.execute('UPDATE users SET level = ? WHERE telegram_id = ?', (new_level, user_id))
                     
-                    # ДЕАКТИВИРУЕМ купоны уровней, которые выше нового уровня
                     for level in level_order:
                         if level > new_level:
                             cursor.execute('''
@@ -1331,81 +1296,62 @@ class AchievementSystem:
         }
 
     @staticmethod
-    def get_user_coupons_summary(user_id: str) -> dict:
-        """Возвращает полную информацию о купонах пользователя"""
+    async def notify_level_change(user_id: str, old_vinyls: int, new_vinyls: int, context=None):
+        """Отправляет отдельное уведомление об изменении уровня"""
         try:
-            with db.get_connection() as conn:
-                cursor = conn.cursor()
-                
-                cursor.execute('''
-                    SELECT level, discount_percent, remaining_uses, is_permanent
-                    FROM user_coupons 
-                    WHERE user_id = ?
-                    AND (remaining_uses > 0 OR is_permanent = 1)
-                    ORDER BY level ASC, discount_percent DESC
-                ''', (user_id,))
-                
-                rows = cursor.fetchall()
-                
-                coupons_by_level = {}
-                total_discount = 0
-                permanent_discount = 0
-                
-                for row in rows:
-                    level, discount, remaining, is_permanent = row
+            old_level_info = AchievementSystem.get_level_info(old_vinyls)
+            new_level_info = AchievementSystem.get_level_info(new_vinyls)
+            
+            if new_level_info['current_level'] == old_level_info['current_level']:
+                logger.info(f"ℹ️ Уровень пользователя {user_id} не изменился")
+                return False
+            
+            if not context:
+                logger.warning(f"⚠️ context отсутствует, уведомление об изменении уровня не отправлено")
+                return False
+            
+            if new_level_info['current_level'] > old_level_info['current_level']:
+                message = (
+                    f"*🎉 Повышение уровня!*\n\n"
+                    f"*📈 Был уровень: {old_level_info['current_level_name']}*\n"
+                    f"*📈 Стал уровень: {new_level_info['current_level_name']}*\n\n"
+                    f"*🎁 Вы получили новые купоны на скидку!*\n"
+                    f"*💰 Проверьте раздел «Мой уровень»*\n\n"
+                    f"*💪 Продолжайте в том же духе! 🔥*"
+                )
+            else:
+                message = (
+                    f"*📉 Понижение уровня!*\n\n"
+                    f"*📉 Был уровень: {old_level_info['current_level_name']}*\n"
+                    f"*📉 Стал уровень: {new_level_info['current_level_name']}*\n\n"
+                    f"*💪 Не расстраивайтесь! Запишитесь снова и верните уровень! 🔥*"
+                )
+            
+            message += f"\n\n*📊 Пластинки: {old_vinyls} 💿 → {new_vinyls} 💿*"
+            
+            try:
+                await context.bot.send_message(
+                    chat_id=int(user_id),
+                    text=message,
+                    parse_mode="Markdown"
+                )
+                logger.info(f"✅ Уведомление об изменении уровня отправлено пользователю {user_id}")
+                return True
+            except Exception as e:
+                logger.error(f"❌ Не удалось отправить уведомление об изменении уровня: {e}")
+                return False
                     
-                    if level not in coupons_by_level:
-                        coupons_by_level[level] = []
-                    
-                    is_perm = is_permanent == 1
-                    
-                    if is_perm:
-                        permanent_discount += discount
-                        total_discount += discount
-                        coupons_by_level[level].append({
-                            'discount': discount,
-                            'remaining': None,
-                            'is_permanent': True,
-                            'total_value': discount
-                        })
-                    else:
-                        value = discount * remaining
-                        total_discount += value
-                        coupons_by_level[level].append({
-                            'discount': discount,
-                            'remaining': remaining,
-                            'is_permanent': False,
-                            'total_value': value
-                        })
-                
-                level_names = {}
-                for lvl in AchievementSystem.LEVELS:
-                    level_names[lvl['level']] = lvl['name']
-                
-                return {
-                    'coupons_by_level': coupons_by_level,
-                    'total_discount': min(total_discount, 100),
-                    'raw_total': total_discount,
-                    'permanent_discount': permanent_discount,
-                    'level_names': level_names
-                }
-                
         except Exception as e:
-            logger.error(f"Ошибка получения сводки купонов: {e}")
-            return {
-                'coupons_by_level': {},
-                'total_discount': 0,
-                'raw_total': 0,
-                'permanent_discount': 0,
-                'level_names': {}
-            }
+            logger.error(f"❌ Ошибка в notify_level_change: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
 
     @staticmethod
     async def check_and_revoke_achievements_on_cancellation(user_id: str, cancelled_booking: dict, context=None):
         """Проверяет, нужно ли отозвать достижения после отмены записи админом"""
         try:
             logger.info(f"🔍 Проверка достижений после отмены записи для пользователя {user_id}")
-            logger.info(f"📋 Отмененная запись: {cancelled_booking}")
             
             with db.get_connection() as conn:
                 cursor = conn.cursor()
@@ -1413,7 +1359,6 @@ class AchievementSystem:
                 cursor.execute('SELECT vinyls FROM users WHERE telegram_id = ?', (user_id,))
                 result = cursor.fetchone()
                 current_vinyls_before = result[0] if result else 0
-                logger.info(f"💰 Пластинок ДО отзыва: {current_vinyls_before}")
                 
                 cursor.execute('''
                     SELECT achievement_id FROM user_achievements WHERE user_id = ?
@@ -1431,16 +1376,19 @@ class AchievementSystem:
                 for achievement_id in user_achievements:
                     should_revoke = False
                     
+                    # first_booking защищён
                     if achievement_id == 'first_booking':
                         logger.info(f"✅ Достижение 'Добро пожаловать' защищено от отзыва")
                         continue
                     
+                    # Реферальные достижения защищены
                     if achievement_id in ['friend_inviter', 'social', 'star', 'magnate', 'network_giant']:
                         logger.info(f"✅ Реферальное достижение {achievement_id} защищено от отзыва")
                         continue
                     
                     ach_info = AchievementSystem.ACHIEVEMENTS.get(achievement_id, {})
                     
+                    # Достижения за записи
                     if achievement_id in ['novice', 'amateur', 'pro', 'veteran', 'studio_legend']:
                         needed = {
                             'novice': 3,
@@ -1455,14 +1403,15 @@ class AchievementSystem:
                             WHERE telegram_id = ? 
                             AND id != ?
                             AND (
-                                (status = 'confirmed' AND is_contractual = 1) OR
-                                (name LIKE '%Админская запись%') OR
-                                (status = 'completed' AND date_str NOT LIKE '%Не указана%')
-                            )
-                            AND NOT (
-                                status = 'confirmed' 
-                                AND is_contractual = 0 
-                                AND date_str NOT LIKE '%Не указана%'
+                                (status = 'completed' AND is_admin_booking = 0 AND is_contractual = 0)
+                                OR
+                                (is_admin_booking = 1 AND status IN ('confirmed', 'подтвержден'))
+                                OR
+                                (is_contractual = 1 AND status IN ('confirmed', 'подтвержден'))
+                                OR
+                                (is_mixing = 1 AND status IN ('confirmed', 'подтвержден'))
+                                OR
+                                (is_track_creation = 1 AND track_type = 'Альбом' AND status IN ('confirmed', 'подтвержден'))
                             )
                         ''', (user_id, cancelled_booking.get('id', 0)))
                         
@@ -1471,126 +1420,6 @@ class AchievementSystem:
                         if actual_count < needed:
                             should_revoke = True
                             logger.info(f"❌ Достижение {achievement_id} нужно отозвать: нужно {needed}, осталось {actual_count}")
-                    
-                    elif achievement_id in ['vocalist', 'virtuoso', 'renter', 'golden_ears', 'author', 'godspeed_legend', 'name_on_wall', 'golden_mic']:
-                        service_conditions = {
-                            'vocalist': ('service LIKE ?', ('%вокал%',), 5),
-                            'virtuoso': ('service LIKE ?', ('%инструмент%',), 5),
-                            'renter': ('(service LIKE ? OR is_12_hours = 1)', ('%аренд%',), 3),
-                            'golden_ears': ('(service LIKE ? OR service LIKE ? OR is_mixing = 1)', ('%сведен%', '%мастеринг%'), 5),
-                            'author': ('(service LIKE ? OR is_track_creation = 1)', ('%создание трека%',), 3),
-                            'godspeed_legend': None,
-                            'name_on_wall': None,
-                            'golden_mic': None
-                        }
-                        
-                        if achievement_id in service_conditions and service_conditions[achievement_id] is not None:
-                            condition, params, needed = service_conditions[achievement_id]
-                            
-                            if achievement_id == 'golden_ears':
-                                cursor.execute(f'''
-                                    SELECT COUNT(*) FROM bookings 
-                                    WHERE telegram_id = ? 
-                                    AND id != ?
-                                    AND (
-                                        service LIKE '%сведен%' 
-                                        OR service LIKE '%мастеринг%'
-                                        OR is_mixing = 1
-                                    )
-                                    AND (
-                                        (status = 'confirmed' AND is_contractual = 1) OR
-                                        (name LIKE '%Админская запись%') OR
-                                        (status = 'completed' AND date_str NOT LIKE '%Не указана%')
-                                    )
-                                    AND NOT (
-                                        status = 'confirmed' 
-                                        AND is_contractual = 0 
-                                        AND date_str NOT LIKE '%Не указана%'
-                                    )
-                                ''', (user_id, cancelled_booking.get('id', 0)))
-                            else:
-                                cursor.execute(f'''
-                                    SELECT COUNT(*) FROM bookings 
-                                    WHERE telegram_id = ? 
-                                    AND id != ?
-                                    AND {condition}
-                                    AND (
-                                        (status = 'confirmed' AND is_contractual = 1) OR
-                                        (name LIKE '%Админская запись%') OR
-                                        (status = 'completed' AND date_str NOT LIKE '%Не указана%')
-                                    )
-                                    AND NOT (
-                                        status = 'confirmed' 
-                                        AND is_contractual = 0 
-                                        AND date_str NOT LIKE '%Не указана%'
-                                    )
-                                ''', (user_id, cancelled_booking.get('id', 0)) + params)
-                            
-                            actual_count = cursor.fetchone()[0] or 0
-                            
-                            if actual_count < needed:
-                                should_revoke = True
-                                logger.info(f"❌ Достижение {achievement_id} нужно отозвать: нужно {needed}, осталось {actual_count}")
-                    
-                    elif achievement_id == 'universal':
-                        conditions = [
-                            ('service LIKE ?', ('%вокал%',)),
-                            ('service LIKE ?', ('%инструмент%',)),
-                            ('(service LIKE ? OR is_12_hours = 1)', ('%аренд%',)),
-                            ('(service LIKE ? OR service LIKE ? OR is_mixing = 1)', ('%сведен%', '%мастеринг%')),
-                            ('(service LIKE ? OR is_track_creation = 1)', ('%создание трека%',))
-                        ]
-                        
-                        has_all_types = True
-                        for cond, params in conditions:
-                            if '%сведен%' in cond and '%мастеринг%' in cond:
-                                cursor.execute(f'''
-                                    SELECT COUNT(*) FROM bookings 
-                                    WHERE telegram_id = ? 
-                                    AND id != ?
-                                    AND (
-                                        service LIKE '%сведен%' 
-                                        OR service LIKE '%мастеринг%'
-                                        OR is_mixing = 1
-                                    )
-                                    AND (
-                                        (status = 'confirmed' AND is_contractual = 1) OR
-                                        (name LIKE '%Админская запись%') OR
-                                        (status = 'completed' AND date_str NOT LIKE '%Не указана%')
-                                    )
-                                    AND NOT (
-                                        status = 'confirmed' 
-                                        AND is_contractual = 0 
-                                        AND date_str NOT LIKE '%Не указана%'
-                                    )
-                                ''', (user_id, cancelled_booking.get('id', 0)))
-                            else:
-                                cursor.execute(f'''
-                                    SELECT COUNT(*) FROM bookings 
-                                    WHERE telegram_id = ? 
-                                    AND id != ?
-                                    AND {cond}
-                                    AND (
-                                        (status = 'confirmed' AND is_contractual = 1) OR
-                                        (name LIKE '%Админская запись%') OR
-                                        (status = 'completed' AND date_str NOT LIKE '%Не указана%')
-                                    )
-                                    AND NOT (
-                                        status = 'confirmed' 
-                                        AND is_contractual = 0 
-                                        AND date_str NOT LIKE '%Не указана%'
-                                    )
-                                ''', (user_id, cancelled_booking.get('id', 0)) + params)
-                            
-                            count = cursor.fetchone()[0] or 0
-                            
-                            if count == 0:
-                                has_all_types = False
-                                break
-                        
-                        if not has_all_types:
-                            should_revoke = True
-                            logger.info(f"❌ Достижение universal нужно отозвать: не все типы услуг остались")
                     
                     if should_revoke:
                         cursor.execute('''
@@ -1645,7 +1474,6 @@ class AchievementSystem:
                     except Exception as e:
                         logger.error(f"❌ Не удалось отправить уведомление об отзыве: {e}")
                 
-                logger.info(f"📊 ИТОГО: отозвано {len(revoked_achievements)} достижений, {total_vinyls_revoked} пластинок")
                 return revoked_achievements
                 
         except Exception as e:
