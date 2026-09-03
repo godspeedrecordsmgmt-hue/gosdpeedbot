@@ -7572,8 +7572,7 @@ async def top_vinyls_handler(update: Update, context):
             
             if not top_users:
                 await update.message.reply_text(
-                    "*📭 Пока нет пользователей с пластинками*\n\n"
-                    "*✨ Будьте первым! Записывайтесь в студию и получайте пластинки!*",
+                    "*📭 Пока нет пользователей с пластинками*",
                     parse_mode="Markdown",
                     reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
                 )
@@ -9156,9 +9155,9 @@ async def show_my_bookings(update: Update, context):
             
             if not rows:
                 await update.message.reply_text(
-                    f"*📭 У вас нет активных записей*\n\n"
-                    f"*✨ Хотите записаться?*\n\n"
-                    f"*Нажмите 🎤 \"Записаться в студию\"*",
+                    text=(
+                        f"*📭 У Вас нет активных записей*\n\n"
+                    ),
                     parse_mode="Markdown",
                     reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
                 )
@@ -9682,9 +9681,9 @@ async def notifications_command(update: Update, context):
             
             if not rows:
                 await update.message.reply_text(
-                    "*🔕 Ожидающих уведомлений нет*\n\n"
-                    "*✨ Все напоминания уже отправлены*\n\n"
-                    "*👇 Запишитесь снова — и мы снова напомним!*",
+                    text=(
+                        f"*📭 У Вас нет активных напоминаний*"
+                    ),
                     parse_mode="Markdown",
                     reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
                 )
@@ -12354,9 +12353,9 @@ async def show_my_bookings_in_message(message_obj, context, user_id):
             
             if not rows:
                 await message_obj.edit_text(
-                    text=f"*📭 У вас нет активных записей*\n\n"
-                         f"*✨ Хотите записаться?*\n\n"
-                         f"*Нажмите 🎤 \"Записаться в студию\"*",
+                    text=(
+                        f"*📭 У Вас нет активных записей*"
+                    ),
                     parse_mode="Markdown"
                 )
                 return
