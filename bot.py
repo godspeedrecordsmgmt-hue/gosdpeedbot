@@ -594,11 +594,11 @@ class AchievementSystem:
         'studio_legend': {'name': '👑 Легенда студии', 'desc': '100 завершенных записей', 'vinyls': 60, 'hidden': False, 'category': 'bookings', 'emoji': '👑'},
         
         # ===== РЕФЕРАЛЫ =====
-        'friend_inviter': {'name': '🤝 Позвал друга', 'desc': '1 друг сделал запись', 'vinyls': 30, 'hidden': False, 'category': 'referrals', 'emoji': '🤝'},
-        'social': {'name': '🗣 Социальный', 'desc': '3 друга сделали запись', 'vinyls': 50, 'hidden': False, 'category': 'referrals', 'emoji': '🗣'},
-        'star': {'name': '⭐️ Звезда', 'desc': '5 друзей сделали запись', 'vinyls': 70, 'hidden': False, 'category': 'referrals', 'emoji': '⭐️'},
-        'magnate': {'name': '💰 Магнат', 'desc': '10 друзей сделали запись', 'vinyls': 100, 'hidden': False, 'category': 'referrals', 'emoji': '💰'},
-        'network_giant': {'name': '🌐 Сетевой гигант', 'desc': '20 друзей сделали запись', 'vinyls': 150, 'hidden': False, 'category': 'referrals', 'emoji': '🌐'},
+        'friend_inviter': {'name': '🤝 Позвал друга', 'desc': '1 друг приглашён', 'vinyls': 30, 'hidden': False, 'category': 'referrals', 'emoji': '🤝'},
+        'social': {'name': '🗣 Социальный', 'desc': '3 друга приглашены', 'vinyls': 50, 'hidden': False, 'category': 'referrals', 'emoji': '🗣'},
+        'star': {'name': '⭐️ Звезда', 'desc': '5 друзей приглашены', 'vinyls': 70, 'hidden': False, 'category': 'referrals', 'emoji': '⭐️'},
+        'magnate': {'name': '💰 Магнат', 'desc': '10 друзей приглашены', 'vinyls': 100, 'hidden': False, 'category': 'referrals', 'emoji': '💰'},
+        'network_giant': {'name': '🌐 Сетевой гигант', 'desc': ' 20 друзей приглашены', 'vinyls': 150, 'hidden': False, 'category': 'referrals', 'emoji': '🌐'},
         
         # ===== ОСОБЫЕ НАГРАДЫ (ТОЛЬКО АДМИН) =====
         'name_on_wall': {'name': '📜 Имя на стене', 'desc': 'Самый преданный клиент года', 'vinyls': 100, 'hidden': False, 'category': 'special', 'emoji': '📜'},
@@ -7908,7 +7908,7 @@ async def calculate_and_show_revenue(update: Update, context, start_date, end_da
             formatted_revenue = f"{total_revenue:,}₽".replace(',', ' ')
             
             message_text = f"*💰 Выручка {period_name}:*\n\n"
-            message_text += f"*📊 Статистика:*\n"
+            message_text += f"*Статистика:*\n"
             message_text += f"• Всего записей в периоде: {len(bookings)}\n"
             message_text += f"• Учтено в выручке: {len(counted_bookings)}\n"
             message_text += f"• Пропущено: {len(skipped_bookings)}\n"
@@ -8321,9 +8321,9 @@ async def referral_command(update: Update, context):
             
             # ===== ФОРМИРУЕМ СООБЩЕНИЕ =====
             message = (
-                f"*👥 Реферальная система*\n\n"
-                f"*🔑 Ваш реферальный код:* `{referral_code}`\n\n"
-                f"*📊 Статистика:*\n"
+                f"*👥 Рефералы*\n\n"
+                f"*Ваш реферальный код:* `{referral_code}`\n\n"
+                f"*Статистика:*\n"
                 f"• Приглашенных друзей: {active_referrals}\n"
                 f"• Заработано пластинок: {earned_vinyls} 💿\n\n"
             )
@@ -8332,7 +8332,7 @@ async def referral_command(update: Update, context):
                 message += f"*🎉 Вы были приглашены! +15 пластинок за регистрацию*\n\n"
             
             message += (
-                f"*🎁 Как это работает:*\n"
+                f"*Как это работает:*\n"
                 f"• Дайте свой код друзьям\n"
                 f"• Друг вводит код в разделе 'Рефералы' → 'Ввести код друга'\n"
                 f"• Когда друг сделает первую запись, вы получите +25 пластинок\n"
@@ -8342,11 +8342,11 @@ async def referral_command(update: Update, context):
             message += f"*Достижения за рефералов:*\n"
             
             referral_achievements_list = [
-                ('friend_inviter', '🤝 Позвал друга', '1 друг сделал запись'),
-                ('social', '🗣 Социальный', '3 друга сделали запись'),
-                ('star', '⭐️ Звезда', '5 друзей сделали запись'),
-                ('magnate', '💰 Магнат', '10 друзей сделали запись'),
-                ('network_giant', '🌐 Сетевой гигант', '20 друзей сделали запись')
+                ('friend_inviter', '🤝 Позвал друга', '1 друг приглашён'),
+                ('social', '🗣 Социальный', '3 друга приглашены'),
+                ('star', '⭐️ Звезда', '5 друзей приглашены'),
+                ('magnate', '💰 Магнат', '10 друзей приглашены'),
+                ('network_giant', '🌐 Сетевой гигант', ' 20 друзей приглашены')
             ]
             
             for ach_id, name_with_emoji, desc in referral_achievements_list:
@@ -8581,9 +8581,9 @@ async def back_to_referral_callback(update: Update, context):
             
             # ===== ФОРМИРУЕМ СООБЩЕНИЕ =====
             message = (
-                f"*👥 Реферальная система*\n\n"
-                f"*🔑 Ваш реферальный код:* `{referral_code}`\n\n"
-                f"*📊 Статистика:*\n"
+                f"*👥 Рефералы*\n\n"
+                f"*Ваш реферальный код:* `{referral_code}`\n\n"
+                f"*Статистика:*\n"
                 f"• Приглашенных друзей: {active_referrals}\n"
                 f"• Заработано пластинок: {earned_vinyls} 💿\n\n"
             )
@@ -8592,7 +8592,7 @@ async def back_to_referral_callback(update: Update, context):
                 message += f"*🎉 Вы были приглашены! +15 пластинок за регистрацию*\n\n"
             
             message += (
-                f"*🎁 Как это работает:*\n"
+                f"*Как это работает:*\n"
                 f"• Дайте свой код друзьям\n"
                 f"• Друг вводит код в разделе 'Рефералы' → 'Ввести код друга'\n"
                 f"• Когда друг сделает первую запись, вы получите +25 пластинок\n"
@@ -8602,11 +8602,11 @@ async def back_to_referral_callback(update: Update, context):
             message += f"*Достижения за рефералов:*\n"
             
             referral_achievements_list = [
-                ('friend_inviter', '🤝 Позвал друга', '1 друг сделал запись'),
-                ('social', '🗣 Социальный', '3 друга сделали запись'),
-                ('star', '⭐️ Звезда', '5 друзей сделали запись'),
-                ('magnate', '💰 Магнат', '10 друзей сделали запись'),
-                ('network_giant', '🌐 Сетевой гигант', '20 друзей сделали запись')
+                ('friend_inviter', '🤝 Позвал друга', '1 друг приглашён'),
+                ('social', '🗣 Социальный', '3 друга приглашены'),
+                ('star', '⭐️ Звезда', '5 друзей приглашены'),
+                ('magnate', '💰 Магнат', '10 друзей приглашены'),
+                ('network_giant', '🌐 Сетевой гигант', ' 20 друзей приглашены')
             ]
             
             for ach_id, name_with_emoji, desc in referral_achievements_list:
