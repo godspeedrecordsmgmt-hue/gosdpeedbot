@@ -7345,72 +7345,94 @@ async def achievements_handler(update: Update, context):
     )
     return ConversationHandler.END
 
+from telegram import Update
+from telegram.ext import CallbackContext, ConversationHandler
+import logging
+
+logger = logging.getLogger(__name__)
+
 @handle_errors_with_rate_limit
 async def level_handler(update: Update, context: CallbackContext) -> int:
     """Обработчик команды /level - отображение информации об уровне пользователя"""
     
+    # Проверка на заблокированного пользователя
+    if await check_user_blocked(update, context):
+        return ConversationHandler.END
+    
     user_id = str(update.effective_user.id)
     
-    with db.get_connection() as conn:
-        cursor = conn.cursor()
-        
-        cursor.execute('''
-            SELECT vinyls, level, permanent_discount, temporary_discount, discount_expiry
-            FROM users WHERE telegram_id = ?
-        ''', (user_id,))
-        
-        result = cursor.fetchone()
-        
-        if not result:
-            vinyls = 0
-            level = 1
-        else:
-            vinyls = result[0] or 0
-            level = result[1] or 1
-        
-        level_info = AchievementSystem.get_level_info(vinyls)
-        
-        # Получаем активные купоны пользователя
-        active_coupons = CouponManager.get_user_coupons(user_id)
-        active_levels = {coupon['level'] for coupon in active_coupons}
-        
-        # ===== ФОРМИРУЕМ ТЕКСТ В НУЖНОМ ПОРЯДКЕ =====
-        text = f"*📈 Мой уровень*\n\n"
-        
-        # 1. ВСЕ УРОВНИ (сверху)
-        text += f"*Все уровни:*\n"
-        for lvl in AchievementSystem.LEVELS:
-            emoji = "✅ " if lvl['level'] in active_levels else ""
-            medal = "🥇" if lvl['level'] == 1 else "🏅" if lvl['level'] == 2 else "🎖" if lvl['level'] == 3 else "👑"
+    try:
+        with db.get_connection() as conn:
+            cursor = conn.cursor()
             
-            text += f"{emoji}{medal} {lvl['name']} — {lvl['discount']}%"
+            cursor.execute('''
+                SELECT vinyls, level, permanent_discount, temporary_discount, discount_expiry
+                FROM users WHERE telegram_id = ?
+            ''', (user_id,))
             
-            if lvl['discount_type'] == 'permanent':
-                text += f" (вечная)\n"
+            result = cursor.fetchone()
+            
+            if not result:
+                vinyls = 0
+                level = 1
             else:
-                text += f" ({lvl['uses']} раз)\n"
-        
-        text += "\n"
-        
-        # 2. СЛЕДУЮЩИЙ УРОВЕНЬ
-        text += f"*Следующий уровень:*\n"
-        if level_info['next_level_name']:
-            text += f"• {level_info['next_level_name']}\n"
-            text += f"• Нужно пластинок: {level_info['vinyls_needed_next']}\n"
-            text += f"• Прогресс: {level_info['progress_percent']}%\n\n"
-        else:
-            text += f"• Достигнут максимальный уровень!\n\n"
-        
-        # 3. СТАТИСТИКА (внизу)
-        text += f"*Статистика:*\n"
-        text += f"• Пластинок: {vinyls}\n"
-        text += f"• Текущий уровень: {level_info['current_level_name']}\n"
-        
+                vinyls = result[0] or 0
+                level = result[1] or 1
+            
+            level_info = AchievementSystem.get_level_info(vinyls)
+            
+            # Получаем активные купоны пользователя
+            active_coupons = CouponManager.get_user_coupons(user_id)
+            active_levels = {coupon['level'] for coupon in active_coupons}
+            
+            # ===== ФОРМИРУЕМ ТЕКСТ =====
+            text = f"*📈 Мой уровень*\n\n"
+            
+            # 1. ВСЕ УРОВНИ
+            text += f"*Все уровни:*\n"
+            for lvl in AchievementSystem.LEVELS:
+                emoji = "✅ " if lvl['level'] in active_levels else ""
+                medal = "🥇" if lvl['level'] == 1 else "🏅" if lvl['level'] == 2 else "🎖" if lvl['level'] == 3 else "👑"
+                
+                text += f"{emoji}{medal} {lvl['name']} — {lvl['discount']}%"
+                
+                if lvl['discount_type'] == 'permanent':
+                    text += f" (вечная)\n"
+                else:
+                    text += f" ({lvl['uses']} раз)\n"
+            
+            text += "\n"
+            
+            # 2. СЛЕДУЮЩИЙ УРОВЕНЬ
+            text += f"*Следующий уровень:*\n"
+            if level_info['next_level_name']:
+                text += f"• {level_info['next_level_name']}\n"
+                text += f"• Нужно пластинок: {level_info['vinyls_needed_next']}\n"
+                text += f"• Прогресс: {level_info['progress_percent']}%\n\n"
+            else:
+                text += f"• Достигнут максимальный уровень!\n\n"
+            
+            # 3. СТАТИСТИКА
+            text += f"*Статистика:*\n"
+            text += f"• Пластинок: {vinyls}\n"
+            text += f"• Текущий уровень: {level_info['current_level_name']}\n"
+            
+            await update.message.reply_text(
+                text,
+                parse_mode="Markdown",
+                reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
+            )
+            
+            return ConversationHandler.END
+            
+    except Exception as e:
+        logger.error(f"Ошибка в level_handler: {e}")
         await update.message.reply_text(
-            text,
+            "❌ Ошибка загрузки информации об уровне",
             parse_mode="Markdown",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
         )
+        return ConversationHandler.END
 
 @handle_errors_with_rate_limit
 async def top_vinyls_handler(update: Update, context):
