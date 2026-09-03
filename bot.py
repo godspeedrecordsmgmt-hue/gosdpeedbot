@@ -16423,7 +16423,7 @@ async def show_slots(update: Update, context):
     # ===== ПРОВЕРКА НА 24 =====
     if user_input.startswith('24') or '-24' in user_input:
         await update.message.reply_text(
-            "*❌ Начальный час и конечный час должны быть от 0 до 23!*",
+            "*❌ Неверный формат времени! Используйте формат час-час, например: 14-18 или 22-2!*",
             parse_mode="Markdown",
             reply_markup=KeyboardManager.get_time_input()
         )
@@ -16573,7 +16573,7 @@ async def show_slots(update: Update, context):
             end_hour = int(end_hour_str.strip())
         except ValueError:
             await update.message.reply_text(
-                "*❌ Начальный час и конечный час должны быть от 0 до 23!*",
+                "*❌ Неверный формат времени! Используйте формат час-час, например: 14-18 или 22-2!*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_time_input()
             )
