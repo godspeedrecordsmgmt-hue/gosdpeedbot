@@ -689,11 +689,9 @@ class AchievementSystem:
             with db.get_connection() as conn:
                 cursor = conn.cursor()
                 
-                # Получаем текущие достижения пользователя
                 cursor.execute('SELECT achievement_id FROM user_achievements WHERE user_id = ?', (user_id,))
                 user_achievements = {row[0] for row in cursor.fetchall()}
                 
-                # Считаем все подтверждённые записи
                 cursor.execute('''
                     SELECT COUNT(*) FROM bookings 
                     WHERE telegram_id = ? 
@@ -706,7 +704,6 @@ class AchievementSystem:
                 awarded = []
                 total_vinyls = 0
                 
-                # ===== ДОСТИЖЕНИЯ ЗА ЗАПИСИ =====
                 achievements_list = [
                     ('first_booking', 1, 10, '🥉 Добро пожаловать'),
                     ('novice', 3, 20, '🥈 Новичок'),
@@ -739,16 +736,9 @@ class AchievementSystem:
                         for ach_id2, need, vinyls, name in achievements_list:
                             if ach_id2 == ach_id:
                                 try:
-                                    # Получаем эмодзи достижения
-                                    ach_emoji = ""
-                                    for a_id, ach_data in AchievementSystem.ACHIEVEMENTS.items():
-                                        if a_id == ach_id:
-                                            ach_emoji = ach_data.get('emoji', '🏆')
-                                            break
-                                    
-                                    # ===== НОВОЕ ФОРМАТИРОВАННОЕ СООБЩЕНИЕ =====
+                                    # ===== ИСПРАВЛЕНО: name уже содержит эмодзи =====
                                     message = (
-                                        f"*🎉 Добавлено {vinyls} пластинок за достижение «{ach_emoji} {name}»!*\n\n"
+                                        f"*🎉 Добавлено {vinyls} пластинок за достижение «{name}»!*\n\n"
                                         f"*✨ Гордимся, что Вы с нами!*\n\n"
                                         f"*💰 Пластинок после достижения: {new_vinyls} 💿*"
                                     )
