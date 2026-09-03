@@ -7394,7 +7394,7 @@ async def level_handler(update: Update, context: CallbackContext) -> int:
                 if lvl['level'] == current_level:
                     text += f"✅ {medal} {lvl['name']} — {lvl['discount']}%"
                 else:
-                    text += f"   {medal} {lvl['name']} — {lvl['discount']}%"
+                    text += f"{medal} {lvl['name']} — {lvl['discount']}%"
                 
                 if lvl['discount_type'] == 'permanent':
                     text += f" (вечная)\n"
