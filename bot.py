@@ -4160,23 +4160,23 @@ class DateTimeUtils:
                 date_part = text.strip()
             
             if '.' not in date_part:
-                return None, "*❌ Неверный формат даты! Используйте формат ДД.ММ.ГГГГ!*"
+                return None, "*❌ Неверный формат даты! Используйте формат ДД.ММ.ГГГГ, например: 01.10.2026 или 02.10.2026 (Пт)!*"
             
             parts = date_part.split('.')
             if len(parts) != 3:
-                return None, "*❌ Неверный формат даты! Используйте формат ДД.ММ.ГГГГ!*"
+                return None, "*❌ Неверный формат даты! Используйте формат ДД.ММ.ГГГГ, например: 01.10.2026 или 02.10.2026 (Пт)!*"
             
             try:
                 day, month, year = map(int, parts)
             except ValueError:
-                return None, "*❌ Неверный формат даты! Используйте формат ДД.ММ.ГГГГ!*"
+                return None, "*❌ Неверный формат даты! Используйте формат ДД.ММ.ГГГГ, например: 01.10.2026 или 02.10.2026 (Пт)!*"
             
             if not (1 <= day <= 31):
-                return None, "*❌ Неверный формат даты! Используйте формат ДД.ММ.ГГГГ!*"
+                return None, "*❌ Неверный формат даты! Используйте формат ДД.ММ.ГГГГ, например: 01.10.2026 или 02.10.2026 (Пт)!*"
             if not (1 <= month <= 12):
-                return None, "*❌ Неверный формат даты! Используйте формат ДД.ММ.ГГГГ!*"
+                return None, "*❌ Неверный формат даты! Используйте формат ДД.ММ.ГГГГ, например: 01.10.2026 или 02.10.2026 (Пт)!*"
             if not (2024 <= year <= 2030):
-                return None, "*❌ Неверный формат даты! Используйте формат ДД.ММ.ГГГГ!*"
+                return None, "*❌ Неверный формат даты! Используйте формат ДД.ММ.ГГГГ, например: 01.10.2026 или 02.10.2026 (Пт)!*"
             
             naive_datetime = datetime(year, month, day)
             user_datetime = Config.TIMEZONE.localize(naive_datetime)
@@ -8275,7 +8275,7 @@ async def handle_custom_revenue_period_inline(update: Update, context):
         
         # Просто отправляем сообщение об ошибке БЕЗ КНОПКИ "Назад"
         await update.message.reply_text(
-            "*❌ Неверный формат даты! Используйте формат ДД.ММ.ГГГГ!*",
+            "*❌ Неверный формат даты! Используйте формат ДД.ММ.ГГГГ, например: 01.10.2026 или 02.10.2026 (Пт)!*",
             parse_mode="Markdown"
         )
         return
@@ -8328,7 +8328,7 @@ async def handle_custom_revenue_period(update: Update, context):
         logger.error(f"Ошибка парсинга дат: {e}")
         
         await update.message.reply_text(
-            "*❌ Неверный формат даты! Используйте формат ДД.ММ.ГГГГ!*",
+            "*❌ Неверный формат даты! Используйте формат ДД.ММ.ГГГГ, например: 01.10.2026 или 02.10.2026 (Пт)!*",
             parse_mode="Markdown",
             reply_markup=ReplyKeyboardMarkup([
                 ["↩️ Главное меню"]
@@ -11247,7 +11247,7 @@ async def get_date(update: Update, context):
                     reply_markup = KeyboardManager.get_dates("vocal", with_engineer)
                 
                 await update.message.reply_text(
-                    "*❌ Неверный формат даты! Используйте формат ДД.ММ.ГГГГ!*",
+                    "*❌ Неверный формат даты! Используйте формат ДД.ММ.ГГГГ, например: 01.10.2026 или 02.10.2026 (Пт)!*",
                     parse_mode="Markdown",
                     reply_markup=reply_markup
                 )
@@ -11266,7 +11266,7 @@ async def get_date(update: Update, context):
         reply_markup = KeyboardManager.get_dates("vocal", with_engineer)
     
     await update.message.reply_text(
-        "*❌ Неверный формат даты! Используйте формат ДД.ММ.ГГГГ!*",
+        "*❌ Неверный формат даты! Используйте формат ДД.ММ.ГГГГ, например: 01.10.2026 или 02.10.2026 (Пт)!*",
         parse_mode="Markdown",
         reply_markup=reply_markup
     )
@@ -11338,20 +11338,20 @@ async def handle_date_selection(update: Update, context, text: str):
         
         if is_track_creation:
             await update.message.reply_text(
-                "*❌ Неверный формат даты! Используйте формат ДД.ММ.ГГГГ!*",
+                "*❌ Неверный формат даты! Используйте формат ДД.ММ.ГГГГ, например: 01.10.2026 или 02.10.2026 (Пт)!*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_dates("track_creation", True)
             )
         elif is_12_hours:
             service_type = "12_hours_day" if context.user_data.get('12_hours_type', '').startswith('День') else "12_hours_night"
             await update.message.reply_text(
-                "*❌ Неверный формат даты! Используйте формат ДД.ММ.ГГГГ!*",
+                "*❌ Неверный формат даты! Используйте формат ДД.ММ.ГГГГ, например: 01.10.2026 или 02.10.2026 (Пт)!*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_dates(service_type, False)
             )
         else:
             await update.message.reply_text(
-                "*❌ Неверный формат даты! Используйте формат ДД.ММ.ГГГГ!*",
+                "*❌ Неверный формат даты! Используйте формат ДД.ММ.ГГГГ, например: 01.10.2026 или 02.10.2026 (Пт)!*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_dates("vocal", with_engineer)
             )
