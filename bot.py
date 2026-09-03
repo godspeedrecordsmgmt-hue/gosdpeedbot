@@ -7509,13 +7509,13 @@ async def top_vinyls_handler(update: Update, context):
                     user_vinyls, user_level, user_rank = user_stats
                     
                     if user_vinyls > 0:
-                        message += f"*Ваша статистика:*\n"
+                        message += f"*Статистика:*\n"
                         message += f"• Место: {user_rank}\n"
                         message += f"• Пластинок: {user_vinyls}\n\n"
                     else:
                         message += f"*💡 У вас пока нет пластинок*\n\n"
             
-            message += "*✨ Как получить пластинки:*\n"
+            message += "*Как получить пластинки:*\n"
             message += "• Запись в студии — +25 пластинок\n"
             message += "• Пригласить друга — +25 пластинок\n"
             message += "• Выполнить достижения — от 1000+ пластинок"
