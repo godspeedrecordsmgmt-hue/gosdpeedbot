@@ -11686,6 +11686,13 @@ async def confirm_booking(update: Update, context):
             )
             context.user_data.clear()
             return ConversationHandler.END
+
+        # ============================================================
+        # ===== ВАЖНО: ПРОВЕРЯЕМ ДОСТИЖЕНИЯ СРАЗУ ПОСЛЕ СОХРАНЕНИЯ =====
+        # ============================================================
+        logger.info(f"🔍 ПРОВЕРКА ДОСТИЖЕНИЙ ДЛЯ ПОЛЬЗОВАТЕЛЯ {user_id}")
+        awarded, total_vinyls = await AchievementSystem.check_and_award_achievements(str(user_id), context, update)
+        logger.info(f"✅ Выдано достижений: {awarded}, всего пластинок: {total_vinyls}")
         
         # ===== СОХРАНЯЕМ ИНФОРМАЦИЮ О КУПОНЕ И ПРОМОКОДЕ =====
         with db.get_connection() as conn:
