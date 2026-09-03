@@ -7392,21 +7392,19 @@ async def level_handler(update: Update, context: CallbackContext) -> int:
             for lvl in AchievementSystem.LEVELS:
                 medal = "🥇" if lvl['level'] == 1 else "🏅" if lvl['level'] == 2 else "🎖" if lvl['level'] == 3 else "👑"
                 
-                # ===== ГЛАВНАЯ ЛОГИКА =====
-                # Для уровня 1: галочка если ЕСТЬ КУПОН
-                # Для уровней 2,3,4: галочка если ЭТО ТЕКУЩИЙ УРОВЕНЬ
+                # ===== ЛОГИКА ГАЛОЧКИ =====
+                # Уровень 1: галочка если ЕСТЬ КУПОН
+                # Уровни 2,3,4: галочка если ТЕКУЩИЙ УРОВЕНЬ
                 if lvl['level'] == 1:
-                    # Любитель - проверяем наличие купона
                     if lvl['level'] in active_levels:
                         text += f"✅ {medal} {lvl['name']} — {lvl['discount']}%"
                     else:
-                        text += f"   {medal} {lvl['name']} — {lvl['discount']}%"
+                        text += f"{medal} {lvl['name']} — {lvl['discount']}%"
                 else:
-                    # Мастер, Легенда, Бог музыки - проверяем текущий уровень
                     if lvl['level'] == current_level:
                         text += f"✅ {medal} {lvl['name']} — {lvl['discount']}%"
                     else:
-                        text += f"   {medal} {lvl['name']} — {lvl['discount']}%"
+                        text += f"{medal} {lvl['name']} — {lvl['discount']}%"
                 
                 if lvl['discount_type'] == 'permanent':
                     text += f" (вечная)\n"
