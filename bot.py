@@ -620,6 +620,89 @@ class AchievementSystem:
     }
     
     @staticmethod
+    def get_user_coupons_summary(user_id: str) -> dict:
+        """Возвращает сводку купонов пользователя"""
+        try:
+            with db.get_connection() as conn:
+                cursor = conn.cursor()
+                
+                # Получаем текущий уровень пользователя
+                cursor.execute('SELECT level FROM users WHERE telegram_id = ?', (user_id,))
+                result = cursor.fetchone()
+                current_level = result[0] if result else 1
+                
+                if current_level is None or current_level == 0:
+                    current_level = 1
+                    cursor.execute('UPDATE users SET level = 1 WHERE telegram_id = ?', (user_id,))
+                    conn.commit()
+                
+                # Получаем купоны пользователя
+                cursor.execute('''
+                    SELECT level, discount_percent, remaining_uses, is_permanent
+                    FROM user_coupons 
+                    WHERE user_id = ?
+                    AND level <= ?
+                    AND (remaining_uses > 0 OR is_permanent = 1)
+                    ORDER BY level ASC, discount_percent DESC
+                ''', (user_id, current_level))
+                
+                rows = cursor.fetchall()
+                
+                coupons_by_level = {}
+                total_discount = 0
+                permanent_discount = 0
+                
+                for row in rows:
+                    level, discount, remaining, is_permanent = row
+                    
+                    if level not in coupons_by_level:
+                        coupons_by_level[level] = []
+                    
+                    is_perm = is_permanent == 1
+                    
+                    if is_perm:
+                        permanent_discount += discount
+                        total_discount += discount
+                        coupons_by_level[level].append({
+                            'discount': discount,
+                            'remaining': None,
+                            'is_permanent': True,
+                            'total_value': discount
+                        })
+                    else:
+                        value = discount * remaining
+                        total_discount += value
+                        coupons_by_level[level].append({
+                            'discount': discount,
+                            'remaining': remaining,
+                            'is_permanent': False,
+                            'total_value': value
+                        })
+                
+                level_names = {}
+                for lvl in AchievementSystem.LEVELS:
+                    level_names[lvl['level']] = lvl['name']
+                
+                return {
+                    'coupons_by_level': coupons_by_level,
+                    'total_discount': min(total_discount, 100),
+                    'raw_total': total_discount,
+                    'permanent_discount': permanent_discount,
+                    'level_names': level_names
+                }
+                
+        except Exception as e:
+            logger.error(f"Ошибка получения сводки купонов: {e}")
+            return {
+                'coupons_by_level': {},
+                'total_discount': 0,
+                'raw_total': 0,
+                'permanent_discount': 0,
+                'level_names': {}
+            }
+
+
+    @staticmethod
     async def check_and_award_achievements(user_id: str, context=None, update=None):
         """Проверяет и выдает достижения"""
         try:
@@ -7387,7 +7470,7 @@ async def top_vinyls_handler(update: Update, context):
                 )
                 return
             
-            message = "*🏆 Топ-10 пользователей по пластинкам*\n\n"
+            message = "*🏆 Топ пользователей*\n\n"
             
             medals = ["🥇", "🥈", "🥉"]
             
@@ -7426,7 +7509,7 @@ async def top_vinyls_handler(update: Update, context):
                     user_vinyls, user_level, user_rank = user_stats
                     
                     if user_vinyls > 0:
-                        message += f"*📊 Ваша статистика:*\n"
+                        message += f"*Ваша статистика:*\n"
                         message += f"• Место: {user_rank}\n"
                         message += f"• Пластинок: {user_vinyls}\n\n"
                     else:
