@@ -635,9 +635,8 @@ class AchievementSystem:
                 return False
             
             if new_level_info['current_level'] > old_level_info['current_level']:
-                change_icon = "🎉"
                 message = (
-                    f"*{change_icon} Повышение уровня!*\n\n"
+                    f"*🎉 Повышение уровня!*\n\n"
                     f"*📈 Был уровень: {old_level_info['current_level_name']}*\n"
                     f"*📈 Стал уровень: {new_level_info['current_level_name']}*\n\n"
                     f"*🎁 Вы получили новые купоны на скидку!*\n"
@@ -645,9 +644,8 @@ class AchievementSystem:
                     f"*💪 Продолжайте в том же духе! 🔥*"
                 )
             else:
-                change_icon = "⚠️"
                 message = (
-                    f"*{change_icon} Понижение уровня!*\n\n"
+                    f"*📉 Понижение уровня!*\n\n"
                     f"*📉 Был уровень: {old_level_info['current_level_name']}*\n"
                     f"*📉 Стал уровень: {new_level_info['current_level_name']}*\n\n"
                     f"*💪 Не расстраивайтесь! Запишитесь снова и верните уровень! 🔥*"
@@ -748,13 +746,11 @@ class AchievementSystem:
                                             ach_emoji = ach_data.get('emoji', '🏆')
                                             break
                                     
+                                    # ===== НОВОЕ ФОРМАТИРОВАННОЕ СООБЩЕНИЕ =====
                                     message = (
-                                        f"*🏆 Новое достижение!*\n\n"
-                                        f"*✨ Продолжайте в том же духе! 🔥*\n\n"
-                                        f"*🎁 Награда:*\n"
-                                        f"• Достижение: «{name}»\n"
-                                        f"• Пластинок: +{vinyls} 💿\n"
-                                        f"• Всего: {new_vinyls} 💿"
+                                        f"*🎉 Добавлено {vinyls} пластинок за достижение «{ach_emoji} {name}»!*\n\n"
+                                        f"*✨ Гордимся, что Вы с нами!*\n\n"
+                                        f"*💰 Пластинок после достижения: {new_vinyls} 💿*"
                                     )
                                     
                                     await context.bot.send_message(
@@ -824,8 +820,8 @@ class AchievementSystem:
                 old_level_info = AchievementSystem.get_level_info(old_vinyls)
                 new_level_info = AchievementSystem.get_level_info(new_vinyls)
                 
-                # Обновляем уровень в базе (НО БЕЗ отправки уведомления!)
-                await AchievementSystem.update_user_level(user_id, None, send_notification=False)  # <-- ВАЖНО: send_notification=False
+                # Обновляем уровень в базе (БЕЗ отправки уведомления!)
+                await AchievementSystem.update_user_level(user_id, None, send_notification=False)
                 
                 # Отправляем ОДНО уведомление о повышении уровня, если уровень изменился
                 if context and new_level_info['current_level'] > old_level_info['current_level']:
@@ -848,17 +844,13 @@ class AchievementSystem:
                     except Exception as e:
                         logger.error(f"❌ Не удалось отправить уведомление о повышении уровня: {e}")
                 
-                # Отправляем уведомление о выдаче достижения
+                # ===== НОВОЕ ФОРМАТИРОВАННОЕ УВЕДОМЛЕНИЕ О ДОСТИЖЕНИИ =====
                 if context:
                     try:
                         message = (
-                            f"*👑 Администратор выдал вам достижение!*\n\n"
-                            f"*Вы получили особое достижение:*\n"
-                            f"*{ach['emoji']} «{ach['name']}»*\n\n"
-                            f"*{ach['desc']}*\n"
-                            f"*+{ach['vinyls']} пластинок! 💿*\n\n"
-                            f"*💰 Всего пластинок: {new_vinyls} 💿*\n\n"
-                            f"*Гордимся, что вы с нами! 🔥*"
+                            f"*🎉 Добавлено {ach['vinyls']} пластинок за достижение «{ach['emoji']} {ach['name']}»!*\n\n"
+                            f"*✨ Гордимся, что Вы с нами!*\n\n"
+                            f"*💰 Пластинок после достижения: {new_vinyls} 💿*"
                         )
                         
                         await context.bot.send_message(
@@ -866,6 +858,7 @@ class AchievementSystem:
                             text=message,
                             parse_mode="Markdown"
                         )
+                        logger.info(f"✅ Уведомление о выдаче достижения отправлено пользователю {user_id}")
                     except Exception as e:
                         logger.error(f"Не удалось отправить уведомление пользователю: {e}")
                 
@@ -877,7 +870,7 @@ class AchievementSystem:
     
     @staticmethod
     async def remove_achievement(user_id: str, achievement_id: str, admin_id: str, context=None):
-        """Удаляет достижение (без отправки уведомления о понижении уровня)"""
+        """Удаляет достижение (БЕЗ отправки уведомлений о понижении уровня)"""
         try:
             with db.get_connection() as conn:
                 cursor = conn.cursor()
@@ -919,15 +912,16 @@ class AchievementSystem:
                 # Обновляем уровень в базе (БЕЗ отправки уведомления)
                 await AchievementSystem.update_user_level(user_id, None, send_notification=False)
                 
-                # Отправляем ТОЛЬКО уведомление об удалении достижения
+                # ===== НОВОЕ ФОРМАТИРОВАННОЕ УВЕДОМЛЕНИЕ ОБ УДАЛЕНИИ =====
                 if context:
                     try:
+                        emoji = ach.get('emoji', '🏆')
+                        
                         message = (
-                            f"❌ Администратор удалил достижение\n\n"
-                            f"Достижение «{achievement_name}» было удалено.\n"
-                            f"📉 У вас отозвано {vinyls_to_remove} пластинок.\n"
-                            f"💰 Текущее количество пластинок: {new_vinyls} 💿\n\n"
-                            f"📞 Свяжитесь с администратором @mothman32 для уточнения"
+                            f"*❌ Удалено {vinyls_to_remove} пластинок за достижение «{emoji} {achievement_name}»*\n\n"
+                            f"*📉 Достижение отозвано администратором*\n"
+                            f"*💰 Текущее количество пластинок: {new_vinyls} 💿*\n\n"
+                            f"*📞 Свяжитесь с администратором @mothman32 для уточнения*"
                         )
                         
                         await context.bot.send_message(
@@ -995,12 +989,12 @@ class AchievementSystem:
             user_achievements = AchievementSystem.get_user_achievements(user_id)
             stats = AchievementSystem.get_achievements_stats(user_id)
             
-            text = "*🏆 Твои достижения*\n\n"
+            text = "*🏆 Достижения*\n\n"
             
             # ===== ЗАПИСИ В СТУДИИ =====
             text += "*🎤 Записи в студии:*\n"
             booking_achievements = [
-                ('first_booking', '🥉 Добро пожаловать', 'Отправил первую заявку'),
+                ('first_booking', '🥉 Добро пожаловать', 'Отправили первую заявку'),
                 ('novice', '🥈 Новичок', '3 завершенные записи'),
                 ('amateur', '🥇 Любитель', '10 завершенных записей'),
                 ('pro', '🏅 Профи', '25 завершенных записей'),
@@ -1017,11 +1011,11 @@ class AchievementSystem:
             # ===== РЕФЕРАЛЫ =====
             text += "*👥 Рефералы:*\n"
             referrals_achievements = [
-                ('friend_inviter', '🤝 Позвал друга', '1 друг сделал запись'),
-                ('social', '🗣 Социальный', '3 друга сделали запись'),
-                ('star', '⭐️ Звезда', '5 друзей сделали запись'),
-                ('magnate', '💰 Магнат', '10 друзей сделали запись'),
-                ('network_giant', '🌐 Сетевой гигант', '20 друзей сделали запись')
+                ('friend_inviter', '🤝 Позвал друга', '1 друг приглашён'),
+                ('social', '🗣 Социальный', '3 друга приглашены'),
+                ('star', '⭐️ Звезда', '5 друзей приглашены'),
+                ('magnate', '💰 Магнат', '10 друзей приглашены'),
+                ('network_giant', '🌐 Сетевой гигант', '20 друзей приглашены')
             ]
             for ach_id, name_with_emoji, desc in referrals_achievements:
                 if ach_id in user_achievements:
@@ -1033,9 +1027,9 @@ class AchievementSystem:
             # ===== ОСОБЫЕ НАГРАДЫ =====
             text += "*🏆 Особые награды:*\n"
             special_achievements = [
-                ('name_on_wall', '📜 Имя на стене', 'Самый преданный клиент года'),
+                ('name_on_wall', '📜 Имя на стене', 'Самому преданному клиенту года'),
                 ('godspeed_legend', '🎖 Godspeed Legend', 'За вклад в развитие студии'),
-                ('golden_mic', '🎤 Золотой микрофон', 'Популярный артист')
+                ('golden_mic', '🎤 Золотой микрофон', 'Популярному артисту')
             ]
             for ach_id, name_with_emoji, desc in special_achievements:
                 if ach_id in user_achievements:
