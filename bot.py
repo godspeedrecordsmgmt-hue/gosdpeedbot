@@ -7380,22 +7380,18 @@ async def level_handler(update: Update, context: CallbackContext) -> int:
                 level = result[1] or 1
             
             level_info = AchievementSystem.get_level_info(vinyls)
-            current_level = level_info['current_level']
-            
-            # ===== ПОЛУЧАЕМ АКТИВНЫЕ КУПОНЫ ПОЛЬЗОВАТЕЛЯ =====
-            active_coupons = CouponManager.get_user_coupons(user_id)
-            active_levels = {coupon['level'] for coupon in active_coupons}
+            current_level = level_info['current_level']  # Текущий уровень пользователя
             
             # ===== ФОРМИРУЕМ ТЕКСТ =====
             text = f"*📈 Мой уровень*\n\n"
             
-            # 1. ВСЕ УРОВНИ
+            # 1. ВСЕ УРОВНИ - галочка ТОЛЬКО на текущем
             text += f"*Все уровни:*\n"
             for lvl in AchievementSystem.LEVELS:
                 medal = "🥇" if lvl['level'] == 1 else "🏅" if lvl['level'] == 2 else "🎖" if lvl['level'] == 3 else "👑"
                 
-                # ===== ГАЛОЧКА ЕСЛИ ЕСТЬ АКТИВНЫЙ КУПОН =====
-                if lvl['level'] in active_levels:
+                # ===== ГАЛОЧКА ТОЛЬКО НА ТЕКУЩЕМ УРОВНЕ =====
+                if lvl['level'] == current_level:
                     text += f"✅ {medal} {lvl['name']} — {lvl['discount']}%"
                 else:
                     text += f"   {medal} {lvl['name']} — {lvl['discount']}%"
