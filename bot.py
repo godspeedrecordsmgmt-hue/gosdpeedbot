@@ -639,32 +639,27 @@ class AchievementSystem:
                 ''', (user_id,))
                 total_row = cursor.fetchone()
                 total_bookings = total_row[0] if total_row and total_row[0] else 0
+                logger.info(f"📊 Всего записей (включая pending): {total_bookings}")
                 
                 # ===== 2. ЗАВЕРШЁННЫЕ ЗАПИСИ =====
                 cursor.execute('''
                     SELECT COUNT(*) FROM bookings 
                     WHERE telegram_id = ? 
                     AND (
-                        -- Обычные записи: статус completed
                         (status = 'completed' AND is_admin_booking = 0 AND is_contractual = 0)
                         OR
-                        -- Админские записи: статус confirmed
                         (is_admin_booking = 1 AND status IN ('confirmed', 'подтвержден'))
                         OR
-                        -- Договорные записи: статус confirmed
                         (is_contractual = 1 AND status IN ('confirmed', 'подтвержден'))
                         OR
-                        -- Сведение/мастеринг: статус confirmed
                         (is_mixing = 1 AND status IN ('confirmed', 'подтвержден'))
                         OR
-                        -- Создание альбома: статус confirmed
                         (is_track_creation = 1 AND track_type = 'Альбом' AND status IN ('confirmed', 'подтвержден'))
                     )
                 ''', (user_id,))
                 completed_row = cursor.fetchone()
                 completed_bookings = completed_row[0] if completed_row and completed_row[0] else 0
-                
-                logger.info(f"📊 Всего записей: {total_bookings}, завершённых: {completed_bookings}")
+                logger.info(f"📊 Завершённых записей: {completed_bookings}")
                 
                 awarded = []
                 total_vinyls = 0
@@ -682,7 +677,7 @@ class AchievementSystem:
                 for ach_id, need, vinyls, name in achievements_list:
                     if ach_id not in user_achievements:
                         if ach_id == 'first_booking':
-                            # first_booking — от всех записей (включая pending)
+                            # ===== ВАЖНО: first_booking от ВСЕХ записей =====
                             if total_bookings >= need:
                                 logger.info(f"🎯 Выдаём {ach_id} (всего записей: {total_bookings})")
                                 cursor.execute('''
@@ -694,7 +689,7 @@ class AchievementSystem:
                                 awarded.append(ach_id)
                                 total_vinyls += vinyls
                         else:
-                            # Остальные — только от завершённых записей
+                            # ===== Остальные достижения от ЗАВЕРШЁННЫХ записей =====
                             if completed_bookings >= need:
                                 logger.info(f"🎯 Выдаём {ach_id} (завершённых: {completed_bookings})")
                                 cursor.execute('''
@@ -722,8 +717,8 @@ class AchievementSystem:
                             b.service LIKE '%Админ%' OR b.service LIKE '%админ%' OR
                             (b.is_contractual = 1 AND b.status IN ('confirmed', 'подтвержден')) OR
                             (b.date_str NOT LIKE '%Не указана%' AND 
-                             b.date_str NOT LIKE '%договорная%' AND 
-                             b.status = 'completed')
+                            b.date_str NOT LIKE '%договорная%' AND 
+                            b.status = 'completed')
                         )
                     ''', (referral_code,))
                     
@@ -757,11 +752,11 @@ class AchievementSystem:
                 
                 # ===== ОТПРАВЛЯЕМ УВЕДОМЛЕНИЯ =====
                 if awarded and context:
+                    # Уведомления для достижений из achievements_list
                     for ach_id in awarded:
                         for ach_id2, need, vinyls, name in achievements_list:
                             if ach_id2 == ach_id:
                                 try:
-                                    # name уже содержит эмодзи, например "🥉 Добро пожаловать"
                                     message = (
                                         f"*🎉 Добавлено {vinyls} пластинок за достижение «{name}»!*\n\n"
                                         f"*✨ Гордимся, что Вы с нами!*\n\n"
@@ -777,9 +772,8 @@ class AchievementSystem:
                                 except Exception as e:
                                     logger.error(f"❌ Ошибка отправки уведомления: {e}")
                                 break
-                    
-                    # Отдельно для реферальных достижений
-                    for ach_id in awarded:
+                        
+                        # Уведомления для реферальных достижений
                         for ach_id2, name, need, vinyls in referral_achievements_list:
                             if ach_id2 == ach_id:
                                 try:
