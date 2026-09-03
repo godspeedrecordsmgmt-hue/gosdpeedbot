@@ -13054,18 +13054,24 @@ async def admin_show_user_bookings(update: Update, context, target_user_id: int,
                 context.user_data.clear()
                 return
             
-            # Получаем ID первой платной записи (не договорной и не альбом)
+            # ===== ИСПРАВЛЕННАЯ ЛОГИКА ОПРЕДЕЛЕНИЯ ПЕРВОЙ ПЛАТНОЙ ЗАПИСИ =====
+            # Получаем ID первой подтвержденной/завершенной записи, у которой есть цена
             cursor.execute('''
                 SELECT MIN(id) FROM bookings 
                 WHERE telegram_id = ? 
-                AND status NOT IN ('rejected', 'отклонен', 'cancelled_by_user', 'cancelled', 'отменен')
+                AND status IN ('confirmed', 'подтвержден', 'completed')
+                AND price != '0'
                 AND price != 'Договорная'
                 AND price NOT LIKE '%договорная%'
                 AND (mixing_type IS NULL OR mixing_type NOT LIKE '%Альбом%')
                 AND (track_type IS NULL OR track_type NOT LIKE '%Альбом%')
+                AND is_contractual = 0
+                AND is_admin_booking = 0
             ''', (str(target_user_id),))
             first_paid_booking_row = cursor.fetchone()
             first_paid_booking_id = first_paid_booking_row[0] if first_paid_booking_row else None
+            
+            logger.info(f"🔍 Первая платная запись пользователя: {first_paid_booking_id}")
             
             dated_bookings = []
             contract_bookings = []
@@ -13104,16 +13110,18 @@ async def admin_show_user_bookings(update: Update, context, target_user_id: int,
                 if is_admin_booking:
                     safe_name = "Администратор"
                 
-                # ===== НОВАЯ ЛОГИКА ДЛЯ КУПОНА =====
+                # ===== ИСПРАВЛЕННАЯ ЛОГИКА ДЛЯ КУПОНА =====
                 coupon_text = ""
                 
                 # Проверяем — это первая платная запись?
                 is_first_paid_booking = (booking_id == first_paid_booking_id)
                 
-                if is_first_paid_booking:
+                if is_first_paid_booking and not is_admin_booking and not is_contractual:
+                    # Это первая платная запись - показываем купон 50%
                     coupon_text = "• Купон уровня 1: 50%"
                     logger.info(f"✅ Первая платная запись пользователя #{booking_id} — купон 50%")
-                elif level_coupon_id:
+                elif level_coupon_id and level_discount_percent and level_discount_percent > 0:
+                    # Проверяем, есть ли такой купон в таблице user_coupons
                     cursor.execute('''
                         SELECT level, discount_percent FROM user_coupons WHERE id = ?
                     ''', (level_coupon_id,))
@@ -13124,53 +13132,10 @@ async def admin_show_user_bookings(update: Update, context, target_user_id: int,
                             coupon_text = f"• Купон уровня {level}: {discount}%"
                         logger.info(f"✅ Найден купон для записи #{booking_id}: уровень {level}, скидка {discount}%")
                 elif level_discount_percent and level_discount_percent > 0 and not promo_code_used:
-                    coupon_text = "• Купон уровня 1: 50%"
-                    logger.info(f"ℹ️ Старая запись #{booking_id} со скидкой 50%")
-                elif price and not promo_code_used:
-                    try:
-                        price_str = str(price).replace('₽', '').replace(' ', '').strip()
-                        if price_str and price_str != '0' and 'договорная' not in price_str.lower():
-                            current_price = int(float(price_str))
-                            base_price = None
-                            
-                            if is_mixing == 1:
-                                if mixing_type and "Альбом" in mixing_type:
-                                    base_price = None
-                                else:
-                                    base_price = 2500
-                            elif is_track_creation == 1:
-                                if track_type and "Альбом" in track_type:
-                                    base_price = None
-                                else:
-                                    base_price = 9000
-                            elif is_12_hours == 1:
-                                if twelve_hours_type and ("Ночь" in twelve_hours_type or "ночь" in twelve_hours_type.lower()):
-                                    base_price = 6500
-                                else:
-                                    base_price = 7000
-                            elif "вокал" in str(service).lower() or "инструмент" in str(service).lower():
-                                if with_engineer == 1:
-                                    if duration >= 6:
-                                        base_price = duration * 1200
-                                    elif duration >= 3:
-                                        base_price = duration * 1300
-                                    else:
-                                        base_price = duration * 1500
-                                else:
-                                    if duration >= 6:
-                                        base_price = duration * 1000
-                                    elif duration >= 3:
-                                        base_price = duration * 1200
-                                    else:
-                                        base_price = duration * 1400
-                            
-                            if base_price and current_price < base_price:
-                                discount_percent = int((base_price - current_price) / base_price * 100)
-                                if discount_percent > 0:
-                                    coupon_text = "• Купон уровня 1: 50%"
-                                    logger.info(f"💡 Первая платная запись #{booking_id}: скидка 50% (база={base_price}, цена={current_price})")
-                    except Exception as e:
-                        logger.error(f"Ошибка вычисления скидки для #{booking_id}: {e}")
+                    # Для старых записей, где купон уже не существует
+                    if is_first_paid_booking:
+                        coupon_text = "• Купон уровня 1: 50%"
+                        logger.info(f"ℹ️ Старая первая платная запись #{booking_id} со скидкой 50%")
                 
                 # ===== ФОРМИРУЕМ ТЕКСТ ПРОМОКОДА =====
                 promo_text = ""
@@ -13301,7 +13266,6 @@ async def admin_show_user_bookings(update: Update, context, target_user_id: int,
                         else:
                             booking_text += f"• Дата: {safe_clean_date}\n"
                     
-                    # ===== ИСПРАВЛЕНО: format_time_for_display() нормализует 24→00 =====
                     if (booking['time_slot'] and 
                         booking['time_slot'] not in ['Не указано', 'Не указано (договорная)', 'Запись в студии']):
                         display_time = DateTimeUtils.format_time_for_display(booking['time_slot'])
@@ -13314,7 +13278,6 @@ async def admin_show_user_bookings(update: Update, context, target_user_id: int,
                         else:
                             booking_text += f"• Время: {safe_display_time}\n"
                     
-                    # ===== ЦЕНА ИЗ БД =====
                     if booking['is_12_hours']:
                         price_from_db = booking.get('price', 0)
                         if price_from_db and price_from_db != '0':
@@ -13344,11 +13307,9 @@ async def admin_show_user_bookings(update: Update, context, target_user_id: int,
                         else:
                             booking_text += "• Стоимость: 0₽\n"
                     
-                    # ===== ДОБАВЛЯЕМ КУПОН =====
                     if booking.get('coupon_text'):
                         booking_text += f"{booking['coupon_text']}\n"
                     
-                    # ===== ДОБАВЛЯЕМ ПРОМОКОД =====
                     if booking.get('promo_text'):
                         booking_text += f"{booking['promo_text']}\n"
                     
@@ -13398,11 +13359,9 @@ async def admin_show_user_bookings(update: Update, context, target_user_id: int,
                     else:
                         booking_text += "• Стоимость: 0₽\n"
                     
-                    # ===== ДОБАВЛЯЕМ КУПОН =====
                     if booking.get('coupon_text'):
                         booking_text += f"{booking['coupon_text']}\n"
                     
-                    # ===== ДОБАВЛЯЕМ ПРОМОКОД =====
                     if booking.get('promo_text'):
                         booking_text += f"{booking['promo_text']}\n"
                     
@@ -13434,7 +13393,6 @@ async def admin_show_user_bookings(update: Update, context, target_user_id: int,
                         safe_clean_date = SecurityUtils.safe_markdown_text(clean_date)
                         booking_text += f"• Дата: {safe_clean_date}\n"
                     
-                    # ===== ИСПРАВЛЕНО: format_time_for_display() нормализует 24→00 =====
                     if (booking['time_slot'] and 
                         booking['time_slot'] not in ['Не указано', 'Не указано (договорная)', 'Запись в студии']):
                         display_time = DateTimeUtils.format_time_for_display(booking['time_slot'])
