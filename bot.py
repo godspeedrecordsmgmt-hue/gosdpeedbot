@@ -1005,7 +1005,7 @@ class AchievementSystem:
                 if ach_id in user_achievements:
                     text += f"✅ {name_with_emoji} — {desc}\n"
                 else:
-                    text += f"   {name_with_emoji} — {desc}\n"
+                    text += f"{name_with_emoji} — {desc}\n"
             text += "\n"
             
             # ===== РЕФЕРАЛЫ =====
@@ -1021,7 +1021,7 @@ class AchievementSystem:
                 if ach_id in user_achievements:
                     text += f"✅ {name_with_emoji} — {desc}\n"
                 else:
-                    text += f"   {name_with_emoji} — {desc}\n"
+                    text += f"{name_with_emoji} — {desc}\n"
             text += "\n"
             
             # ===== ОСОБЫЕ НАГРАДЫ =====
@@ -1035,7 +1035,7 @@ class AchievementSystem:
                 if ach_id in user_achievements:
                     text += f"✅ {name_with_emoji} — {desc}\n"
                 else:
-                    text += f"   {name_with_emoji} — {desc}\n"
+                    text += f"{name_with_emoji} — {desc}\n"
             text += "\n"
             
             # ===== СТАТИСТИКА =====
