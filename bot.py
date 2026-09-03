@@ -992,7 +992,7 @@ class AchievementSystem:
             text = "*🏆 Достижения*\n\n"
             
             # ===== ЗАПИСИ В СТУДИИ =====
-            text += "*🎤 Записи в студии:*\n"
+            text += "*Записи в студии:*\n"
             booking_achievements = [
                 ('first_booking', '🥉 Добро пожаловать', 'Отправили первую заявку'),
                 ('novice', '🥈 Новичок', '3 завершенные записи'),
@@ -1009,7 +1009,7 @@ class AchievementSystem:
             text += "\n"
             
             # ===== РЕФЕРАЛЫ =====
-            text += "*👥 Рефералы:*\n"
+            text += "*Рефералы:*\n"
             referrals_achievements = [
                 ('friend_inviter', '🤝 Позвал друга', '1 друг приглашён'),
                 ('social', '🗣 Социальный', '3 друга приглашены'),
@@ -1025,7 +1025,7 @@ class AchievementSystem:
             text += "\n"
             
             # ===== ОСОБЫЕ НАГРАДЫ =====
-            text += "*🏆 Особые награды:*\n"
+            text += "*Особые награды:*\n"
             special_achievements = [
                 ('name_on_wall', '📜 Имя на стене', 'Самому преданному клиенту года'),
                 ('godspeed_legend', '🎖 Godspeed Legend', 'За вклад в развитие студии'),
@@ -1039,7 +1039,7 @@ class AchievementSystem:
             text += "\n"
             
             # ===== СТАТИСТИКА =====
-            text += "*📊 Статистика:*\n"
+            text += "*Статистика:*\n"
             text += f"• Выполнено достижений: {stats['total_earned']}/{stats['total_possible']}\n"
             text += f"• Заработано пластинок: {stats['vinyls_from_achievements']} 💿"
             
