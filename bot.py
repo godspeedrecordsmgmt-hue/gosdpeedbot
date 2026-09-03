@@ -7355,7 +7355,6 @@ logger = logging.getLogger(__name__)
 async def level_handler(update: Update, context: CallbackContext) -> int:
     """Обработчик команды /level - отображение информации об уровне пользователя"""
     
-    # Проверка на заблокированного пользователя
     if await check_user_blocked(update, context):
         return ConversationHandler.END
     
@@ -7380,25 +7379,34 @@ async def level_handler(update: Update, context: CallbackContext) -> int:
                 level = result[1] or 1
             
             level_info = AchievementSystem.get_level_info(vinyls)
-            current_level = level_info['current_level']  # Текущий уровень
+            current_level = level_info['current_level']
             
-            # ===== ПОЛУЧАЕМ АКТИВНЫЕ КУПОНЫ (для отображения информации) =====
+            # ===== ПОЛУЧАЕМ АКТИВНЫЕ КУПОНЫ =====
             active_coupons = CouponManager.get_user_coupons(user_id)
             active_levels = {coupon['level'] for coupon in active_coupons}
             
             # ===== ФОРМИРУЕМ ТЕКСТ =====
             text = f"*📈 Мой уровень*\n\n"
             
-            # 1. ВСЕ УРОВНИ - галочка ТОЛЬКО на текущем
             text += f"*Все уровни:*\n"
             for lvl in AchievementSystem.LEVELS:
                 medal = "🥇" if lvl['level'] == 1 else "🏅" if lvl['level'] == 2 else "🎖" if lvl['level'] == 3 else "👑"
                 
-                # ===== ГАЛОЧКА ТОЛЬКО НА ТЕКУЩЕМ УРОВНЕ =====
-                if lvl['level'] == current_level:
-                    text += f"✅ {medal} {lvl['name']} — {lvl['discount']}%"
+                # ===== ГЛАВНАЯ ЛОГИКА =====
+                # Для уровня 1: галочка если ЕСТЬ КУПОН
+                # Для уровней 2,3,4: галочка если ЭТО ТЕКУЩИЙ УРОВЕНЬ
+                if lvl['level'] == 1:
+                    # Любитель - проверяем наличие купона
+                    if lvl['level'] in active_levels:
+                        text += f"✅ {medal} {lvl['name']} — {lvl['discount']}%"
+                    else:
+                        text += f"   {medal} {lvl['name']} — {lvl['discount']}%"
                 else:
-                    text += f"   {medal} {lvl['name']} — {lvl['discount']}%"
+                    # Мастер, Легенда, Бог музыки - проверяем текущий уровень
+                    if lvl['level'] == current_level:
+                        text += f"✅ {medal} {lvl['name']} — {lvl['discount']}%"
+                    else:
+                        text += f"   {medal} {lvl['name']} — {lvl['discount']}%"
                 
                 if lvl['discount_type'] == 'permanent':
                     text += f" (вечная)\n"
@@ -7407,7 +7415,6 @@ async def level_handler(update: Update, context: CallbackContext) -> int:
             
             text += "\n"
             
-            # 2. СЛЕДУЮЩИЙ УРОВЕНЬ
             text += f"*Следующий уровень:*\n"
             if level_info['next_level_name']:
                 text += f"• {level_info['next_level_name']}\n"
@@ -7416,7 +7423,6 @@ async def level_handler(update: Update, context: CallbackContext) -> int:
             else:
                 text += f"• Достигнут максимальный уровень!\n\n"
             
-            # 3. СТАТИСТИКА
             text += f"*Статистика:*\n"
             text += f"• Пластинок: {vinyls}\n"
             text += f"• Текущий уровень: {level_info['current_level_name']}\n"
