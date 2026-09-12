@@ -2817,72 +2817,72 @@ class CouponManager:
         effective_total = min(total, 100)
         return effective_total, coupon_list, total
     
-        @staticmethod
-        def use_coupon(user_id: str, coupon_id: int, db_conn=None):
-            """Использует 1 использование купона"""
-            try:
-                if db_conn:
-                    conn = db_conn
-                    cursor = conn.cursor()
-                    should_close = False
-                else:
-                    conn = sqlite3.connect(db.db_path, timeout=30.0)
-                    conn.execute('PRAGMA journal_mode=WAL')
-                    conn.execute('PRAGMA synchronous=NORMAL')
-                    cursor = conn.cursor()
-                    should_close = True
-                
-                cursor.execute('''
-                    SELECT id, level, discount_percent, remaining_uses, is_permanent
-                    FROM user_coupons 
-                    WHERE id = ? AND user_id = ?
-                ''', (coupon_id, user_id))
-                
-                coupon = cursor.fetchone()
-                
-                if not coupon:
-                    if should_close:
-                        conn.close()
-                    return False, "Купон не найден", 0
-                
-                coupon_id_db, level, discount, remaining, is_permanent = coupon
-                
-                if is_permanent:
-                    if should_close:
-                        conn.close()
-                    return True, f"Применена вечная скидка {discount}%", discount
-                
-                if remaining <= 0:
-                    if should_close:
-                        conn.close()
-                    return False, "Купон уже использован", 0
-                
-                new_remaining = remaining - 1
-                
-                # НЕ УДАЛЯЕМ купон, а обнуляем remaining_uses.
-                # Это позволяет вернуть его при отмене записи.
-                cursor.execute('''
-                    UPDATE user_coupons 
-                    SET remaining_uses = ?, updated_at = CURRENT_TIMESTAMP
-                    WHERE id = ?
-                ''', (new_remaining, coupon_id_db))
-                
-                if new_remaining == 0:
-                    logger.info(f"✅ Купон уровня {level} ({discount}%) полностью использован пользователем {user_id} (остался в БД с remaining_uses=0)")
-                else:
-                    logger.info(f"✅ Использован 1 купон уровня {level} ({discount}%), осталось {new_remaining} у {user_id}")
-                
+    @staticmethod
+    def use_coupon(user_id: str, coupon_id: int, db_conn=None):
+        """Использует 1 использование купона (не удаляет купон из БД)"""
+        try:
+            if db_conn:
+                conn = db_conn
+                cursor = conn.cursor()
+                should_close = False
+            else:
+                conn = sqlite3.connect(db.db_path, timeout=30.0)
+                conn.execute('PRAGMA journal_mode=WAL')
+                conn.execute('PRAGMA synchronous=NORMAL')
+                cursor = conn.cursor()
+                should_close = True
+            
+            cursor.execute('''
+                SELECT id, level, discount_percent, remaining_uses, is_permanent
+                FROM user_coupons 
+                WHERE id = ? AND user_id = ?
+            ''', (coupon_id, user_id))
+            
+            coupon = cursor.fetchone()
+            
+            if not coupon:
                 if should_close:
-                    conn.commit()
                     conn.close()
-                
-                return True, f"Применена скидка {discount}%", discount
-                
-            except Exception as e:
-                logger.error(f"❌ Ошибка использования купона: {e}")
-                if should_close and 'conn' in locals():
+                return False, "Купон не найден", 0
+            
+            coupon_id_db, level, discount, remaining, is_permanent = coupon
+            
+            if is_permanent:
+                if should_close:
                     conn.close()
-                return False, str(e), 0
+                return True, f"Применена вечная скидка {discount}%", discount
+            
+            if remaining <= 0:
+                if should_close:
+                    conn.close()
+                return False, "Купон уже использован", 0
+            
+            new_remaining = remaining - 1
+            
+            # НЕ УДАЛЯЕМ купон, а обнуляем remaining_uses.
+            # Это позволяет вернуть его при отмене записи.
+            cursor.execute('''
+                UPDATE user_coupons 
+                SET remaining_uses = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            ''', (new_remaining, coupon_id_db))
+            
+            if new_remaining == 0:
+                logger.info(f"✅ Купон уровня {level} ({discount}%) полностью использован пользователем {user_id} (остался в БД с remaining_uses=0)")
+            else:
+                logger.info(f"✅ Использован 1 купон уровня {level} ({discount}%), осталось {new_remaining} у {user_id}")
+            
+            if should_close:
+                conn.commit()
+                conn.close()
+            
+            return True, f"Применена скидка {discount}%", discount
+            
+        except Exception as e:
+            logger.error(f"❌ Ошибка использования купона: {e}")
+            if should_close and 'conn' in locals():
+                conn.close()
+            return False, str(e), 0
     
     @staticmethod
     def get_best_coupon(user_id: str):
@@ -21823,7 +21823,7 @@ async def admin_cancel_confirm_handler(update: Update, context):
                 cursor.execute('UPDATE bookings SET vinyls_awarded = 0 WHERE id = ?', (booking_id,))
             
             # ================================================================
-            # ===== ЛОГИКА КУПОНА ПРИ ОТМЕНЕ АДМИНОМ (по проценту из записи) =====
+            # ===== ЛОГИКА КУПОНА ПРИ ОТМЕНЕ АДМИНОМ =====
             # ================================================================
             if level_discount_percent_db and level_discount_percent_db > 0:
                 # Определяем уровень купона по проценту
@@ -21833,30 +21833,66 @@ async def admin_cancel_confirm_handler(update: Update, context):
                         coupon_level = lvl['level']
                         break
                 
-                # Определяем, нужно ли сжечь или вернуть купон
+                # ===== НОРМАЛИЗУЕМ СТАТУС =====
+                status_norm = str(current_status).strip().lower() if current_status else ""
+                
+                if status_norm in ['confirmed', 'подтвержден', 'подтверждена', 'подтверждено']:
+                    status_canonical = 'confirmed'
+                elif status_norm in ['pending', 'ожидает', 'ожидание']:
+                    status_canonical = 'pending'
+                elif status_norm in ['completed', 'завершен', 'завершена', 'завершено']:
+                    status_canonical = 'completed'
+                else:
+                    status_canonical = status_norm
+                
+                logger.info(f"🔍 ДИАГНОСТИКА ОТМЕНЫ АДМИНОМ #{booking_id}:")
+                logger.info(f"   current_status (raw) = {repr(current_status)}")
+                logger.info(f"   status_canonical = '{status_canonical}'")
+                logger.info(f"   is_mixing_db = {is_mixing_db}")
+                logger.info(f"   hours_until = {hours_until}")
+                logger.info(f"   level_discount_percent_db = {level_discount_percent_db}")
+                
+                # ================================================================
+                # ===== ОПРЕДЕЛЯЕМ, СГОРАЕТ ИЛИ ВОЗВРАЩАЕТСЯ =====
+                # ================================================================
                 should_burn = False
                 
                 if is_mixing_db:
-                    # Для сведения/мастеринга: если confirmed - сгорает, иначе возвращается
-                    if current_status in ['confirmed', 'подтвержден']:
+                    # ===== ДЛЯ СВЕДЕНИЯ/МАСТЕРИНГА =====
+                    # pending → возвращается, confirmed → сгорает
+                    if status_canonical == 'confirmed':
                         should_burn = True
+                        logger.info(f"🔥 Купон СГОРАЕТ: сведение, статус=confirmed")
                     else:
                         should_burn = False
-                else:
-                    # Для услуг с датой (вокал, инструменты, трек, аренда)
-                    if current_status in ['confirmed', 'подтвержден'] and hours_until < 12:
-                        should_burn = True
-                    elif current_status in ['pending', 'ожидает'] and hours_until < 12:
-                        should_burn = False
-                    elif hours_until >= 12:
-                        should_burn = False
-                    else:
-                        should_burn = False
+                        logger.info(f"🔄 Купон ВОЗВРАЩАЕТСЯ: сведение, статус={status_canonical}")
                 
+                else:
+                    # ===== ДЛЯ ЗАПИСЕЙ С ДАТОЙ =====
+                    if status_canonical == 'completed':
+                        # Запись завершена (время прошло) → сгорает всегда
+                        should_burn = True
+                        logger.info(f"🔥 Купон СГОРАЕТ: запись с датой, статус=completed (время прошло)")
+                    
+                    elif status_canonical == 'confirmed':
+                        # confirmed: сгорает только если < 12ч до записи
+                        if hours_until < 12 and hours_until != -1:
+                            should_burn = True
+                            logger.info(f"🔥 Купон СГОРАЕТ: запись с датой, confirmed, до начала {hours_until:.1f}ч < 12ч")
+                        else:
+                            should_burn = False
+                            logger.info(f"🔄 Купон ВОЗВРАЩАЕТСЯ: запись с датой, confirmed, до начала {hours_until:.1f}ч >= 12ч")
+                    
+                    else:
+                        # pending → возвращается
+                        should_burn = False
+                        logger.info(f"🔄 Купон ВОЗВРАЩАЕТСЯ: запись с датой, статус={status_canonical}")
+                
+                # ===== ПРИМЕНЯЕМ РЕШЕНИЕ =====
                 if should_burn:
                     logger.info(f"🔥 Купон уровня {coupon_level} ({level_discount_percent_db}%) СГОРЕЛ при отмене админом #{booking_id}")
                 else:
-                    # Возвращаем купон: ищем активный купон этого уровня
+                    # Возвращаем купон
                     cursor.execute('''
                         SELECT id, remaining_uses FROM user_coupons 
                         WHERE user_id = ? AND level = ? AND discount_percent = ? AND is_permanent = 0
@@ -21868,7 +21904,7 @@ async def admin_cancel_confirm_handler(update: Update, context):
                             UPDATE user_coupons SET remaining_uses = remaining_uses + 1, updated_at = CURRENT_TIMESTAMP
                             WHERE id = ?
                         ''', (existing_coupon[0],))
-                        logger.info(f"🔄 Купон уровня {coupon_level} ({level_discount_percent_db}%) ВОЗВРАЩЁН при отмене админом #{booking_id}")
+                        logger.info(f"🔄 Купон уровня {coupon_level} ({level_discount_percent_db}%) ВОЗВРАЩЁН (обновлён) при отмене админом #{booking_id}")
                     else:
                         cursor.execute('''
                             INSERT INTO user_coupons (user_id, level, discount_percent, remaining_uses, is_permanent)
