@@ -7116,7 +7116,6 @@ async def help_handler(update: Update, context):
         "• Ваши отзывы помогают нам стать лучше\n\n"
         "*По техническим вопросам:* @mothman32\n"
         "*Администратор:* @mothman32\n\n"
-        "*Адрес студии:* Садовая ул., 91"
     )
     
     await update.message.reply_text(
