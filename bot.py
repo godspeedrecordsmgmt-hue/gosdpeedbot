@@ -3781,42 +3781,44 @@ class Config:
         'rental': 72,
         'track_creation': 72,
         'with_engineer': 48,
-        'without_engineer': 24,  # ← БЫЛО 24
+        'without_engineer': 24,
         'default': 24
     }
-
 
     DAY_START = 9
     DAY_END = 21
     PRICES = {
-        'vocal_engineer_under3': 1500,
-        'vocal_engineer_over3': 1300,
-        'vocal_engineer_over6': 1100,
-        'vocal_engineer_night_under3': 1700,
-        'vocal_engineer_night_over3': 1500,
-        'vocal_engineer_night_over6': 1400,
-        'vocal_no_engineer_under3': 1400,
-        'vocal_no_engineer_over3': 1200,
-        'vocal_no_engineer_over6': 1000,
-        'mixing_track': 2500,
-        '12_hours_rent_day': 7000,
-        '12_hours_rent_night': 6500,
-        'default': 1500,
+        # ===== ЗАПИСЬ С ИНЖЕНЕРОМ =====
+        'vocal_engineer_under3': 1000,          # 1-2 часа
+        'vocal_engineer_over3': 800,            # 3-6 часов
+        'vocal_engineer_over6': 500,            # от 6 часов
+        # ===== ЗАПИСЬ С ИНЖЕНЕРОМ НОЧЬЮ (базовая + 200₽ надбавка) =====
+        'vocal_engineer_night_under3': 1200,    # 1000 + 200
+        'vocal_engineer_night_over3': 1000,     # 800 + 200
+        'vocal_engineer_night_over6': 700,      # 500 + 200
+        # ===== ЗАПИСЬ БЕЗ ИНЖЕНЕРА (единая 800₽/час) =====
+        'vocal_no_engineer_under3': 800,
+        'vocal_no_engineer_over3': 800,
+        'vocal_no_engineer_over6': 800,
+        # ===== ДРУГИЕ УСЛУГИ =====
+        'mixing_track': 3000,                   # сведение трека
+        '12_hours_rent_day': 7000,              # аренда день
+        '12_hours_rent_night': 6000,            # аренда ночь
+        'default': 1000,
         'track_creation_single': 9000
     }
-    
-    # В классе Config добавь или обнови:
+
     NOTIFICATION_INTERVALS = {
-        'vocal_with_engineer': [48, 24, 12, 6],  # 48ч, 24ч, 12ч, 6ч
-        'vocal_without_engineer': [24, 12, 6, 3],  # 24ч, 12ч, 6ч, 3ч
+        'vocal_with_engineer': [48, 24, 12, 6],
+        'vocal_without_engineer': [24, 12, 6, 3],
         'instruments_with_engineer': [48, 24, 12, 6],
         'instruments_without_engineer': [24, 12, 6, 3],
-        'rental': [48, 24, 12],  # для аренды
-        'track_creation': [48, 24, 12],  # для создания трека
-        'mixing': [],  # для сведения - нет уведомлений
+        'rental': [48, 24, 12],
+        'track_creation': [48, 24, 12],
+        'mixing': [],
         'default': [24, 12, 3]
     }
-    
+
     TRACK_CREATION = {
         'min_advance_hours': 72,
         'min_duration': 4,
@@ -3827,39 +3829,38 @@ class Config:
     MAX_TIME_STR_LENGTH = 20
     RATE_LIMIT = 60
     RATE_BLOCK_TIME = 300
-    
+
     # ===== ФИНАНСОВЫЕ КОНСТАНТЫ =====
-    RENT_COST = 45000  # Аренда в месяц
-    ENGINEER_BASE_RATE = 500  # Базовая ставка звукорежиссера в час
-    ENGINEER_NIGHT_SURCHARGE = 200  # Ночная надбавка звукорежиссеру в час
-    
+    RENT_COST = 45000
+    ENGINEER_BASE_RATE = 500
+    ENGINEER_NIGHT_SURCHARGE = 200
+
     @staticmethod
     def get_period_by_hour(hour: int):
         for period in Config.TIME_PERIODS:
             if period["start"] <= hour < period["end"]:
                 return period
         return Config.TIME_PERIODS[-1]
-    
+
     @staticmethod
     def validate_string_length(text: str, max_length: int, field_name: str = "поле"):
         if not text or len(text.strip()) == 0:
             return False, f"*❌ {field_name} не может быть пустым!*"
-        
+
         if len(text) > max_length:
-            # Определяем правильное окончание для поля
             if field_name == "имя":
                 return False, f"*❌ Максимально 50 символов, слишком длинное имя! Введите имя длиной от 2 до 50 символов!*"
             elif field_name == "контакт":
                 return False, f"*❌ Максимально 50 символов, слишком длинный контакт! Введите контакт длиной от 2 до 50 символов!*"
             else:
                 return False, f"*❌ Максимально {max_length} символов, слишком длинное {field_name}!*"
-        
+
         if len(text.strip()) < 2 and field_name == "имя":
             return False, "*❌ Минимально 2 символа, слишком короткое имя! Введите имя длиной от 2 до 50 символов!*"
-        
+
         if len(text.strip()) < 2 and field_name == "контакт":
             return False, f"*❌ Минимально 2 символа, слишком короткий контакт! Введите контакт длиной от 2 до {Config.MAX_CONTACT_LENGTH} символов!*"
-        
+
         return True, ""
 
 class SecurityUtils:
@@ -4507,15 +4508,12 @@ class PriceCalculator:
         """Подсчитывает количество ночных часов (00:00-06:00)"""
         if start_hour is None or end_hour is None:
             return 0
-            
+
         night_hours = 0
-        
-        # Нормализуем часы
         start = start_hour % 24
         end = end_hour % 24 if end_hour != 24 else 0
-        
+
         if end <= start:
-            # Ночной слот, пересекающий полночь
             for hour in range(start, 24):
                 if 0 <= hour < 6:
                     night_hours += 1
@@ -4523,11 +4521,10 @@ class PriceCalculator:
                 if 0 <= hour < 6:
                     night_hours += 1
         else:
-            # Дневной слот
             for hour in range(start, end):
                 if 0 <= hour < 6:
                     night_hours += 1
-        
+
         return night_hours
 
     @staticmethod
@@ -4541,12 +4538,8 @@ class PriceCalculator:
             else:
                 return duration * Config.PRICES['vocal_engineer_under3']
         else:
-            if duration >= 6:
-                return duration * Config.PRICES['vocal_no_engineer_over6']
-            elif duration >= 3:
-                return duration * Config.PRICES['vocal_no_engineer_over3']
-            else:
-                return duration * Config.PRICES['vocal_no_engineer_under3']
+            # ===== БЕЗ ИНЖЕНЕРА — ЕДИНАЯ ЦЕНА 800₽/ЧАС =====
+            return duration * Config.PRICES['vocal_no_engineer_under3']
 
     @staticmethod
     def get_price_per_hour(with_engineer: bool, duration: int = None) -> int:
@@ -4559,17 +4552,13 @@ class PriceCalculator:
             else:
                 return Config.PRICES['vocal_engineer_under3']
         else:
-            if duration is not None and duration >= 6:
-                return Config.PRICES['vocal_no_engineer_over6']
-            elif duration is not None and duration >= 3:
-                return Config.PRICES['vocal_no_engineer_over3']
-            else:
-                return Config.PRICES['vocal_no_engineer_under3']
+            # ===== БЕЗ ИНЖЕНЕРА — ЕДИНАЯ СТАВКА =====
+            return Config.PRICES['vocal_no_engineer_under3']
 
     @staticmethod
-    def calculate(service, duration, is_mixing=False, mixing_type=None, 
+    def calculate(service, duration, is_mixing=False, mixing_type=None,
                 is_12_hours=False, is_track_creation=False, track_type=None,
-                twelve_hours_type=None, start_hour=None, end_hour=None, 
+                twelve_hours_type=None, start_hour=None, end_hour=None,
                 with_engineer=False, user_id=None, consume_coupon=False):
         """
         Рассчитывает цену в ПРАВИЛЬНОМ порядке:
@@ -4579,35 +4568,34 @@ class PriceCalculator:
         4. Процентная скидка по уровню
         5. Процентная скидка по промокоду
         """
-        
+
         logger.info(f"💰 РАСЧЕТ ЦЕНЫ: service={service}, duration={duration}, with_engineer={with_engineer}, user_id={user_id}, is_track_creation={is_track_creation}, start_hour={start_hour}, end_hour={end_hour}")
-        
+
         # ===== 1. БАЗОВАЯ ЦЕНА =====
         if duration == 0 and not is_mixing and not is_track_creation:
             base_price = 0
-            
+
         elif is_12_hours:
             if twelve_hours_type and ('Ночь' in twelve_hours_type or 'ночь' in twelve_hours_type.lower()):
                 base_price = Config.PRICES['12_hours_rent_night']
             else:
                 base_price = Config.PRICES['12_hours_rent_day']
             logger.info(f"💰 АРЕНДА: base_price={base_price}")
-            
+
             level_discount_percent = 0
             level_coupon_id = None
             promo_discount_percent = 0
             promo_code_used = None
             free_service_applied = False
-            
+
             if user_id:
-                # 1. ПРОВЕРЯЕМ КУПОН УРОВНЯ
                 try:
                     best_coupon = CouponManager.get_best_coupon(str(user_id))
                     if best_coupon:
                         level_discount_percent = best_coupon['discount']
                         level_coupon_id = best_coupon['id']
                         logger.info(f"💰 Найден купон для аренды: скидка {level_discount_percent}%")
-                        
+
                         if consume_coupon and not best_coupon.get('is_permanent', False):
                             success, msg, discount_used = CouponManager.use_coupon(str(user_id), level_coupon_id)
                             if success:
@@ -4618,16 +4606,15 @@ class PriceCalculator:
                                 level_coupon_id = None
                 except Exception as e:
                     logger.error(f"Ошибка при работе с купоном для аренды: {e}")
-                
-                # 2. ПРОВЕРЯЕМ ПРОМОКОД
+
                 try:
                     promo = PromoCodeManager.get_user_active_promo(str(user_id))
                     if promo:
                         service_lower = service.lower() if service else ""
                         target_service = promo.get('target_service')
-                        
+
                         promo_applies = False
-                        
+
                         if promo['discount_type'] == PromoCodeManager.TYPE_PERCENT_ALL:
                             promo_applies = True
                         elif promo['discount_type'] == PromoCodeManager.TYPE_PERCENT_SERVICE:
@@ -4639,7 +4626,7 @@ class PriceCalculator:
                                 free_service_applied = True
                                 promo_code_used = promo['code']
                                 logger.info(f"💰 Бесплатная аренда, цена = 0")
-                        
+
                         if promo_applies:
                             if promo['discount_type'] == PromoCodeManager.TYPE_FREE_SERVICE:
                                 current_price = 0
@@ -4652,21 +4639,20 @@ class PriceCalculator:
                                 logger.info(f"💰 Промокод для аренды: +{promo_discount_percent}%")
                 except Exception as e:
                     logger.error(f"Ошибка при работе с промокодом для аренды: {e}")
-            
-            # 3. ПРИМЕНЯЕМ СКИДКИ
+
             if free_service_applied:
                 current_price = 0
                 final_price = 0
             else:
                 current_price = base_price
                 total_percent_discount = level_discount_percent + promo_discount_percent
-                
+
                 if total_percent_discount > 0:
                     current_price = current_price * (100 - min(total_percent_discount, 100)) / 100
                     logger.info(f"💰 Аренда со скидкой: {current_price} (скидка {total_percent_discount}%)")
-                
+
                 final_price = int(current_price) if current_price > 0 else 0
-            
+
             return {
                 'base_price': base_price,
                 'final_price': final_price,
@@ -4693,6 +4679,7 @@ class PriceCalculator:
                     'free_hours_applied': 0,
                     'free_service_applied': False
                 }
+            # ===== СВЕДЕНИЕ ТРЕКА = 3000₽ =====
             base_price = Config.PRICES['mixing_track']
             if duration == 0:
                 duration = 1
@@ -4720,8 +4707,7 @@ class PriceCalculator:
         else:
             base_price = PriceCalculator.calculate_base_price(duration, with_engineer)
             logger.info(f"💰 Базовая цена (без инженера): {base_price}₽")
-        
-        # Если договорная цена
+
         if isinstance(base_price, str) and base_price == "Договорная":
             return {
                 'base_price': 0,
@@ -4734,17 +4720,15 @@ class PriceCalculator:
                 'free_hours_applied': 0,
                 'free_service_applied': False
             }
-        
+
         # ===== 2. НОЧНАЯ НАДБАВКА =====
         night_surcharge = 0
-        
-        # Для создания трека - применяем ночную надбавку!
+
         if is_track_creation and start_hour is not None and end_hour is not None:
             night_hours = PriceCalculator.get_night_hours_count(start_hour, end_hour, duration)
             night_surcharge = night_hours * Config.NIGHT_SURCHARGE_AMOUNT
             logger.info(f"💰 СОЗДАНИЕ ТРЕКА: ночных часов: {night_hours}, надбавка: +{night_surcharge}₽")
-        
-        # Для обычной записи с инженером
+
         elif start_hour is not None and end_hour is not None and not is_12_hours and not is_mixing and not is_track_creation:
             if with_engineer:
                 night_hours = PriceCalculator.get_night_hours_count(start_hour, end_hour, duration)
@@ -4752,11 +4736,10 @@ class PriceCalculator:
                 logger.info(f"💰 ОБЫЧНАЯ ЗАПИСЬ: ночных часов: {night_hours}, надбавка (с инженером): +{night_surcharge}₽")
             else:
                 logger.info(f"💰 Ночная надбавка не применяется (работа без инженера)")
-        
+
         total_before_discounts = base_price + night_surcharge
         logger.info(f"💰 Сумма до скидок: {total_before_discounts}₽")
-        
-        # Начальные значения
+
         current_price = total_before_discounts
         remaining_duration = duration
         level_discount_percent = 0
@@ -4765,24 +4748,24 @@ class PriceCalculator:
         promo_code_used = None
         free_hours_applied = 0
         free_service_applied = False
-        
+
         # ===== 3. БЕСПЛАТНЫЕ ЧАСЫ/УСЛУГА (из промокода) =====
         if user_id:
             try:
                 promo = PromoCodeManager.get_user_active_promo(str(user_id))
             except:
                 promo = None
-            
+
             if promo:
                 service_lower = service.lower() if service else ""
                 target_service = promo.get('target_service')
-                
+
                 promo_applies = False
-                
+
                 if promo['discount_type'] == PromoCodeManager.TYPE_PERCENT_ALL:
                     promo_applies = True
                     logger.info(f"💰 ПРОМОКОД % НА ВСЕ ПРИМЕНЯЕТСЯ")
-                    
+
                 elif promo['discount_type'] == PromoCodeManager.TYPE_PERCENT_SERVICE:
                     if target_service == "вокал" and "вокал" in service_lower:
                         promo_applies = True
@@ -4795,12 +4778,12 @@ class PriceCalculator:
                     elif target_service == "трек" and "создание трека" in service_lower:
                         promo_applies = True
                     logger.info(f"💰 ПРОМОКОД % НА УСЛУГУ ПРИМЕНЯЕТСЯ")
-                        
+
                 elif promo['discount_type'] == PromoCodeManager.TYPE_FREE_HOURS:
                     if "вокал" in service_lower or "инструмент" in service_lower or "создание трека" in service_lower:
                         promo_applies = True
                         logger.info(f"💰 ПРОМОКОД БЕСПЛАТНЫЕ ЧАСЫ ПРИМЕНЯЕТСЯ")
-                        
+
                 elif promo['discount_type'] == PromoCodeManager.TYPE_FREE_SERVICE:
                     if target_service == "вокал" and "вокал" in service_lower:
                         promo_applies = True
@@ -4813,12 +4796,12 @@ class PriceCalculator:
                     elif target_service == "трек" and "создание трека" in service_lower:
                         promo_applies = True
                     logger.info(f"💰 ПРОМОКОД БЕСПЛАТНАЯ УСЛУГА ПРИМЕНЯЕТСЯ")
-                
+
                 if promo_applies:
                     if promo['discount_type'] == PromoCodeManager.TYPE_FREE_HOURS:
                         free_hours = promo['discount_value']
                         free_hours_applied = free_hours
-                        
+
                         if is_12_hours or is_mixing:
                             logger.info(f"💰 Бесплатные часы не применяются для этого типа услуги")
                         else:
@@ -4827,14 +4810,13 @@ class PriceCalculator:
                             current_price = total_before_discounts - free_hours_cost
                             promo_code_used = promo['code']
                             logger.info(f"💰 Бесплатных часов: {free_hours}, стоимость: -{free_hours_cost}₽, осталось: {current_price}₽")
-                        
+
                     elif promo['discount_type'] == PromoCodeManager.TYPE_FREE_SERVICE:
                         current_price = 0
                         free_service_applied = True
                         promo_code_used = promo['code']
                         logger.info(f"💰 Бесплатная услуга, цена = 0, промокод: {promo_code_used}")
-        
-        # ===== 4. ЕСЛИ ЦЕНА УЖЕ 0 - ВОЗВРАЩАЕМ =====
+
         if current_price == 0 or free_service_applied:
             return {
                 'base_price': int(base_price),
@@ -4848,9 +4830,8 @@ class PriceCalculator:
                 'free_service_applied': free_service_applied,
                 'night_surcharge': night_surcharge
             }
-        
+
         # ===== 5. ПРИМЕНЯЕМ ПРОЦЕНТНУЮ СКИДКУ ПО УРОВНЮ (КУПОН) =====
-        # ===== НЕ ПРИМЕНЯЕМ ДЛЯ АЛЬБОМОВ =====
         is_album = False
         if is_mixing and mixing_type and "Альбом" in mixing_type:
             is_album = True
@@ -4858,16 +4839,16 @@ class PriceCalculator:
             is_album = True
         elif is_12_hours and "договорная" in str(service).lower():
             is_album = True
-        
+
         if user_id and not is_album:
             try:
                 best_coupon = CouponManager.get_best_coupon(str(user_id))
-                
+
                 if best_coupon:
                     level_discount_percent = best_coupon['discount']
                     level_coupon_id = best_coupon['id']
                     logger.info(f"💰 Найден купон: скидка {level_discount_percent}%")
-                    
+
                     if consume_coupon and not best_coupon.get('is_permanent', False):
                         success, msg, discount_used = CouponManager.use_coupon(str(user_id), level_coupon_id)
                         if success:
@@ -4878,18 +4859,18 @@ class PriceCalculator:
                             level_coupon_id = None
             except Exception as e:
                 logger.error(f"Ошибка при работе с купоном: {e}")
-        
+
         # ===== 6. ПРИМЕНЯЕМ ПРОЦЕНТНУЮ СКИДКУ ПО ПРОМОКОДУ =====
         if user_id and not promo_code_used:
             try:
                 promo = PromoCodeManager.get_user_active_promo(str(user_id))
-                
+
                 if promo and promo['discount_type'] in [PromoCodeManager.TYPE_PERCENT_ALL, PromoCodeManager.TYPE_PERCENT_SERVICE]:
                     service_lower = service.lower() if service else ""
                     target_service = promo.get('target_service')
-                    
+
                     promo_applies = False
-                    
+
                     if promo['discount_type'] == PromoCodeManager.TYPE_PERCENT_ALL:
                         promo_applies = True
                     elif promo['discount_type'] == PromoCodeManager.TYPE_PERCENT_SERVICE:
@@ -4903,26 +4884,25 @@ class PriceCalculator:
                             promo_applies = True
                         elif target_service == "трек" and "создание трека" in service_lower:
                             promo_applies = True
-                    
+
                     if promo_applies:
                         promo_discount_percent = promo['discount_value']
                         promo_code_used = promo['code']
                         logger.info(f"💰 Промокод на %: +{promo_discount_percent}%")
             except Exception as e:
                 logger.error(f"Ошибка при работе с промокодом: {e}")
-        
-        # ===== 7. ПРИМЕНЯЕМ СУММАРНУЮ ПРОЦЕНТНУЮ СКИДКУ =====
+
         total_percent_discount = level_discount_percent + promo_discount_percent
         old_price = current_price
-        
+
         if total_percent_discount > 0:
             current_price = current_price * (100 - min(total_percent_discount, 100)) / 100
             logger.info(f"💰 Суммарная скидка: {total_percent_discount}%, было {old_price:.0f}₽, стало {current_price:.0f}₽")
-        
+
         final_price = int(current_price) if current_price > 0 else 0
-        
+
         logger.info(f"💰 ИТОГ: {final_price}₽ (база={base_price}, ночь=+{night_surcharge}, скидка={total_percent_discount}%)")
-        
+
         return {
             'base_price': int(base_price),
             'final_price': final_price,
@@ -4948,16 +4928,16 @@ class PriceCalculator:
                 if night_hours > 0:
                     return f"{total_price}₽ (база: {base_price}₽ + ночь: {night_surcharge}₽)"
             return f"{base_price}₽"
-        
+
         if not with_engineer or start_hour is None or end_hour is None:
             price = PriceCalculator.calculate_base_price(duration, with_engineer)
             return f"{price}₽"
-        
+
         base_price = PriceCalculator.calculate_base_price(duration, with_engineer)
         night_hours = PriceCalculator.get_night_hours_count(start_hour, end_hour, duration)
         night_surcharge = night_hours * Config.NIGHT_SURCHARGE_AMOUNT
         total_price = base_price + night_surcharge
-        
+
         if night_hours > 0:
             return f"{total_price}₽ (база: {base_price}₽ + ночь: {night_surcharge}₽)"
         else:
@@ -7231,7 +7211,6 @@ async def start(update: Update, context):
         "• Возможны небольшие ошибки\n"
         "• Мы постоянно улучшаем сервис\n"
         "• Ваши отзывы помогают нам стать лучше\n\n"
-        "*🛠 По техническим вопросам: @mothman32*\n\n"
         "*👇 Выберите подходящий вариант:*"
     )
     
@@ -7839,9 +7818,11 @@ async def calculate_and_show_revenue(update: Update, context, start_date, end_da
                     except:
                         booking_price = 0
                 elif is_12_hours == 1:
-                    booking_price = 7000 if twelve_hours_type and 'День' in twelve_hours_type else 6500
+                    # ===== ПРАВКА: 6500 → 6000 =====
+                    booking_price = 7000 if twelve_hours_type and 'День' in twelve_hours_type else 6000
                 elif is_mixing == 1:
-                    booking_price = 2500
+                    # ===== ПРАВКА: 2500 → 3000 =====
+                    booking_price = 3000
                 elif is_track_creation == 1:
                     booking_price = 9000
                 
@@ -7875,7 +7856,6 @@ async def calculate_and_show_revenue(update: Update, context, start_date, end_da
                     reason = "завершённая запись"
                 
                 else:
-                    # Формируем причину пропуска
                     if status == 'pending':
                         status_display = "ожидающая подтверждения"
                     elif status in ['rejected', 'отклонен']:
@@ -7990,7 +7970,6 @@ async def handle_revenue_menu(update: Update, context):
         )
         return ConversationHandler.END
     
-    # Используем ТОЧНЫЕ строки для callback_data
     keyboard = [
         [
             InlineKeyboardButton("📅 Сегодня", callback_data="revenue_today"),
@@ -9036,7 +9015,6 @@ async def show_my_bookings(update: Update, context):
             else:
                 current_user_display = f"ID: ...{user_id[-4:]}"
             
-            # ===== SQL ЗАПРОС =====
             cursor.execute('''
                 SELECT b.id, b.service, b.time_slot, b.date_str, b.status, b.price,
                     b.is_mixing, b.mixing_type, b.is_track_creation, b.track_type,
@@ -9107,12 +9085,9 @@ async def show_my_bookings(update: Update, context):
                 if is_admin_booking:
                     safe_name = "Администратор"
                 
-                # ===== ИСПРАВЛЕННОЕ ФОРМИРОВАНИЕ ТЕКСТА КУПОНА / СКИДКИ ПО УРОВНЮ =====
                 coupon_text = ""
                 
-                # Сначала проверяем level_discount_percent из записи
                 if level_discount_percent and level_discount_percent > 0:
-                    # Пытаемся найти купон в user_coupons для деталей
                     if level_coupon_id:
                         cursor.execute('''
                             SELECT level, discount_percent FROM user_coupons WHERE id = ?
@@ -9122,13 +9097,10 @@ async def show_my_bookings(update: Update, context):
                             level, discount = coupon_info
                             coupon_text = f"• Купон уровня {level}: {discount}%"
                         else:
-                            # Купон удалён, но скидка была применена
                             coupon_text = f"• Скидка по уровню: {level_discount_percent}%"
                     else:
-                        # Нет ID купона, но скидка была применена
                         coupon_text = f"• Скидка по уровню: {level_discount_percent}%"
                 
-                # ===== ФОРМИРУЕМ ТЕКСТ ПРОМОКОДА =====
                 promo_text = ""
                 if promo_code_used:
                     cursor.execute('''
@@ -9183,7 +9155,6 @@ async def show_my_bookings(update: Update, context):
                     'promo_discount_percent': promo_discount_percent
                 }
                 
-                # ===== РАЗДЕЛЯЕМ ЗАПИСИ =====
                 if is_mixing == 1 or is_contractual:
                     contract_bookings.append(booking_info)
                 else:
@@ -9195,7 +9166,6 @@ async def show_my_bookings(update: Update, context):
             message_parts = []
             current_part = f"*📅 Мои записи*\n\n*👤 Профиль: {SecurityUtils.safe_markdown_text(current_user_display)}*\n\n"
             
-            # ===== ОБЫЧНЫЕ ЗАПИСИ =====
             if dated_bookings:
                 current_part += "*📋 Записи в студии:*\n\n"
                 
@@ -9245,7 +9215,8 @@ async def show_my_bookings(update: Update, context):
                             except:
                                 booking_text += f"• Стоимость: {price_from_db}₽\n"
                         else:
-                            rent_price = 7000 if booking.get('twelve_hours_type', '').startswith('День') else 6500
+                            # ===== ПРАВКА: 6500 → 6000 =====
+                            rent_price = 7000 if booking.get('twelve_hours_type', '').startswith('День') else 6000
                             booking_text += f"• Стоимость аренды: {rent_price}₽ + залог (по договору)\n"
                     elif booking['price'] and str(booking['price']) != '0':
                         if 'договорная' in str(booking['price']).lower():
@@ -9259,11 +9230,9 @@ async def show_my_bookings(update: Update, context):
                                 safe_price = SecurityUtils.safe_markdown_text(str(booking['price']))
                                 booking_text += f"• Стоимость: {safe_price}\n"
                     
-                    # ===== ДОБАВЛЯЕМ КУПОН / СКИДКУ ПО УРОВНЮ =====
                     if booking.get('coupon_text'):
                         booking_text += f"{booking['coupon_text']}\n"
                     
-                    # ===== ДОБАВЛЯЕМ ПРОМОКОД =====
                     if booking.get('promo_text'):
                         booking_text += f"{booking['promo_text']}\n"
                     
@@ -9275,7 +9244,6 @@ async def show_my_bookings(update: Update, context):
                     else:
                         current_part += booking_text
             
-            # ===== ДОГОВОРНЫЕ ЗАПИСИ (ТОЛЬКО PENDING) =====
             if contract_bookings:
                 if len(current_part + "*📝 Ожидающие договорные записи:*\n\n") > 3500:
                     message_parts.append(current_part)
@@ -9308,11 +9276,9 @@ async def show_my_bookings(update: Update, context):
                                 safe_price = SecurityUtils.safe_markdown_text(str(booking['price']))
                                 booking_text += f"• Стоимость: {safe_price}\n"
                     
-                    # ===== ДОБАВЛЯЕМ КУПОН / СКИДКУ ПО УРОВНЮ =====
                     if booking.get('coupon_text'):
                         booking_text += f"{booking['coupon_text']}\n"
                     
-                    # ===== ДОБАВЛЯЕМ ПРОМОКОД =====
                     if booking.get('promo_text'):
                         booking_text += f"{booking['promo_text']}\n"
                     
@@ -9329,7 +9295,6 @@ async def show_my_bookings(update: Update, context):
                     current_part += "*👇 Отменить записи в студии:*"
                 message_parts.append(current_part)
             
-            # ===== КНОПКИ ТОЛЬКО ДЛЯ dated_bookings =====
             keyboard_buttons = []
             for booking in dated_bookings:
                 button_text = f"❌ Отменить #{booking['id']}"
@@ -9941,22 +9906,22 @@ async def get_contact_input(update: Update, context):
 async def get_service(update: Update, context):
     if await check_user_blocked(update, context):
         return ConversationHandler.END
-    
+
     context.user_data['_conversation_state'] = SERVICE
-    
+
     text = update.message.text.strip()
-    
+
     if text == "↩️ Главное меню":
         return await handle_main_menu_button(update, context)
-    
+
     if text == "↩️ Назад":
         logger.info(f"🔍 Пользователь нажал 'Назад' в get_service")
         context.user_data.pop('with_engineer', None)
         context.user_data.pop('service', None)
-        
+
         name = context.user_data.get('name', '')
         safe_name = SecurityUtils.safe_markdown_text(name)
-        
+
         await update.message.reply_text(
             "*📱 Шаг 2/7: Ввод контактов*\n\n"
             "*✨ Как с Вами связаться?*\n\n"
@@ -9972,16 +9937,16 @@ async def get_service(update: Update, context):
             reply_markup=KeyboardManager.get_contact_request()
         )
         return CONTACT
-    
+
     valid_services = [
         "🎤 Запись вокала", "🎸 Запись инструментов",
         "⏰ 12-часовая аренда", "🎚️ Сведение/мастеринг",
         "🎵 Создание трека", "🎹 Аранжировка/Биты"
     ]
-    
+
     user_id = str(update.effective_user.id)
-    
-    # ===== ПРОВЕРКА ЛИМИТОВ ДЛЯ ВСЕХ УСЛУГ (КРОМЕ СОЗДАНИЯ ТРЕКА) =====
+
+    # ===== ПРОВЕРКА ЛИМИТОВ =====
     if text == "🎚️ Сведение/мастеринг":
         is_allowed, message, current_count = UserLimits.check_user_limits(user_id, False)
         if not is_allowed:
@@ -9991,7 +9956,7 @@ async def get_service(update: Update, context):
                 reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
             )
             return ConversationHandler.END
-    
+
     elif text == "⏰ 12-часовая аренда":
         is_allowed, message, current_count = UserLimits.check_user_limits(user_id, True)
         if not is_allowed:
@@ -10001,7 +9966,7 @@ async def get_service(update: Update, context):
                 reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
             )
             return ConversationHandler.END
-    
+
     elif text in ["🎤 Запись вокала", "🎸 Запись инструментов"]:
         is_allowed, message, current_count = UserLimits.check_user_limits(user_id, True)
         if not is_allowed:
@@ -10011,16 +9976,13 @@ async def get_service(update: Update, context):
                 reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
             )
             return ConversationHandler.END
-    
-    # ===== СОЗДАНИЕ ТРЕКА - ПРОВЕРКУ УБРАЛИ! ОНА БУДЕТ В get_track_creation_type() =====
+
     elif text == "🎵 Создание трека":
-        # Проверка лимитов ПЕРЕНЕСЕНА в get_track_creation_type()
-        # Здесь только устанавливаем данные и переходим к выбору формата
         pass
-    
+
     keys_to_remove = [
         'is_12_hours', '12_hours_type', 'is_mixing', 'mixing_type',
-        'is_track_creation', 'track_type', 'with_engineer', 
+        'is_track_creation', 'track_type', 'with_engineer',
         'service', 'service_type', 'duration', 'time', 'date',
         'price', 'display_period', 'free_intervals', 'free_interval',
         'start_hour', 'end_hour', 'date_with_color', 'display_time',
@@ -10029,79 +9991,82 @@ async def get_service(update: Update, context):
     for key in keys_to_remove:
         if key in context.user_data:
             context.user_data.pop(key)
-    
+
     if text == "🎤 Запись вокала":
         context.user_data['service_type'] = "Запись вокала"
-        
+
         await update.message.reply_text(
             "*👨‍🔧 Шаг 4/7: Выбор формата*\n\n"
             "*✨ Вам требуется помощь звукорежиссера?*\n\n"
             "*С инженером — рекомендуем:*\n"
             "• Профессиональная настройка оборудования\n"
             "• Помощь в процессе записи\n"
-            "• Консультации по исполнению\n\n"
+            "• 1-2 ч — 1000₽/ч, 3-6 ч — 800₽/ч, от 6 ч — 500₽/ч\n\n"
             "*Без инженера — для опытных:*\n"
             "• Самостоятельная работа в студии\n"
-            "• Экономия 200₽ в час\n"
+            "• 800₽/ч (единая цена за 1-6 часов)\n"
             "• Полный творческий контроль\n\n"
             "*👇 Выберите подходящий вариант:*",
             parse_mode="Markdown",
             reply_markup=KeyboardManager.get_engineer_options()
         )
         return ENGINEER_OPTION
-    
+
     elif text == "🎸 Запись инструментов":
         context.user_data['service_type'] = "Запись инструментов"
-        
+
         await update.message.reply_text(
             "*👨‍🔧 Шаг 4/7: Выбор формата*\n\n"
             "*✨ Вам требуется помощь звукорежиссера?*\n\n"
             "*С инженером — рекомендуем:*\n"
             "• Профессиональная настройка оборудования\n"
             "• Помощь в процессе записи\n"
-            "• Консультации по исполнению\n\n"
+            "• 1-2 ч — 1000₽/ч, 3-6 ч — 800₽/ч, от 6 ч — 500₽/ч\n\n"
             "*Без инженера — для опытных:*\n"
             "• Самостоятельная работа в студии\n"
-            "• Экономия 200₽ в час\n"
+            "• 800₽/ч (единая цена за 1-6 часов)\n"
             "• Полный творческий контроль\n\n"
             "*👇 Выберите подходящий вариант:*",
             parse_mode="Markdown",
             reply_markup=KeyboardManager.get_engineer_options()
         )
         return ENGINEER_OPTION
-    
+
     elif text == "⏰ 12-часовая аренда":
         context.user_data['service'] = "⏰ 12-часовая аренда"
         context.user_data['service_type'] = "12-часовая аренда"
         context.user_data['is_12_hours'] = True
         context.user_data['with_engineer'] = False
-        
+
         await update.message.reply_text(
             "*⏰ Шаг 4/6: Выбор формата*\n\n"
             "*✨ Когда для Вас забронировать студию?*\n\n"
-            "*День — 7000₽ + залог (по договору)*\n"  
+            "*День — 7000₽ + залог (по договору)*\n"
             "• Работа с 9:00 до 21:00\n"
-            "• Полный контроль студии\n\n"
-            "*Ночь — 6500₽ + залог (по договору)*\n"
+            "• До 4 человек включительно\n"
+            "• Свыше 4 человек — доплата 1000₽ за каждого\n\n"
+            "*Ночь — 6000₽ + залог (по договору)*\n"
             "• Работа с 21:00 до 9:00\n"
-            "• Специальная ночная цена\n\n"
-            "*👇 Выберите подходящий вариант:*", 
+            "• До 4 человек включительно\n"
+            "• Свыше 4 человек — доплата 1000₽ за каждого\n\n"
+            "*👇 Выберите подходящий вариант:*",
             parse_mode="Markdown",
             reply_markup=KeyboardManager.get_12_hours_options()
         )
         return TWELVE_HOURS_OPTION
-    
+
     elif text == "🎚️ Сведение/мастеринг":
         context.user_data['service'] = "🎛️ Сведение/мастеринг"
         context.user_data['service_type'] = "🎛️ Сведение/мастеринг"
         context.user_data['is_mixing'] = True
-        
+
         await update.message.reply_text(
             "*🎚️ Шаг 4/5: Выбор сведения*\n\n"
             "*✨ Что Вам требуется свести?*\n\n"
-            "*Трек — 2500₽*\n"
+            "*Трек — 3000₽*\n"
             "• Профессиональное сведение\n"
-            "• Мастеринг готового микса\n\n"
+            "• Мастеринг готового микса\n"
+            "• 💡 Если вокал записан на нашей студии — 2000₽\n\n"
             "*Альбом — договорная*\n"
             "• Обсуждение проекта\n"
             "• Индивидуальный подход\n\n"
@@ -10110,14 +10075,13 @@ async def get_service(update: Update, context):
             reply_markup=KeyboardManager.get_mixing()
         )
         return MIXING_TYPE
-    
+
     elif text == "🎵 Создание трека":
         context.user_data['service'] = "Создание трека"
         context.user_data['service_type'] = "Создание трека"
         context.user_data['is_track_creation'] = True
         context.user_data['with_engineer'] = True
-        
-        # Очищаем старые данные
+
         keys_to_remove = [
             'is_12_hours', '12_hours_type', 'is_mixing', 'mixing_type',
             'track_type', 'date', 'date_with_color', 'time', 'display_time',
@@ -10127,9 +10091,9 @@ async def get_service(update: Update, context):
         for key in keys_to_remove:
             if key in context.user_data:
                 context.user_data.pop(key)
-        
+
         logger.info(f"🔍 Переход к выбору формата трека")
-        
+
         await update.message.reply_text(
             "*🎵 Шаг 4/7: Выбор формата*\n\n"
             "*✨ Что Вам требуется создать?*\n\n"
@@ -10146,7 +10110,7 @@ async def get_service(update: Update, context):
             reply_markup=KeyboardManager.get_track_creation_options()
         )
         return TRACK_CREATION_TYPE
-    
+
     elif text == "🎹 Аранжировка/Биты":
         keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("Написать продюсеру", url="https://t.me/Simweyy")]
@@ -10172,9 +10136,9 @@ async def get_service(update: Update, context):
             reply_markup=keyboard
         )
         return SERVICE
-    
+
     keyboard = KeyboardManager.get_services()
-    
+
     await update.message.reply_text(
         "*❌ Пожалуйста, используйте кнопки! Выберите подходящий вариант из предложенных!*",
         parse_mode="Markdown",
@@ -10300,14 +10264,14 @@ async def get_engineer_option(update: Update, context):
 async def get_twelve_hours_option(update: Update, context):
     if await check_user_blocked(update, context):
         return ConversationHandler.END
-    
+
     context.user_data['_conversation_state'] = TWELVE_HOURS_OPTION
-    
+
     text = update.message.text.strip()
-    
+
     if text == "↩️ Главное меню":
         return await handle_main_menu_button(update, context)
-    
+
     if text == "↩️ Назад":
         await update.message.reply_text(
             "*🎧 Шаг 3/7: Выбор услуги*\n\n"
@@ -10324,10 +10288,10 @@ async def get_twelve_hours_option(update: Update, context):
             reply_markup=KeyboardManager.get_services()
         )
         return SERVICE
-    
+
     is_day = any(day_text in text for day_text in ["☀️ День", "День (9-21)", "День"])
     is_night = any(night_text in text for night_text in ["🌙 Ночь", "Ночь (21-9)", "Ночь"])
-    
+
     if not is_day and not is_night:
         logger.warning(f"❌ Неизвестный выбор: '{text}'")
         await update.message.reply_text(
@@ -10336,7 +10300,7 @@ async def get_twelve_hours_option(update: Update, context):
             reply_markup=KeyboardManager.get_12_hours_options()
         )
         return TWELVE_HOURS_OPTION
-    
+
     if is_day:
         logger.info("✅ Выбран день (9-21)")
         keys_to_remove = [
@@ -10346,7 +10310,7 @@ async def get_twelve_hours_option(update: Update, context):
         ]
         for key in keys_to_remove:
             context.user_data.pop(key, None)
-        
+
         context.user_data['12_hours_type'] = "День"
         context.user_data['time'] = "9-21"
         context.user_data['service'] = "⏰ 12-часовая аренда"
@@ -10363,7 +10327,7 @@ async def get_twelve_hours_option(update: Update, context):
         ]
         for key in keys_to_remove:
             context.user_data.pop(key, None)
-        
+
         context.user_data['12_hours_type'] = "Ночь"
         context.user_data['time'] = "21-9"
         context.user_data['service'] = "⏰ 12-часовая аренда"
@@ -10371,13 +10335,13 @@ async def get_twelve_hours_option(update: Update, context):
         context.user_data['booking_start_time'] = "Ночь"
         service_type = "12_hours_night"
         selected_text = "🌙 Ночь (21-9)"
-    
+
     context.user_data['duration'] = 12
     context.user_data['service_type_check'] = service_type
-    
+
     user_id = str(update.effective_user.id)
     is_allowed, message, current_count = UserLimits.check_user_limits(user_id, True)
-    
+
     if not is_allowed:
         await update.message.reply_text(
             message,
@@ -10385,7 +10349,7 @@ async def get_twelve_hours_option(update: Update, context):
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
         )
         return ConversationHandler.END
-    
+
     await update.message.reply_text(
         "*📅 Шаг 5/6: Выбор даты*\n\n"
         "*✨ Когда для Вас забронировать студию?*\n\n"
@@ -10406,14 +10370,14 @@ async def get_twelve_hours_option(update: Update, context):
 async def get_mixing_type(update: Update, context):
     if await check_user_blocked(update, context):
         return ConversationHandler.END
-    
+
     context.user_data['_conversation_state'] = MIXING_TYPE
-    
+
     text = update.message.text.strip()
-    
+
     if text == "↩️ Главное меню":
         return await handle_main_menu_button(update, context)
-    
+
     if text == "↩️ Назад":
         await update.message.reply_text(
             "*🎧 Шаг 3/7: Выбор услуги*\n\n"
@@ -10430,7 +10394,7 @@ async def get_mixing_type(update: Update, context):
             reply_markup=KeyboardManager.get_services()
         )
         return SERVICE
-    
+
     if text not in ["🎵 Трек", "💿 Альбом"]:
         await update.message.reply_text(
             "*❌ Пожалуйста, используйте кнопки! Выберите подходящий вариант из предложенных!*",
@@ -10438,16 +10402,15 @@ async def get_mixing_type(update: Update, context):
             reply_markup=KeyboardManager.get_mixing()
         )
         return MIXING_TYPE
-    
+
     mixing_type = text
     user_id = str(update.effective_user.id)
-    
+
     if "Трек" in mixing_type:
         context.user_data['mixing_type'] = "Трек"
         context.user_data['service'] = "Сведение/мастеринг"
         context.user_data['is_mixing'] = True
-        
-        # ===== РАСЧЕТ ЦЕНЫ =====
+
         price_result = PriceCalculator.calculate(
             service=context.user_data['service'],
             duration=1,
@@ -10456,30 +10419,27 @@ async def get_mixing_type(update: Update, context):
             user_id=user_id,
             consume_coupon=False
         )
-        
+
         context.user_data['price_result'] = price_result
         context.user_data['price'] = price_result['final_price']
-        
-        # ===== ФОРМИРУЕМ ТЕКСТ О СКИДКАХ =====
+
         discount_text = ""
-        
+
         if price_result.get('level_discount_percent', 0) > 0:
             discount_text += f"\n• Скидка по уровню: {price_result['level_discount_percent']}%"
-        
+
         if price_result.get('promo_discount_percent', 0) > 0:
             discount_text += f"\n• Промокод: {price_result['promo_discount_percent']}%"
-        
+
         if price_result.get('free_service_applied', False) and price_result.get('promo_code_used'):
             discount_text += f"\n• Промокод: Бесплатная услуга"
-        
+
         safe_name = context.user_data.get('safe_name', context.user_data.get('name', ''))
         safe_contact = context.user_data.get('safe_contact', context.user_data.get('contact', ''))
-        
-        # Очищаем услугу и тип от смайликов
+
         clean_service = context.user_data['service'].replace('', '').strip()
         clean_type = context.user_data.get('mixing_type', 'Не указан').replace('', '').strip()
-        
-        # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ (БЕЗ СМАЙЛИКОВ) =====
+
         confirmation_lines = [
             f"*✅ Шаг 5/5: Подтверждение*",
             "",
@@ -10491,36 +10451,34 @@ async def get_mixing_type(update: Update, context):
             f"• Тип: {clean_type}",
             f"• Стоимость: {price_result['final_price']}₽"
         ]
-        
+
         if discount_text:
             confirmation_lines.append(discount_text.lstrip('\n'))
-        
+
         confirmation_lines.append("")
         confirmation_lines.append("*👇 Выберите подходящий вариант:*")
-        
+
         confirmation_text = "\n".join(confirmation_lines)
-        
+
         await update.message.reply_text(
             confirmation_text,
             reply_markup=KeyboardManager.get_confirmation(),
             parse_mode="Markdown"
         )
         return CONFIRM
-    
+
     else:
         context.user_data['mixing_type'] = "Альбом"
         context.user_data['service'] = "Сведение/мастеринг"
         context.user_data['price'] = "Договорная"
         context.user_data['is_mixing'] = True
-        
+
         safe_name = context.user_data.get('safe_name', context.user_data.get('name', ''))
         safe_contact = context.user_data.get('safe_contact', context.user_data.get('contact', ''))
-        
-        # ===== ОЧИЩАЕМ УСЛУГУ И ТИП ОТ СМАЙЛИКОВ =====
+
         clean_service = context.user_data['service'].replace('', '').strip()
         clean_type = context.user_data.get('mixing_type', 'Не указан').replace('', '').strip()
-        
-        # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ (БЕЗ СМАЙЛИКОВ) =====
+
         confirmation_lines = [
             f"*✅ Шаг 5/5: Подтверждение*",
             "",
@@ -10534,9 +10492,9 @@ async def get_mixing_type(update: Update, context):
             "",
             "*👇 Выберите подходящий вариант:*"
         ]
-        
+
         confirmation_text = "\n".join(confirmation_lines)
-        
+
         await update.message.reply_text(
             confirmation_text,
             reply_markup=KeyboardManager.get_confirmation(),
@@ -10994,25 +10952,25 @@ async def pending_command(update: Update, context):
 async def get_date(update: Update, context):
     if await check_user_blocked(update, context):
         return ConversationHandler.END
-    
+
     context.user_data['_conversation_state'] = DATE
-    
+
     text = update.message.text.strip()
-    
+
     logger.info(f"🔍 get_date вызван: '{text}'")
     logger.info(f"🔍 Текущее время: {DateTimeUtils.now()}")
-    
+
     if text == "↩️ Главное меню":
         return await handle_main_menu_button(update, context)
-    
+
     if text == "↩️ Назад":
         logger.info(f"🔍 Пользователь нажал 'Назад' на шаге DATE")
-        
+
         is_track_creation = context.user_data.get('is_track_creation', False)
         is_12_hours = context.user_data.get('is_12_hours', False)
         is_mixing = context.user_data.get('is_mixing', False)
         with_engineer = context.user_data.get('with_engineer', False)
-        
+
         keys_to_remove = [
             'free_intervals', 'free_interval', 'time', 'display_time',
             'duration', 'price', 'date_with_color', 'display_period',
@@ -11020,7 +10978,7 @@ async def get_date(update: Update, context):
         ]
         for key in keys_to_remove:
             context.user_data.pop(key, None)
-        
+
         if is_track_creation:
             await update.message.reply_text(
                 "*🎵 Шаг 4/7: Выбор формата*\n\n"
@@ -11038,42 +10996,45 @@ async def get_date(update: Update, context):
                 reply_markup=KeyboardManager.get_track_creation_options()
             )
             return TRACK_CREATION_TYPE
-            
+
         elif is_12_hours:
             await update.message.reply_text(
                 "*⏰ Шаг 4/6: Выбор формата*\n\n"
                 "*✨ Когда для Вас забронировать студию?*\n\n"
-                "*День — 7000₽ + залог (по договору)*\n"  
+                "*День — 7000₽ + залог (по договору)*\n"
                 "• Работа с 9:00 до 21:00\n"
-                "• Полный контроль студии\n\n"
-                "*Ночь — 6500₽ + залог (по договору)*\n"
+                "• До 4 человек включительно\n"
+                "• Свыше 4 человек — доплата 1000₽ за каждого\n\n"
+                "*Ночь — 6000₽ + залог (по договору)*\n"
                 "• Работа с 21:00 до 9:00\n"
-                "• Специальная ночная цена\n\n"
-                "*👇 Выберите подходящий вариант:*",  
+                "• До 4 человек включительно\n"
+                "• Свыше 4 человек — доплата 1000₽ за каждого\n\n"
+                "*👇 Выберите подходящий вариант:*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_12_hours_options()
             )
             return TWELVE_HOURS_OPTION
-            
+
         elif is_mixing:
             await update.message.reply_text(
-                "🎚️ Шаг 4/5: Тип сведения\n\n"
-                "✨ Что Вам требуется свести?\n\n"
-                "Трек — 2 500₽\n"
+                "*🎚️ Шаг 4/5: Выбор сведения*\n\n"
+                "*✨ Что Вам требуется свести?*\n\n"
+                "*Трек — 3000₽*\n"
                 "• Профессиональное сведение\n"
-                "• Мастеринг готового микса\n\n"
-                "Альбом — договорная\n"
+                "• Мастеринг готового микса\n"
+                "• 💡 Если вокал записан на нашей студии — 2000₽\n\n"
+                "*Альбом — договорная*\n"
                 "• Обсуждение проекта\n"
                 "• Индивидуальный подход\n\n"
-                "👇 Выберите подходящий вариант:",
+                "*👇 Выберите подходящий вариант:*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_mixing()
             )
             return MIXING_TYPE
-            
+
         else:
             service_type = context.user_data.get('service_type', '')
-            
+
             if service_type == "Запись вокала":
                 await update.message.reply_text(
                     "*👨‍🔧 Шаг 4/7: Выбор формата*\n\n"
@@ -11081,17 +11042,17 @@ async def get_date(update: Update, context):
                     "*С инженером — рекомендуем:*\n"
                     "• Профессиональная настройка оборудования\n"
                     "• Помощь в процессе записи\n"
-                    "• Консультации по исполнению\n\n"
+                    "• 1-2 ч — 1000₽/ч, 3-6 ч — 800₽/ч, от 6 ч — 500₽/ч\n\n"
                     "*Без инженера — для опытных:*\n"
                     "• Самостоятельная работа в студии\n"
-                    "• Экономия 200₽ в час\n"
+                    "• 800₽/ч (единая цена за 1-6 часов)\n"
                     "• Полный творческий контроль\n\n"
                     "*👇 Выберите подходящий вариант:*",
                     parse_mode="Markdown",
                     reply_markup=KeyboardManager.get_engineer_options()
                 )
                 return ENGINEER_OPTION
-                
+
             elif service_type == "Запись инструментов":
                 await update.message.reply_text(
                     "*👨‍🔧 Шаг 4/7: Выбор формата*\n\n"
@@ -11099,17 +11060,17 @@ async def get_date(update: Update, context):
                     "*С инженером — рекомендуем:*\n"
                     "• Профессиональная настройка оборудования\n"
                     "• Помощь в процессе записи\n"
-                    "• Консультации по исполнению\n\n"
+                    "• 1-2 ч — 1000₽/ч, 3-6 ч — 800₽/ч, от 6 ч — 500₽/ч\n\n"
                     "*Без инженера — для опытных:*\n"
                     "• Самостоятельная работа в студии\n"
-                    "• Экономия 200₽ в час\n"
+                    "• 800₽/ч (единая цена за 1-6 часов)\n"
                     "• Полный творческий контроль\n\n"
                     "*👇 Выберите подходящий вариант:*",
                     parse_mode="Markdown",
                     reply_markup=KeyboardManager.get_engineer_options()
                 )
                 return ENGINEER_OPTION
-                
+
             else:
                 await update.message.reply_text(
                     "✅ Контакт успешно получен!\n\n"
@@ -11127,27 +11088,27 @@ async def get_date(update: Update, context):
                     reply_markup=KeyboardManager.get_services()
                 )
                 return SERVICE
-    
+
     if text == "Договорная (без даты)":
         return await handle_no_date_option(update, context)
-    
+
     if '.' in text:
         return await handle_date_selection(update, context, text)
-    
+
     if '-' in text and text.count('-') == 1:
         parts = text.split('-')
         if len(parts) == 2:
             start_part = parts[0].strip()
             end_part = parts[1].strip()
-            
+
             start_clean = start_part.lstrip('0') if start_part != '0' else '0'
             end_clean = end_part.lstrip('0') if end_part != '0' else '0'
-            
+
             if start_clean.isdigit() and end_clean.isdigit():
                 is_track_creation = context.user_data.get('is_track_creation', False)
                 is_12_hours = context.user_data.get('is_12_hours', False)
                 with_engineer = context.user_data.get('with_engineer', False)
-                
+
                 if is_track_creation:
                     reply_markup = KeyboardManager.get_dates("track_creation", True)
                 elif is_12_hours:
@@ -11155,18 +11116,18 @@ async def get_date(update: Update, context):
                     reply_markup = KeyboardManager.get_dates(service_type, False)
                 else:
                     reply_markup = KeyboardManager.get_dates("vocal", with_engineer)
-                
+
                 await update.message.reply_text(
                     "*❌ Неверный формат даты! Используйте формат ДД.ММ.ГГГГ, например: 01.10.2026 или 02.10.2026 (Пт)!*",
                     parse_mode="Markdown",
                     reply_markup=reply_markup
                 )
                 return DATE
-    
+
     is_track_creation = context.user_data.get('is_track_creation', False)
     is_12_hours = context.user_data.get('is_12_hours', False)
     with_engineer = context.user_data.get('with_engineer', False)
-    
+
     if is_track_creation:
         reply_markup = KeyboardManager.get_dates("track_creation", True)
     elif is_12_hours:
@@ -11174,7 +11135,7 @@ async def get_date(update: Update, context):
         reply_markup = KeyboardManager.get_dates(service_type, False)
     else:
         reply_markup = KeyboardManager.get_dates("vocal", with_engineer)
-    
+
     await update.message.reply_text(
         "*❌ Неверный формат даты! Используйте формат ДД.ММ.ГГГГ, например: 01.10.2026 или 02.10.2026 (Пт)!*",
         parse_mode="Markdown",
@@ -11864,10 +11825,8 @@ async def confirm_booking(update: Update, context):
         safe_name = SecurityUtils.safe_markdown_text(context.user_data.get('name', ''))
         safe_contact = SecurityUtils.safe_markdown_text(context.user_data.get('contact', ''))
         
-        # ===== ОЧИЩАЕМ УСЛУГУ ОТ СМАЙЛИКОВ =====
         clean_service = clean_service_text(service)
         
-        # ===== ОЧИЩАЕМ ДАТУ ОТ СМАЙЛИКОВ =====
         clean_date_display = selected_date
         if clean_date_display:
             for emoji in ['🟢', '🟡', '🟠', '🔴', '⚪️']:
@@ -11875,7 +11834,6 @@ async def confirm_booking(update: Update, context):
             if '(' in clean_date_display:
                 clean_date_display = clean_date_display.split('(')[0].strip()
         
-        # ===== ОЧИЩАЕМ ТИП ОТ СМАЙЛИКОВ =====
         clean_type = ""
         if is_track_creation and context.user_data.get('track_type'):
             track_type_raw = context.user_data.get('track_type')
@@ -11887,7 +11845,6 @@ async def confirm_booking(update: Update, context):
             twelve_hours_type_raw = context.user_data.get('12_hours_type')
             clean_type = clean_service_text(twelve_hours_type_raw)
         
-        # ===== ФОРМИРУЕМ ТЕКСТ СКИДОК ДЛЯ ПОЛЬЗОВАТЕЛЯ =====
         discount_lines = []
         
         if level_discount_percent and level_discount_percent > 0:
@@ -11919,12 +11876,10 @@ async def confirm_booking(update: Update, context):
         if discount_lines:
             discount_text = "\n" + "\n".join(discount_lines)
         
-        # Форматируем время
         display_time = time_slot
         if display_time and '-' in display_time:
             display_time = DateTimeUtils.format_time_for_display(display_time)
         
-        # ===== НОВЫЙ ФОРМАТ СООБЩЕНИЯ =====
         user_msg_lines = [
             f"*✅ Заявка успешно отправлена!*",
             "",
@@ -11937,7 +11892,6 @@ async def confirm_booking(update: Update, context):
             f"• Услуга: {clean_service}"
         ]
         
-        # Добавляем тип услуги (без смайликов)
         if clean_type:
             user_msg_lines.append(f"• Тип: {clean_type}")
         
@@ -11957,7 +11911,8 @@ async def confirm_booking(update: Update, context):
         
         # ===== ЦЕНА (для аренды — итоговая со скидкой + залог) =====
         if is_12_hours == 1:
-            rent_price = 6500 if context.user_data.get('12_hours_type') and 'Ночь' in context.user_data.get('12_hours_type') else 7000
+            # ===== ПРАВКА: 6500 → 6000 =====
+            rent_price = 6000 if context.user_data.get('12_hours_type') and 'Ночь' in context.user_data.get('12_hours_type') else 7000
             final_price = price_result.get('final_price', rent_price)
             user_msg_lines.append(f"• Стоимость: {final_price}₽ + залог (по договору)")
         elif price_result['final_price'] == "Договорная" or price_result.get('is_contractual'):
@@ -11991,7 +11946,6 @@ async def confirm_booking(update: Update, context):
             f"• Услуга: {clean_service}"
         ]
         
-        # Добавляем тип услуги для админа (без смайликов)
         if clean_type:
             admin_msg_lines.append(f"• Тип: {clean_type}")
         
@@ -12011,7 +11965,8 @@ async def confirm_booking(update: Update, context):
         
         # ===== ЦЕНА ДЛЯ АДМИНА =====
         if is_12_hours == 1:
-            rent_price = 6500 if context.user_data.get('12_hours_type') and 'Ночь' in context.user_data.get('12_hours_type') else 7000
+            # ===== ПРАВКА: 6500 → 6000 =====
+            rent_price = 6000 if context.user_data.get('12_hours_type') and 'Ночь' in context.user_data.get('12_hours_type') else 7000
             final_price = price_result.get('final_price', rent_price)
             admin_msg_lines.append(f"• Стоимость: {final_price}₽ + залог (по договору)")
         elif price_result['final_price'] == "Договорная" or price_result.get('is_contractual'):
@@ -12023,7 +11978,6 @@ async def confirm_booking(update: Update, context):
         else:
             admin_msg_lines.append(f"• Стоимость: {price_result['final_price']}₽")
         
-        # Добавляем скидки для админа
         admin_discount_lines = []
         if level_discount_percent and level_discount_percent > 0:
             admin_discount_lines.append(f"• Скидка по уровню: {level_discount_percent}%")
@@ -12241,7 +12195,6 @@ async def show_my_bookings_in_message(message_obj, context, user_id):
             else:
                 current_user_display = f"ID: ...{str(user_id)[-4:]}"
             
-            # ===== SQL ЗАПРОС =====
             cursor.execute('''
                 SELECT id, service, time_slot, date_str, status, price,
                     is_mixing, mixing_type, is_track_creation, track_type,
@@ -12311,12 +12264,9 @@ async def show_my_bookings_in_message(message_obj, context, user_id):
                 if is_admin_booking:
                     safe_name = "Администратор"
                 
-                # ===== ИСПРАВЛЕННОЕ ФОРМИРОВАНИЕ ТЕКСТА КУПОНА / СКИДКИ ПО УРОВНЮ =====
                 coupon_text = ""
                 
-                # Сначала проверяем level_discount_percent из записи
                 if level_discount_percent and level_discount_percent > 0:
-                    # Пытаемся найти купон в user_coupons для деталей
                     if level_coupon_id:
                         cursor.execute('''
                             SELECT level, discount_percent FROM user_coupons WHERE id = ?
@@ -12326,13 +12276,10 @@ async def show_my_bookings_in_message(message_obj, context, user_id):
                             level, discount = coupon_info
                             coupon_text = f"• Купон уровня {level}: {discount}%"
                         else:
-                            # Купон удалён, но скидка была применена
                             coupon_text = f"• Скидка по уровню: {level_discount_percent}%"
                     else:
-                        # Нет ID купона, но скидка была применена
                         coupon_text = f"• Скидка по уровню: {level_discount_percent}%"
                 
-                # ===== ФОРМИРУЕМ ТЕКСТ ПРОМОКОДА =====
                 promo_text = ""
                 if promo_code_used:
                     cursor.execute('''
@@ -12385,7 +12332,6 @@ async def show_my_bookings_in_message(message_obj, context, user_id):
                     'promo_text': promo_text
                 }
                 
-                # ===== РАЗДЕЛЯЕМ ЗАПИСИ =====
                 if is_mixing == 1 or is_contractual:
                     contract_bookings.append(booking_info)
                 else:
@@ -12396,7 +12342,6 @@ async def show_my_bookings_in_message(message_obj, context, user_id):
             
             message = f"*📅 Мои записи*\n\n*👤 Профиль: {SecurityUtils.safe_markdown_text(current_user_display)}*\n\n"
             
-            # ===== ОБЫЧНЫЕ ЗАПИСИ =====
             if dated_bookings:
                 message += "*📋 Записи в студии:*\n\n"
                 for booking in dated_bookings:
@@ -12432,7 +12377,8 @@ async def show_my_bookings_in_message(message_obj, context, user_id):
                             message += f"• Время: {safe_display_time}\n"
                     
                     if booking['is_12_hours']:
-                        rent_price = 7000 if booking.get('twelve_hours_type', '').startswith('День') else 6500
+                        # ===== ПРАВКА: 6500 → 6000 =====
+                        rent_price = 7000 if booking.get('twelve_hours_type', '').startswith('День') else 6000
                         message += f"• Стоимость аренды: {rent_price}₽ + залог (по договору)\n"
                     elif booking['price'] and str(booking['price']) != '0':
                         if 'договорная' in str(booking['price']).lower():
@@ -12446,17 +12392,14 @@ async def show_my_bookings_in_message(message_obj, context, user_id):
                                 safe_price = SecurityUtils.safe_markdown_text(str(booking['price']))
                                 message += f"• Стоимость: {safe_price}\n"
                     
-                    # ===== ДОБАВЛЯЕМ КУПОН / СКИДКУ ПО УРОВНЮ =====
                     if booking.get('coupon_text'):
                         message += f"{booking['coupon_text']}\n"
                     
-                    # ===== ДОБАВЛЯЕМ ПРОМОКОД =====
                     if booking.get('promo_text'):
                         message += f"{booking['promo_text']}\n"
                     
                     message += f"• Статус: {booking['status_text']}\n\n"
             
-            # ===== ДОГОВОРНЫЕ ЗАПИСИ (ТОЛЬКО PENDING) =====
             if contract_bookings:
                 message += "*📝 Ожидающие договорные записи:*\n\n"
                 for booking in contract_bookings:
@@ -12484,11 +12427,9 @@ async def show_my_bookings_in_message(message_obj, context, user_id):
                                 safe_price = SecurityUtils.safe_markdown_text(str(booking['price']))
                                 message += f"• Стоимость: {safe_price}\n"
                     
-                    # ===== ДОБАВЛЯЕМ КУПОН / СКИДКУ ПО УРОВНЮ =====
                     if booking.get('coupon_text'):
                         message += f"{booking['coupon_text']}\n"
                     
-                    # ===== ДОБАВЛЯЕМ ПРОМОКОД =====
                     if booking.get('promo_text'):
                         message += f"{booking['promo_text']}\n"
                     
@@ -12496,7 +12437,6 @@ async def show_my_bookings_in_message(message_obj, context, user_id):
             
             message += "*👇 Отменить записи в студии:*"
             
-            # ===== КНОПКИ ТОЛЬКО ДЛЯ dated_bookings =====
             keyboard_buttons = []
             for booking in dated_bookings:
                 if booking['status_text'] != "Завершена":
@@ -13298,7 +13238,7 @@ async def admin_show_user_bookings(update: Update, context, target_user_id: int,
                             except:
                                 booking_text += f"• Стоимость: {price_from_db}₽\n"
                         else:
-                            rent_price = 7000 if booking.get('twelve_hours_type', '').startswith('День') else 6500
+                            rent_price = 7000 if booking.get('twelve_hours_type', '').startswith('День') else 6000
                             booking_text += f"• Стоимость аренды: {rent_price}₽ + залог (по договору)\n"
                     else:
                         if booking['price'] is not None:
@@ -16046,18 +15986,18 @@ async def error_callback(update: Update, context):
 async def handle_back_to_previous_step(update: Update, context):
     if await check_user_blocked(update, context):
         return ConversationHandler.END
-    
+
     logger.info(f"🔍 handle_back_to_previous_step вызван")
-    
+
     service = context.user_data.get('service', '')
     is_track_creation = context.user_data.get('is_track_creation', False)
     is_12_hours = context.user_data.get('is_12_hours', False)
     is_mixing = context.user_data.get('is_mixing', False)
-    
+
     logger.info(f"🔍 ОБЫЧНАЯ запись: handle_back_to_previous_step")
     logger.info(f"   service: {service}, is_track_creation: {is_track_creation}")
     logger.info(f"   is_12_hours: {is_12_hours}, is_mixing: {is_mixing}")
-    
+
     if is_track_creation:
         await update.message.reply_text(
             "*🎵 Шаг 4/7: Выбор формата*\n\n"
@@ -16075,31 +16015,42 @@ async def handle_back_to_previous_step(update: Update, context):
             reply_markup=KeyboardManager.get_track_creation_options()
         )
         return TRACK_CREATION_TYPE
-        
+
     elif is_12_hours:
         await update.message.reply_text(
             "*⏰ Шаг 4/6: Выбор формата*\n\n"
             "*✨ Когда для Вас забронировать студию?*\n\n"
-            "*День — 7000₽ + залог (по договору)*\n"  
+            "*День — 7000₽ + залог (по договору)*\n"
             "• Работа с 9:00 до 21:00\n"
-            "• Полный контроль студии\n\n"
-            "*Ночь — 6500₽ + залог (по договору)*\n"
+            "• До 4 человек включительно\n"
+            "• Свыше 4 человек — доплата 1000₽ за каждого\n\n"
+            "*Ночь — 6000₽ + залог (по договору)*\n"
             "• Работа с 21:00 до 9:00\n"
-            "• Специальная ночная цена\n\n"
-            "*👇 Выберите подходящий вариант:*", 
+            "• До 4 человек включительно\n"
+            "• Свыше 4 человек — доплата 1000₽ за каждого\n\n"
+            "*👇 Выберите подходящий вариант:*",
             parse_mode="Markdown",
             reply_markup=KeyboardManager.get_12_hours_options()
         )
         return TWELVE_HOURS_OPTION
-        
+
     elif is_mixing:
         await update.message.reply_text(
-            "*🎚️ Шаг 4/5: Выбор сведения*\n\n",
+            "*🎚️ Шаг 4/5: Выбор сведения*\n\n"
+            "*✨ Что Вам требуется свести?*\n\n"
+            "*Трек — 3000₽*\n"
+            "• Профессиональное сведение\n"
+            "• Мастеринг готового микса\n"
+            "• 💡 Если вокал записан на нашей студии — 2000₽\n\n"
+            "*Альбом — договорная*\n"
+            "• Обсуждение проекта\n"
+            "• Индивидуальный подход\n\n"
+            "*👇 Выберите подходящий вариант:*",
             parse_mode="Markdown",
             reply_markup=KeyboardManager.get_mixing()
         )
         return MIXING_TYPE
-        
+
     elif service == "🎤 Запись вокала" or service == "🎸 Запись инструментов":
         await update.message.reply_text(
             "*👨‍🔧 Шаг 4/7: Выбор формата*\n\n"
@@ -16107,17 +16058,17 @@ async def handle_back_to_previous_step(update: Update, context):
             "*С инженером — рекомендуем:*\n"
             "• Профессиональная настройка оборудования\n"
             "• Помощь в процессе записи\n"
-            "• Консультации по исполнению\n\n"
+            "• 1-2 ч — 1000₽/ч, 3-6 ч — 800₽/ч, от 6 ч — 500₽/ч\n\n"
             "*Без инженера — для опытных:*\n"
             "• Самостоятельная работа в студии\n"
-            "• Экономия 200₽ в час\n"
+            "• 800₽/ч (единая цена за 1-6 часов)\n"
             "• Полный творческий контроль\n\n"
             "*👇 Выберите подходящий вариант:*",
             parse_mode="Markdown",
             reply_markup=KeyboardManager.get_engineer_options()
         )
         return ENGINEER_OPTION
-        
+
     else:
         await update.message.reply_text(
             "*🎧 Шаг 3/7: Выбор услуги*\n\n"
@@ -16134,7 +16085,6 @@ async def handle_back_to_previous_step(update: Update, context):
             reply_markup=KeyboardManager.get_services()
         )
         return SERVICE
-
 
 async def handle_edit_data(update: Update, context):
     if await check_user_blocked(update, context):
@@ -16381,7 +16331,7 @@ async def show_slots(update: Update, context):
             discount_text += f"\n• Промокод: Бесплатная услуга"
         
         # ===== Цена для аренды (итоговая со скидкой) =====
-        rent_price = 6500 if context.user_data.get('12_hours_type') and 'Ночь' in context.user_data.get('12_hours_type') else 7000
+        rent_price = 6000 if context.user_data.get('12_hours_type') and 'Ночь' in context.user_data.get('12_hours_type') else 7000
         final_price = price_result.get('final_price', rent_price)
         
         # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ (БЕЗ СМАЙЛИКОВ В УСЛУГЕ И ДАТЕ) =====
@@ -16907,12 +16857,12 @@ async def show_slots(update: Update, context):
 
 async def handle_back_button(update: Update, context):
     logger.info(f"🔍 handle_back_button вызван")
-    
+
     current_state = context.user_data.get('_conversation_state', None)
-    
+
     if current_state == SHOW_SLOTS or context.user_data.get('date'):
         logger.info(f"🔍 Возврат из SHOW_SLOTS к DATE")
-        
+
         context.user_data.pop('time', None)
         context.user_data.pop('display_time', None)
         context.user_data.pop('duration', None)
@@ -16922,12 +16872,12 @@ async def handle_back_button(update: Update, context):
         context.user_data.pop('free_intervals', None)
         context.user_data.pop('suitable_intervals', None)
         context.user_data.pop('free_interval', None)
-        
+
         date_with_color = context.user_data.get('date_with_color', '')
         is_track_creation = context.user_data.get('is_track_creation', False)
         is_12_hours = context.user_data.get('is_12_hours', False)
         with_engineer = context.user_data.get('with_engineer', False)
-        
+
         if not date_with_color:
             logger.error("❌ Не найдена дата для возврата!")
             await update.message.reply_text(
@@ -16937,7 +16887,7 @@ async def handle_back_button(update: Update, context):
                 parse_mode="Markdown"
             )
             return ConversationHandler.END
-        
+
         if is_track_creation:
             await update.message.reply_text(
                 "*📅 Шаг 5/7: Выбор даты*\n\n"
@@ -16955,7 +16905,7 @@ async def handle_back_button(update: Update, context):
                 reply_markup=KeyboardManager.get_dates("track_creation", True)
             )
             return DATE
-            
+
         elif is_12_hours:
             service_type = "12_hours_day" if context.user_data.get('12_hours_type', '').startswith('День') else "12_hours_night"
             await update.message.reply_text(
@@ -16968,12 +16918,12 @@ async def handle_back_button(update: Update, context):
                 "*Легенда цветов:*\n"
                 "🟢 — Слот доступен для бронирования\n"
                 "🔴 — Слот недоступен для бронирования\n\n"
-                "*👇 Выберите подходящий вариант:*", 
+                "*👇 Выберите подходящий вариант:*",
                 parse_mode="Markdown",
                 reply_markup=KeyboardManager.get_dates(service_type, False)
             )
             return DATE
-            
+
         else:
             if with_engineer:
                 await update.message.reply_text(
@@ -17006,10 +16956,10 @@ async def handle_back_button(update: Update, context):
                     reply_markup=KeyboardManager.get_dates("vocal", False)
                 )
             return DATE
-    
+
     else:
         service = context.user_data.get('service', '')
-        
+
         if service == "🎤 Запись вокала" or service == "🎸 Запись инструментов":
             await update.message.reply_text(
                 "*👨‍🔧 Шаг 4/7: Выбор формата*\n\n"
@@ -17017,10 +16967,10 @@ async def handle_back_button(update: Update, context):
                 "*С инженером — рекомендуем:*\n"
                 "• Профессиональная настройка оборудования\n"
                 "• Помощь в процессе записи\n"
-                "• Консультации по исполнению\n\n"
+                "• 1-2 ч — 1000₽/ч, 3-6 ч — 800₽/ч, от 6 ч — 500₽/ч\n\n"
                 "*Без инженера — для опытных:*\n"
                 "• Самостоятельная работа в студии\n"
-                "• Экономия 200₽ в час\n"
+                "• 800₽/ч (единая цена за 1-6 часов)\n"
                 "• Полный творческий контроль\n\n"
                 "*👇 Выберите подходящий вариант:*",
                 parse_mode="Markdown",
@@ -17034,13 +16984,15 @@ async def handle_back_button(update: Update, context):
             await update.message.reply_text(
                 "*⏰ Шаг 4/6: Выбор формата*\n\n"
                 "*✨ Когда для Вас забронировать студию?*\n\n"
-                "*День — 7000₽ + залог (по договору)*\n"  
+                "*День — 7000₽ + залог (по договору)*\n"
                 "• Работа с 9:00 до 21:00\n"
-                "• Полный контроль студии\n\n"
-                "*Ночь — 6500₽ + залог (по договору)*\n"
+                "• До 4 человек включительно\n"
+                "• Свыше 4 человек — доплата 1000₽ за каждого\n\n"
+                "*Ночь — 6000₽ + залог (по договору)*\n"
                 "• Работа с 21:00 до 9:00\n"
-                "• Специальная ночная цена\n\n"
-            "*👇 Выберите подходящий вариант:*", 
+                "• До 4 человек включительно\n"
+                "• Свыше 4 человек — доплата 1000₽ за каждого\n\n"
+                "*👇 Выберите подходящий вариант:*",
                 parse_mode="Markdown",
                 reply_markup=ReplyKeyboardMarkup([
                     ["☀️ День (9-21)", "🌙 Ночь (21-9)"],
@@ -17052,9 +17004,10 @@ async def handle_back_button(update: Update, context):
             await update.message.reply_text(
                 "*🎚️ Шаг 4/5: Выбор сведения*\n\n"
                 "*✨ Что Вам требуется свести?*\n\n"
-                "*Трек — 2500₽*\n"
+                "*Трек — 3000₽*\n"
                 "• Профессиональное сведение\n"
-                "• Мастеринг готового микса\n\n"
+                "• Мастеринг готового микса\n"
+                "• 💡 Если вокал записан на нашей студии — 2000₽\n\n"
                 "*Альбом — договорная*\n"
                 "• Обсуждение проекта\n"
                 "• Индивидуальный подход\n\n"
@@ -17088,15 +17041,16 @@ async def handle_back_button(update: Update, context):
             return TRACK_CREATION_TYPE
         else:
             await update.message.reply_text(
-                "🎧 Шаг 3/7: Выберитее услугу\n\n"
-                "✨ Какая услуга вас интересует:\n\n"
-                "🎤 Запись вокала — профессиональная запись\n"
-                "🎸 Запись инструментов — гитара, клавиши, ударные\n"
-                "⏰ 12-часовая аренда — полный доступ к студии\n"
-                "🎚️ Сведение/мастеринг — доведение до идеала\n"
-                "🎵 Создание трека — производство с нуля\n"
-                "🎹 Аранжировка/Биты — готовые решения\n\n"
-                "👇 Выберите подходящий вариант:",
+                "*🎧 Шаг 3/7: Выбор услуги*\n\n"
+                "*✨ Какая услуга Вас интересует?*\n\n"
+                "*Вы можете выбрать:*\n"
+                "• Запись вокала — профессиональная запись\n"
+                "• Запись инструментов — электро-гитара, акустическая гитара\n"
+                "• 12-часовая аренда — полный доступ к студии\n"
+                "• Сведение/мастеринг — доведение до идеала\n"
+                "• Создание трека — создание трека с нуля\n"
+                "• Аранжировка/Биты — готовые решения\n\n"
+                "*👇 Выберите подходящий вариант:*",
                 parse_mode="Markdown",
                 reply_markup=ReplyKeyboardMarkup([
                     ["🎤 Запись вокала", "🎸 Запись инструментов"],
@@ -21385,7 +21339,7 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
         
         # ===== ЦЕНА =====
         if is_12_hours == 1:
-            rent_price = 6500 if twelve_hours_type and 'Ночь' in twelve_hours_type else 7000
+            rent_price = 6000 if twelve_hours_type and 'Ночь' in twelve_hours_type else 7000
             if price and price != '0' and price != str(rent_price):
                 try:
                     price_int = int(float(price))
@@ -21409,7 +21363,7 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
                 user_msg_lines.append(f"• Стоимость: {price}₽")
         else:
             if is_mixing == 1:
-                user_msg_lines.append(f"• Стоимость: 2500₽")
+                user_msg_lines.append(f"• Стоимость: 3000₽")
             elif is_track_creation == 1:
                 user_msg_lines.append(f"• Стоимость: 9000₽")
             else:
@@ -21676,7 +21630,7 @@ async def process_booking_rejection(booking_id: int, admin_id: int, context: Con
         
         # ===== ЦЕНА =====
         if is_12_hours == 1:
-            rent_price = 6500 if twelve_hours_type and 'Ночь' in twelve_hours_type else 7000
+            rent_price = 6000 if twelve_hours_type and 'Ночь' in twelve_hours_type else 7000
             if price and price != '0' and price != str(rent_price):
                 try:
                     price_int = int(float(price))
@@ -21700,7 +21654,7 @@ async def process_booking_rejection(booking_id: int, admin_id: int, context: Con
                 user_msg_lines.append(f"• Стоимость: {price}₽")
         else:
             if is_mixing == 1:
-                user_msg_lines.append(f"• Стоимость: 2500₽")
+                user_msg_lines.append(f"• Стоимость: 3000₽")
             elif is_track_creation == 1:
                 user_msg_lines.append(f"• Стоимость: 9000₽")
             else:
