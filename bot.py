@@ -19858,7 +19858,7 @@ async def handle_admin_vinyl_confirm(update: Update, context):
 
 @handle_errors_with_rate_limit
 async def handle_admin_broadcast_start(update: Update, context):
-    """Начало рассылки — запрос текста"""
+    """Начало рассылки — запрос текста или фото"""
     user_id = update.effective_user.id
     
     if user_id not in Config.ADMIN_IDS:
@@ -19874,70 +19874,125 @@ async def handle_admin_broadcast_start(update: Update, context):
     
     await update.message.reply_text(
         "*👑 Введите текст рассылки*\n\n"
-        "*✏️ Отправьте сообщение, которое нужно разослать всем пользователям:*",
+        "*✏️ Что можно отправить:*\n"
+        "• Текст (с разметкой `*жирный*`, `_курсив_`)\n"
+        "• Фото с подписью\n"
+        "• Фото без подписи\n\n"
+        "*📎 Отправьте сообщение, которое нужно разослать всем:*",
         parse_mode="Markdown",
         reply_markup=KeyboardManager.get_admin_broadcast_input_keyboard()
     )
     return ADMIN_BROADCAST_INPUT
 
-
 @handle_errors_with_rate_limit
 async def handle_admin_broadcast_input(update: Update, context):
-    """Принимаем текст и показываем подтверждение"""
-    text = update.message.text.strip() if update.message.text else ""
+    """Принимаем текст или фото и показываем подтверждение"""
+    message = update.message
     
-    if text == "↩️ Главное меню":
-        context.user_data.clear()
-        await update.message.reply_text(
-            "*🏠 Возвращаемся в главное меню*\n\n"
-            "*👇 Выберите подходящий вариант:*",
-            reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
-            parse_mode="Markdown"
-        )
-        return ConversationHandler.END
+    # ===== ОБРАБОТКА КНОПКИ "ГЛАВНОЕ МЕНЮ" =====
+    if message.text:
+        text = message.text.strip()
+        if text == "↩️ Главное меню":
+            context.user_data.clear()
+            await message.reply_text(
+                "*🏠 Возвращаемся в главное меню*\n\n"
+                "*👇 Выберите подходящий вариант:*",
+                reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
+                parse_mode="Markdown"
+            )
+            return ConversationHandler.END
     
-    if not text:
-        await update.message.reply_text(
-            "*❌ Текст не может быть пустым!*\n\n"
-            "*✏️ Введите текст сообщения:*",
+    # ===== ОБРАБОТКА ФОТО =====
+    if message.photo:
+        # Берём самое большое фото (последнее в списке)
+        photo_file_id = message.photo[-1].file_id
+        caption = message.caption or ""
+        
+        context.user_data['broadcast_type'] = 'photo'
+        context.user_data['broadcast_photo_id'] = photo_file_id
+        context.user_data['broadcast_text'] = caption
+        context.user_data['_conversation_state'] = ADMIN_BROADCAST_CONFIRM
+        
+        # Превью
+        if caption:
+            preview = (
+                f"*👑 Подтверждение рассылки*\n\n"
+                f"*📝 Сообщение содержит фото + подпись:*\n"
+                f"───────────────\n"
+                f"{caption}\n"
+                f"───────────────\n\n"
+                f"*👇 Отправить это сообщение всем?*"
+            )
+        else:
+            preview = (
+                f"*👑 Подтверждение рассылки*\n\n"
+                f"*📝 Сообщение содержит только фото (без подписи)*\n\n"
+                f"*👇 Отправить это сообщение всем?*"
+            )
+        
+        await message.reply_photo(
+            photo=photo_file_id,
+            caption=preview,
             parse_mode="Markdown",
-            reply_markup=KeyboardManager.get_admin_broadcast_input_keyboard()
+            reply_markup=KeyboardManager.get_admin_broadcast_confirm_keyboard()
         )
-        return ADMIN_BROADCAST_INPUT
+        return ADMIN_BROADCAST_CONFIRM
     
-    if len(text) > 4096:
-        await update.message.reply_text(
-            f"*❌ Слишком длинный текст!*\n\n"
-            f"*📏 Максимум: 4096 символов*\n"
-            f"*📏 У вас: {len(text)} символов*",
+    # ===== ОБРАБОТКА ТЕКСТА =====
+    if message.text:
+        text = message.text.strip()
+        
+        if not text:
+            await message.reply_text(
+                "*❌ Текст не может быть пустым!*\n\n"
+                "*✏️ Введите текст сообщения или отправьте фото:*",
+                parse_mode="Markdown",
+                reply_markup=KeyboardManager.get_admin_broadcast_input_keyboard()
+            )
+            return ADMIN_BROADCAST_INPUT
+        
+        if len(text) > 4096:
+            await message.reply_text(
+                f"*❌ Слишком длинный текст!*\n\n"
+                f"*📏 Максимум: 4096 символов*\n"
+                f"*📏 У вас: {len(text)} символов*",
+                parse_mode="Markdown",
+                reply_markup=KeyboardManager.get_admin_broadcast_input_keyboard()
+            )
+            return ADMIN_BROADCAST_INPUT
+        
+        context.user_data['broadcast_type'] = 'text'
+        context.user_data['broadcast_text'] = text
+        context.user_data.pop('broadcast_photo_id', None)
+        context.user_data['_conversation_state'] = ADMIN_BROADCAST_CONFIRM
+        
+        preview = (
+            f"*👑 Подтверждение рассылки*\n\n"
+            f"*📝 Текст сообщения:*\n"
+            f"───────────────\n"
+            f"{text}\n"
+            f"───────────────\n\n"
+            f"*👇 Отправить это сообщение всем?*"
+        )
+        
+        await message.reply_text(
+            preview,
             parse_mode="Markdown",
-            reply_markup=KeyboardManager.get_admin_broadcast_input_keyboard()
+            reply_markup=KeyboardManager.get_admin_broadcast_confirm_keyboard()
         )
-        return ADMIN_BROADCAST_INPUT
+        return ADMIN_BROADCAST_CONFIRM
     
-    context.user_data['broadcast_text'] = text
-    context.user_data['_conversation_state'] = ADMIN_BROADCAST_CONFIRM
-    
-    preview = (
-        f"*👑 Подтверждение рассылки*\n\n"
-        f"*📝 Текст сообщения:*\n"
-        f"───────────────\n"
-        f"{text}\n"
-        f"───────────────\n\n"
-        f"*👇 Отправить это сообщение всем?*"
-    )
-    
-    await update.message.reply_text(
-        preview,
+    # ===== ЕСЛИ ЧТО-ТО ДРУГОЕ =====
+    await message.reply_text(
+        "*❌ Пожалуйста, отправьте текст или фото!*",
         parse_mode="Markdown",
-        reply_markup=KeyboardManager.get_admin_broadcast_confirm_keyboard()
+        reply_markup=KeyboardManager.get_admin_broadcast_input_keyboard()
     )
-    return ADMIN_BROADCAST_CONFIRM
-
+    return ADMIN_BROADCAST_INPUT
 
 @handle_errors_with_rate_limit
 async def handle_admin_broadcast_confirm(update: Update, context):
-    """Подтверждение и запуск рассылки"""
+    """Подтверждение и запуск рассылки (текст или фото)"""
     text = update.message.text.strip() if update.message.text else ""
     
     if text == "↩️ Главное меню":
@@ -19968,12 +20023,24 @@ async def handle_admin_broadcast_confirm(update: Update, context):
         )
         return ADMIN_BROADCAST_CONFIRM
     
+    broadcast_type = context.user_data.get('broadcast_type', 'text')
     broadcast_text = context.user_data.get('broadcast_text', '')
+    broadcast_photo_id = context.user_data.get('broadcast_photo_id', None)
     
-    if not broadcast_text:
+    if broadcast_type == 'text' and not broadcast_text:
         context.user_data.clear()
         await update.message.reply_text(
             "*❌ Текст рассылки потерян!*\n\n"
+            "*🏠 Возвращаемся в главное меню:*",
+            reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
+            parse_mode="Markdown"
+        )
+        return ConversationHandler.END
+    
+    if broadcast_type == 'photo' and not broadcast_photo_id:
+        context.user_data.clear()
+        await update.message.reply_text(
+            "*❌ Фото рассылки потеряно!*\n\n"
             "*🏠 Возвращаемся в главное меню:*",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
             parse_mode="Markdown"
@@ -19987,17 +20054,27 @@ async def handle_admin_broadcast_confirm(update: Update, context):
         all_users = cursor.fetchall()
     
     admin_username = update.effective_user.username or "Администратор"
-    logger.info(f"🚀 @{admin_username} запустил рассылку")
+    logger.info(f"🚀 @{admin_username} запустил рассылку (тип: {broadcast_type})")
     
-    # Рассылаем
+    # ===== РАССЫЛАЕМ =====
     for user in all_users:
         user_telegram_id = user[0]
         try:
-            await context.bot.send_message(
-                chat_id=int(user_telegram_id),
-                text=broadcast_text,
-                parse_mode="Markdown"
-            )
+            if broadcast_type == 'photo':
+                # Отправляем фото с подписью (если есть) или без
+                await context.bot.send_photo(
+                    chat_id=int(user_telegram_id),
+                    photo=broadcast_photo_id,
+                    caption=broadcast_text if broadcast_text else None,
+                    parse_mode="Markdown" if broadcast_text else None
+                )
+            else:
+                # Отправляем текст
+                await context.bot.send_message(
+                    chat_id=int(user_telegram_id),
+                    text=broadcast_text,
+                    parse_mode="Markdown"
+                )
             await asyncio.sleep(Config.BROADCAST_DELAY)
         except telegram.error.Forbidden:
             logger.warning(f"⚠️ Пользователь {user_telegram_id} заблокировал бота")
@@ -22590,7 +22667,9 @@ def setup_handlers(application):
         ],
         states={
             ADMIN_BROADCAST_INPUT: [
+                # Принимаем и текст, и фото (с подписью или без)
                 MessageHandler(filters.TEXT & ~filters.COMMAND, handle_admin_broadcast_input),
+                MessageHandler(filters.PHOTO, handle_admin_broadcast_input),
             ],
             ADMIN_BROADCAST_CONFIRM: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, handle_admin_broadcast_confirm),
