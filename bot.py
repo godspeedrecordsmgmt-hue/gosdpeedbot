@@ -475,11 +475,13 @@ persistent_db = PersistentDatabase()
     ADMIN_PROMO_DURATION_INPUT,
     ADMIN_PROMO_USER_ID,
     ADMIN_PROMO_CONFIRM,
-    ADMIN_PROMO_DELETE_START,      # ← ДОЛЖНО БЫТЬ
-    ADMIN_PROMO_DELETE_TYPE,       # ← ДОЛЖНО БЫТЬ
-    ADMIN_PROMO_DELETE_USER_ID,    # ← ДОЛЖНО БЫТЬ
-    ADMIN_PROMO_DELETE_CONFIRM
-) = range(49)  
+    ADMIN_PROMO_DELETE_START,
+    ADMIN_PROMO_DELETE_TYPE,
+    ADMIN_PROMO_DELETE_USER_ID,
+    ADMIN_PROMO_DELETE_CONFIRM,
+    ADMIN_BROADCAST_INPUT,
+    ADMIN_BROADCAST_CONFIRM
+) = range(51)  
 
 BOOKING_STATUS = {
     'PENDING': 'pending',
@@ -3830,6 +3832,8 @@ class Config:
     RATE_LIMIT = 60
     RATE_BLOCK_TIME = 300
 
+    BROADCAST_DELAY = 0.05
+
     # ===== ФИНАНСОВЫЕ КОНСТАНТЫ =====
     RENT_COST = 45000
     ENGINEER_BASE_RATE = 500
@@ -6505,8 +6509,24 @@ class KeyboardManager:
             keyboard.append(["👑 Удалить достижение", "👑 Пластинки"])
             keyboard.append(["👑 Профиль", "👑 Выручка"])
             keyboard.append(["👑 Создать промокод", "👑 Удалить промокод"])
+            keyboard.append(["👑 Рассылка"])
         
         return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+    
+    @staticmethod
+    def get_admin_broadcast_confirm_keyboard():
+        """Клавиатура подтверждения рассылки"""
+        return ReplyKeyboardMarkup([
+            ["✅ Да, отправить", "❌ Отменить"],
+            ["↩️ Главное меню"]
+        ], resize_keyboard=True, one_time_keyboard=True)
+    
+    @staticmethod
+    def get_admin_broadcast_input_keyboard():
+        """Клавиатура ввода текста рассылки"""
+        return ReplyKeyboardMarkup([
+            ["↩️ Главное меню"]
+        ], resize_keyboard=True, one_time_keyboard=True)
     
     @staticmethod
     def get_services():
@@ -19837,6 +19857,165 @@ async def handle_admin_vinyl_confirm(update: Update, context):
     return ConversationHandler.END
 
 @handle_errors_with_rate_limit
+async def handle_admin_broadcast_start(update: Update, context):
+    """Начало рассылки — запрос текста"""
+    user_id = update.effective_user.id
+    
+    if user_id not in Config.ADMIN_IDS:
+        await update.message.reply_text(
+            "❌ У вас нет прав для этого действия!",
+            reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
+            parse_mode="Markdown"
+        )
+        return ConversationHandler.END
+    
+    context.user_data.clear()
+    context.user_data['_conversation_state'] = ADMIN_BROADCAST_INPUT
+    
+    await update.message.reply_text(
+        "*👑 Введите текст рассылки*\n\n"
+        "*✏️ Отправьте сообщение, которое нужно разослать всем пользователям:*",
+        parse_mode="Markdown",
+        reply_markup=KeyboardManager.get_admin_broadcast_input_keyboard()
+    )
+    return ADMIN_BROADCAST_INPUT
+
+
+@handle_errors_with_rate_limit
+async def handle_admin_broadcast_input(update: Update, context):
+    """Принимаем текст и показываем подтверждение"""
+    text = update.message.text.strip() if update.message.text else ""
+    
+    if text == "↩️ Главное меню":
+        context.user_data.clear()
+        await update.message.reply_text(
+            "*🏠 Возвращаемся в главное меню*\n\n"
+            "*👇 Выберите подходящий вариант:*",
+            reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
+            parse_mode="Markdown"
+        )
+        return ConversationHandler.END
+    
+    if not text:
+        await update.message.reply_text(
+            "*❌ Текст не может быть пустым!*\n\n"
+            "*✏️ Введите текст сообщения:*",
+            parse_mode="Markdown",
+            reply_markup=KeyboardManager.get_admin_broadcast_input_keyboard()
+        )
+        return ADMIN_BROADCAST_INPUT
+    
+    if len(text) > 4096:
+        await update.message.reply_text(
+            f"*❌ Слишком длинный текст!*\n\n"
+            f"*📏 Максимум: 4096 символов*\n"
+            f"*📏 У вас: {len(text)} символов*",
+            parse_mode="Markdown",
+            reply_markup=KeyboardManager.get_admin_broadcast_input_keyboard()
+        )
+        return ADMIN_BROADCAST_INPUT
+    
+    context.user_data['broadcast_text'] = text
+    context.user_data['_conversation_state'] = ADMIN_BROADCAST_CONFIRM
+    
+    preview = (
+        f"*👑 Подтверждение рассылки*\n\n"
+        f"*📝 Текст сообщения:*\n"
+        f"───────────────\n"
+        f"{text}\n"
+        f"───────────────\n\n"
+        f"*👇 Отправить это сообщение всем?*"
+    )
+    
+    await update.message.reply_text(
+        preview,
+        parse_mode="Markdown",
+        reply_markup=KeyboardManager.get_admin_broadcast_confirm_keyboard()
+    )
+    return ADMIN_BROADCAST_CONFIRM
+
+
+@handle_errors_with_rate_limit
+async def handle_admin_broadcast_confirm(update: Update, context):
+    """Подтверждение и запуск рассылки"""
+    text = update.message.text.strip() if update.message.text else ""
+    
+    if text == "↩️ Главное меню":
+        context.user_data.clear()
+        await update.message.reply_text(
+            "*🏠 Возвращаемся в главное меню*\n\n"
+            "*👇 Выберите подходящий вариант:*",
+            reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
+            parse_mode="Markdown"
+        )
+        return ConversationHandler.END
+    
+    if text == "❌ Отменить":
+        context.user_data.clear()
+        await update.message.reply_text(
+            "*❌ Рассылка отменена*\n\n"
+            "*🏠 Возвращаемся в главное меню:*",
+            reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
+            parse_mode="Markdown"
+        )
+        return ConversationHandler.END
+    
+    if text != "✅ Да, отправить":
+        await update.message.reply_text(
+            "*❌ Пожалуйста, используйте кнопки!*",
+            parse_mode="Markdown",
+            reply_markup=KeyboardManager.get_admin_broadcast_confirm_keyboard()
+        )
+        return ADMIN_BROADCAST_CONFIRM
+    
+    broadcast_text = context.user_data.get('broadcast_text', '')
+    
+    if not broadcast_text:
+        context.user_data.clear()
+        await update.message.reply_text(
+            "*❌ Текст рассылки потерян!*\n\n"
+            "*🏠 Возвращаемся в главное меню:*",
+            reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
+            parse_mode="Markdown"
+        )
+        return ConversationHandler.END
+    
+    # Получаем всех пользователей
+    with db.get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute('SELECT telegram_id FROM users')
+        all_users = cursor.fetchall()
+    
+    admin_username = update.effective_user.username or "Администратор"
+    logger.info(f"🚀 @{admin_username} запустил рассылку")
+    
+    # Рассылаем
+    for user in all_users:
+        user_telegram_id = user[0]
+        try:
+            await context.bot.send_message(
+                chat_id=int(user_telegram_id),
+                text=broadcast_text,
+                parse_mode="Markdown"
+            )
+            await asyncio.sleep(Config.BROADCAST_DELAY)
+        except telegram.error.Forbidden:
+            logger.warning(f"⚠️ Пользователь {user_telegram_id} заблокировал бота")
+        except Exception as e:
+            logger.error(f"❌ Ошибка отправки {user_telegram_id}: {e}")
+    
+    await update.message.reply_text(
+        "*✅ Рассылка завершена*",
+        parse_mode="Markdown",
+        reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
+    )
+    
+    logger.info(f"✅ @{admin_username} завершил рассылку")
+    
+    context.user_data.clear()
+    return ConversationHandler.END
+
+@handle_errors_with_rate_limit
 async def handle_admin_profile_start(update: Update, context):
     """Начало процесса просмотра профиля пользователя"""
     user_id = update.effective_user.id
@@ -22180,7 +22359,7 @@ def setup_handlers(application):
     application.add_handler(CommandHandler("debugadd", debug_add_vinyls))
     
     # ============================================================
-    # 2. НОВЫЕ КНОПКИ (ВЫСОКИЙ ПРИОРИТЕТ) - ВСЁ УБРАНО!
+    # 2. НОВЫЕ КНОПКИ (ВЫСОКИЙ ПРИОРИТЕТ)
     # ============================================================
     # ❓ Помощь и ❗️ Полезная информация обрабатываются в handle_global_buttons
     
@@ -22404,7 +22583,29 @@ def setup_handlers(application):
     )
     application.add_handler(admin_profile_conv_handler)
     
-    # 6.9 Админское создание промокода
+    # 6.9 Админская рассылка
+    admin_broadcast_conv_handler = ConversationHandler(
+        entry_points=[
+            MessageHandler(filters.Regex('^(👑 Рассылка)$'), handle_admin_broadcast_start),
+        ],
+        states={
+            ADMIN_BROADCAST_INPUT: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, handle_admin_broadcast_input),
+            ],
+            ADMIN_BROADCAST_CONFIRM: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, handle_admin_broadcast_confirm),
+            ],
+        },
+        fallbacks=[
+            MessageHandler(filters.Regex('^(↩️ Главное меню)$'), handle_main_menu_button),
+            CommandHandler('cancel', lambda update, context: ConversationHandler.END),
+        ],
+        allow_reentry=True,
+        name="admin_broadcast_conversation"
+    )
+    application.add_handler(admin_broadcast_conv_handler)
+    
+    # 6.10 Админское создание промокода
     admin_promo_conv_handler = ConversationHandler(
         entry_points=[
             MessageHandler(filters.Regex('^(👑 Создать промокод)$'), admin_promo_start),
