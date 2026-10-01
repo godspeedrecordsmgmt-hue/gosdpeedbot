@@ -7111,7 +7111,7 @@ async def useful_info_handler(update: Update, context):
     if await check_user_blocked(update, context):
         return ConversationHandler.END
     
-    file_path = "Полезная_информация.docx"
+    file_path = "Полезная информация.docx"
     
     # ===== ТЕКСТОВОЕ СООБЩЕНИЕ =====
     message = (
