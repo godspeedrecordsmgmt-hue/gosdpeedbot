@@ -10133,7 +10133,7 @@ async def get_service(update: Update, context):
 
     elif text == "🎹 Аранжировка/Биты":
         keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton("Написать продюсеру", url="https://t.me/Simweyy")]
+            [InlineKeyboardButton("Написать продюсеру", url="https://t.me/gr_mgmt")]
         ])
 
         await update.message.reply_text(
