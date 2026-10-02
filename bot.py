@@ -938,7 +938,7 @@ class AchievementSystem:
                             f"*📈 Был уровень: {old_level_info['current_level_name']}*\n"
                             f"*📈 Стал уровень: {new_level_info['current_level_name']}*\n\n"
                             f"*🎁 Вы получили новые купоны на скидку!*\n"
-                            f"*💰 Проверьте раздел «Мой уровень»*\n\n"
+                            f"*💰 Проверьте раздел «Уровень скидки»*\n\n"
                             f"*💪 Продолжайте в том же духе! 🔥*"
                         )
                         
@@ -1395,7 +1395,7 @@ class AchievementSystem:
                     f"*📈 Был уровень: {old_level_info['current_level_name']}*\n"
                     f"*📈 Стал уровень: {new_level_info['current_level_name']}*\n\n"
                     f"*🎁 Вы получили новые купоны на скидку!*\n"
-                    f"*💰 Проверьте раздел «Мой уровень»*\n\n"
+                    f"*💰 Проверьте раздел «Уровень скидки»*\n\n"
                     f"*💪 Продолжайте в том же духе! 🔥*"
                 )
             else:
@@ -2944,7 +2944,7 @@ class CouponManager:
 
     @staticmethod
     def format_coupons_for_display(user_id: str) -> str:
-        """Форматирует список купонов для отображения в 'Мой уровень' (только активные по уровню)"""
+        """Форматирует список купонов для отображения в ' скидки' (только активные по уровню)"""
         
         # Получаем текущий уровень пользователя
         with db.get_connection() as conn:
@@ -6511,7 +6511,7 @@ class KeyboardManager:
             ["🎤 Записаться в студию", "📅 Мои записи"],
             ["👤 Мой профиль", "🔔 Напоминания"],
             ["🏆 Достижения", "🎁 Промокоды"],
-            ["👥 Рефералы", "📈 Мой уровень"],
+            ["👥 Рефералы", "📈 Уровень скидки"],
             ["❓ Помощь", "❗️ Полезная информация"],
             ["🏆 Топ пользователей"],
         ]
@@ -7121,7 +7121,7 @@ async def help_handler(update: Update, context):
         "• Достижения — список выполненных достижений\n"
         "• Промокоды — активация промокодов\n"
         "• Рефералы — реферальная программа\n"
-        "• Мой уровень — прогресс и скидки\n"
+        "• Уровень скидки — прогресс и скидки\n"
         "• Топ пользователей — рейтинг по пластинкам\n\n"
         "*Сервис находится в бета-тестировании:*\n"
         "• Возможны небольшие ошибки\n"
@@ -7316,7 +7316,7 @@ async def fix_my_coupons(update: Update, context):
         await update.message.reply_text(
             f"✅ Купоны уровня 1 добавлены!\n\n"
             f"📊 Теперь у вас есть {count} активных купонов.\n\n"
-            f"Нажмите '📈 Мой уровень' чтобы проверить.",
+            f"Нажмите '📈 Уровень скидки' чтобы проверить.",
             parse_mode="Markdown"
         )
     except Exception as e:
@@ -7423,7 +7423,7 @@ async def level_handler(update: Update, context: CallbackContext) -> int:
             active_levels = {coupon['level'] for coupon in active_coupons}
             
             # ===== ФОРМИРУЕМ ТЕКСТ =====
-            text = f"*📈 Мой уровень*\n\n"
+            text = f"*📈 Уровень скидки*\n\n"
             
             text += f"*Все уровни:*\n"
             for lvl in AchievementSystem.LEVELS:
@@ -9479,7 +9479,7 @@ async def handle_main_menu(update: Update, context):
         await referral_command(update, context)
         return ConversationHandler.END
     
-    if text == "📈 Мой уровень":
+    if text == "📈 Уровень скидки":
         await level_handler(update, context)
         return ConversationHandler.END
     
@@ -9555,7 +9555,7 @@ async def handle_global_buttons(update: Update, context):
         await referral_command(update, context)
         return ConversationHandler.END
     
-    if text == "📈 Мой уровень":
+    if text == "📈 Уровень скидки":
         await level_handler(update, context)
         return ConversationHandler.END
     
