@@ -21410,14 +21410,14 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
             if current_status in ['confirmed', 'подтвержден']:
                 await context.bot.edit_message_text(
                     chat_id=chat_id, message_id=message_id,
-                    text="✅ Запись уже подтверждена!", parse_mode="Markdown"
+                    text="*✅ Запись уже подтверждена!*", parse_mode="Markdown"
                 )
                 return
             
             if current_status in ['rejected', 'отклонен']:
                 await context.bot.edit_message_text(
                     chat_id=chat_id, message_id=message_id,
-                    text="❌ Запись уже отклонена!", parse_mode="Markdown"
+                    text="*❌ Запись уже отклонена!*", parse_mode="Markdown"
                 )
                 return
             
@@ -21767,14 +21767,14 @@ async def process_booking_rejection(booking_id: int, admin_id: int, context: Con
             if current_status in ['confirmed', 'подтвержден']:
                 await context.bot.edit_message_text(
                     chat_id=chat_id, message_id=message_id,
-                    text="✅ Запись уже подтверждена!", parse_mode="Markdown"
+                    text="*✅ Запись уже подтверждена!*", parse_mode="Markdown"
                 )
                 return
             
             if current_status in ['rejected', 'отклонен']:
                 await context.bot.edit_message_text(
                     chat_id=chat_id, message_id=message_id,
-                    text="❌ Запись уже отклонена!", parse_mode="Markdown"
+                    text="*❌ Запись уже отклонена!*", parse_mode="Markdown"
                 )
                 return
             
