@@ -2618,6 +2618,19 @@ def migrate_database():
             ''')
             logger.info("✅ Таблица monitoring создана")
             
+            # ===== ТАБЛИЦА RATE_LIMITS =====
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS rate_limits (
+                    user_id TEXT PRIMARY KEY,
+                    request_count INTEGER DEFAULT 0,
+                    first_request_time DATETIME,
+                    last_request_time DATETIME,
+                    is_blocked BOOLEAN DEFAULT 0,
+                    blocked_until DATETIME
+                )
+            ''')
+            logger.info("✅ Таблица rate_limits создана")
+            
             # ===== ОБНОВЛЕНИЕ ДОГОВОРНЫХ ЗАПИСЕЙ =====
             cursor.execute('''
                 UPDATE bookings 
