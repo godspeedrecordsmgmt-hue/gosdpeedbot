@@ -16182,8 +16182,6 @@ async def handle_cancel_booking(update: Update, context):
     
     await update.message.reply_text(
         "*🏠 Возвращаемся в главное меню*\n\n"
-        "*✨ Процесс записи завершён*\n"
-        "*💾 Все введённые данные очищены*\n\n"
         "*👇 Выберите подходящий вариант:*",
         reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
         parse_mode="Markdown"
