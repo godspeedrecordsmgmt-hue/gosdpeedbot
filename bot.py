@@ -7539,7 +7539,6 @@ async def top_vinyls_handler(update: Update, context):
                     'telegram_id': telegram_id
                 }
                 display_name = get_user_display_name(user_data)
-                safe_display_name = SecurityUtils.safe_markdown_text(display_name)
                 
                 if i <= 3:
                     medal = medals[i-1]
@@ -7548,7 +7547,15 @@ async def top_vinyls_handler(update: Update, context):
                 
                 is_current = " ⬅️" if display_name == current_user_display else ""
                 
-                message += f"{medal} *{safe_display_name}* — {vinyls} 💿{is_current}\n"
+                # ===== ИСПРАВЛЕНИЕ =====
+                # Username (@...) НЕ экранируем и НЕ оборачиваем в *...*
+                # Telegram сам делает его кликабельной ссылкой
+                if display_name.startswith("@"):
+                    message += f"{medal} {display_name} — {vinyls} 💿{is_current}\n"
+                else:
+                    # Уникальный ID или "ID: ...1234" — оборачиваем в звёздочки
+                    safe_display_name = SecurityUtils.safe_markdown_text(display_name)
+                    message += f"{medal} *{safe_display_name}* — {vinyls} 💿{is_current}\n"
             
             message += "\n"
             
