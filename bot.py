@@ -7520,13 +7520,13 @@ async def top_vinyls_handler(update: Update, context):
             
             if not top_users:
                 await update.message.reply_text(
-                    "*📭 Пока нет пользователей с пластинками*",
-                    parse_mode="Markdown",
+                    "<b>📭 Пока нет пользователей с пластинками</b>",
+                    parse_mode="HTML",
                     reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
                 )
                 return
             
-            message = "*🏆 Топ пользователей*\n\n"
+            message = "<b>🏆 Топ пользователей</b>\n\n"
             
             medals = ["🥇", "🥈", "🥉"]
             
@@ -7540,6 +7540,15 @@ async def top_vinyls_handler(update: Update, context):
                 }
                 display_name = get_user_display_name(user_data)
                 
+                # ===== HTML-ЭКРАНИРОВАНИЕ =====
+                # Экранируем только < > & (не трогаем _ * [ ] `)
+                safe_display_name = (
+                    display_name
+                    .replace('&', '&amp;')
+                    .replace('<', '&lt;')
+                    .replace('>', '&gt;')
+                )
+                
                 if i <= 3:
                     medal = medals[i-1]
                 else:
@@ -7547,20 +7556,12 @@ async def top_vinyls_handler(update: Update, context):
                 
                 is_current = " ⬅️" if display_name == current_user_display else ""
                 
-                # ===== ИСПРАВЛЕНИЕ =====
-                # Username (@...) НЕ экранируем и НЕ оборачиваем в *...*
-                # Telegram сам делает его кликабельной ссылкой
-                if display_name.startswith("@"):
-                    message += f"{medal} {display_name} — {vinyls} 💿{is_current}\n"
-                else:
-                    # Уникальный ID или "ID: ...1234" — оборачиваем в звёздочки
-                    safe_display_name = SecurityUtils.safe_markdown_text(display_name)
-                    message += f"{medal} *{safe_display_name}* — {vinyls} 💿{is_current}\n"
+                message += f"{medal} {safe_display_name} — {vinyls} 💿{is_current}\n"
             
             message += "\n"
             
             # ===== СНАЧАЛА КАК ПОЛУЧИТЬ ПЛАСТИНКИ =====
-            message += "*Как получить пластинки:*\n"
+            message += "<b>Как получить пластинки:</b>\n"
             message += "• Запись в студии — +25 пластинок\n"
             message += "• Пригласить друга — +25 пластинок\n"
             message += "• Выполнить достижения — от 1000+ пластинок\n\n"
@@ -7579,15 +7580,15 @@ async def top_vinyls_handler(update: Update, context):
                     user_vinyls, user_level, user_rank = user_stats
                     
                     if user_vinyls > 0:
-                        message += f"*Статистика:*\n"
+                        message += f"<b>Статистика:</b>\n"
                         message += f"• Место: {user_rank}\n"
                         message += f"• Пластинок: {user_vinyls}\n"
                     else:
-                        message += f"*💡 У вас пока нет пластинок*\n"
+                        message += f"<b>💡 У вас пока нет пластинок</b>\n"
             
             await update.message.reply_text(
                 message,
-                parse_mode="Markdown",
+                parse_mode="HTML",
                 reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
             )
             
@@ -7596,8 +7597,8 @@ async def top_vinyls_handler(update: Update, context):
         import traceback
         traceback.print_exc()
         await update.message.reply_text(
-            "*❌ Ошибка загрузки топа пластинок*",
-            parse_mode="Markdown",
+            "<b>❌ Ошибка загрузки топа пластинок</b>",
+            parse_mode="HTML",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
         )
 
