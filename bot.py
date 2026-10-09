@@ -20247,7 +20247,10 @@ async def handle_admin_profile_user_id(update: Update, context):
             # Получаем информацию об уровне
             level_info = AchievementSystem.get_level_info(vinyls)
             current_level_name = level_info['current_level_name']
-            current_discount = level_info['current_discount']
+            
+            # ===== РЕАЛЬНАЯ ДОСТУПНАЯ СКИДКА (из активных купонов) =====
+            coupons_summary = AchievementSystem.get_user_coupons_summary(str(telegram_id))
+            available_discount = coupons_summary['total_discount'] if coupons_summary['total_discount'] > 0 else 0
             
             # Получаем все записи пользователя
             cursor.execute('''
@@ -20425,7 +20428,7 @@ async def handle_admin_profile_user_id(update: Update, context):
             f"*💿 Реферальная программа:*\n"
             f"• Уровень: {current_level_name}\n"
             f"• Пластинок: {vinyls}\n"
-            f"• Доступная скидка: {current_discount}%\n\n"
+            f"• Доступная скидка: {available_discount}%\n\n"
             
             f"*📊 История записей:*\n"
             f"• Записи в студии: {studio_count}\n"
