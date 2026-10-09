@@ -1158,139 +1158,144 @@ class AchievementSystem:
         letters = ''.join(random.choices(string.ascii_uppercase, k=4))
         return f"{letters}{id_part}"
     
-    @staticmethod
-    async def add_vinyls_for_booking(user_id: str, context=None, booking_data: dict = None):
-        """Начисляет пластинки за запись с защитой от дублей"""
-        try:
-            logger.info(f"💰 НАЧАЛО начисления пластинок для пользователя {user_id}")
-            
-            if not booking_data:
-                logger.error("❌ booking_data is None or empty!")
-                return False, 0
-            
-            booking_id = booking_data.get('id')
-            if not booking_id:
-                logger.error("❌ Нет ID записи в booking_data!")
-                return False, 0
-            
-            if not user_id:
-                logger.error("❌ Нет user_id!")
-                return False, 0
+        @staticmethod
+        async def add_vinyls_for_booking(user_id: str, context=None, booking_data: dict = None):
+            """Начисляет пластинки за запись с защитой от дублей"""
+            try:
+                logger.info(f"💰 НАЧАЛО начисления пластинок для пользователя {user_id}")
+                
+                if not booking_data:
+                    logger.error("❌ booking_data is None or empty!")
+                    return False, 0
+                
+                booking_id = booking_data.get('id')
+                if not booking_id:
+                    logger.error("❌ Нет ID записи в booking_data!")
+                    return False, 0
+                
+                if not user_id:
+                    logger.error("❌ Нет user_id!")
+                    return False, 0
 
-            with db.get_connection(timeout=60.0) as conn:
-                cursor = conn.cursor()
-                
-                # Проверяем существование колонки
-                cursor.execute("PRAGMA table_info(bookings)")
-                columns = [col[1] for col in cursor.fetchall()]
-                if 'vinyls_awarded' not in columns:
-                    try:
-                        cursor.execute('ALTER TABLE bookings ADD COLUMN vinyls_awarded INTEGER DEFAULT 0')
-                        conn.commit()
-                        logger.info("✅ Добавлена колонка vinyls_awarded")
-                    except Exception as e:
-                        logger.error(f"❌ Ошибка добавления колонки: {e}")
-                
-                # ===== ПРОВЕРКА НА ДУБЛЬ =====
-                cursor.execute('SELECT vinyls_awarded FROM bookings WHERE id = ?', (booking_id,))
-                result = cursor.fetchone()
-                if result and result[0] == 1:
-                    logger.info(f"⚠️ Пластинки уже начислены за запись #{booking_id}")
-                    return False, 0
-                
-                # ===== ПОЛУЧАЕМ ДАННЫЕ ИЗ БД =====
-                cursor.execute('''
-                    SELECT status, is_admin_booking, is_contractual, service, date_str, time_slot
-                    FROM bookings WHERE id = ?
-                ''', (booking_id,))
-                db_row = cursor.fetchone()
-                
-                if not db_row:
-                    logger.error(f"❌ Запись #{booking_id} не найдена в БД!")
-                    return False, 0
-                
-                db_status, db_is_admin, db_is_contractual, db_service, db_date_str, db_time_slot = db_row
-                
-                status = booking_data.get('status', db_status)
-                is_admin_booking = booking_data.get('is_admin_booking', db_is_admin)
-                is_contractual = booking_data.get('is_contractual', db_is_contractual)
-                service = booking_data.get('service', db_service)
-                date_str = booking_data.get('date_str', db_date_str)
-                time_slot = booking_data.get('time_slot', db_time_slot)
-                
-                logger.info(f"📋 Данные записи #{booking_id}: status={status}, is_admin={is_admin_booking}, is_contractual={is_contractual}")
-                
-                # ===== ПРОВЕРКА НА ОТМЕНЕННЫЕ =====
-                if status in ['cancelled_by_user', 'cancelled', 'rejected', 'отклонен', 'отменен']:
-                    logger.info(f"❌ Запись отменена/отклонена, пластинки не начисляются")
-                    return False, 0
-                
-                # ===== УСЛОВИЯ ДЛЯ НАЧИСЛЕНИЯ =====
-                should_award = False
-                award_reason = ""
-                
-                if is_admin_booking:
-                    should_award = True
-                    award_reason = "админская запись"
-                    logger.info(f"✅ Условие: админская запись")
-                elif is_contractual and status in ['confirmed', 'подтвержден']:
-                    should_award = True
-                    award_reason = "подтвержденная договорная запись"
-                    logger.info(f"✅ Условие: договорная подтвержденная запись")
-                elif status == 'completed' and date_str and 'Не указана' not in date_str:
-                    should_award = True
-                    award_reason = "завершенная запись"
-                    logger.info(f"✅ Условие: завершенная запись")
-                
-                if not should_award:
-                    logger.info(f"❌ Запись не подходит для начисления пластинок. status={status}")
-                    return False, 0
-                
-                # ===== НАЧИСЛЯЕМ ПЛАСТИНКИ =====
-                cursor.execute('SELECT vinyls FROM users WHERE telegram_id = ?', (user_id,))
-                result = cursor.fetchone()
-                
-                if not result:
+                with db.get_connection(timeout=60.0) as conn:
+                    cursor = conn.cursor()
+                    
+                    # Проверяем существование колонки
+                    cursor.execute("PRAGMA table_info(bookings)")
+                    columns = [col[1] for col in cursor.fetchall()]
+                    if 'vinyls_awarded' not in columns:
+                        try:
+                            cursor.execute('ALTER TABLE bookings ADD COLUMN vinyls_awarded INTEGER DEFAULT 0')
+                            conn.commit()
+                            logger.info("✅ Добавлена колонка vinyls_awarded")
+                        except Exception as e:
+                            logger.error(f"❌ Ошибка добавления колонки: {e}")
+                    
+                    # ===== ПРОВЕРКА НА ДУБЛЬ =====
+                    cursor.execute('SELECT vinyls_awarded FROM bookings WHERE id = ?', (booking_id,))
+                    result = cursor.fetchone()
+                    if result and result[0] == 1:
+                        logger.info(f"⚠️ Пластинки уже начислены за запись #{booking_id}")
+                        return False, 0
+                    
+                    # ===== ПОЛУЧАЕМ ДАННЫЕ ИЗ БД =====
                     cursor.execute('''
-                        INSERT INTO users (telegram_id, vinyls) VALUES (?, ?)
-                    ''', (user_id, 25))
-                    new_vinyls = 25
-                    logger.info(f"✅ Создан новый пользователь с 25 пластинками")
-                else:
-                    old_vinyls = result[0] or 0
-                    new_vinyls = old_vinyls + 25
-                    cursor.execute('UPDATE users SET vinyls = ? WHERE telegram_id = ?', (new_vinyls, user_id))
-                    logger.info(f"✅ Пользователю начислено +25 пластинок (было {old_vinyls}, стало {new_vinyls})")
+                        SELECT status, is_admin_booking, is_contractual, service, date_str, time_slot
+                        FROM bookings WHERE id = ?
+                    ''', (booking_id,))
+                    db_row = cursor.fetchone()
+                    
+                    if not db_row:
+                        logger.error(f"❌ Запись #{booking_id} не найдена в БД!")
+                        return False, 0
+                    
+                    db_status, db_is_admin, db_is_contractual, db_service, db_date_str, db_time_slot = db_row
+                    
+                    # ===== ФИКС: СТАТУС БЕРЁМ ИЗ БД (ИСТОЧНИК ИСТИНЫ), =====
+                    # ===== А НЕ ИЗ ПЕРЕДАННОГО СЛОВАРЯ =====
+                    # Это устраняет рассинхрон: даже если в booking_data['status']
+                    # окажется устаревшее значение 'confirmed', функция увидит
+                    # реальный статус из БД.
+                    status = db_status
+                    is_admin_booking = db_is_admin
+                    is_contractual = db_is_contractual
+                    service = booking_data.get('service', db_service)
+                    date_str = booking_data.get('date_str', db_date_str)
+                    time_slot = booking_data.get('time_slot', db_time_slot)
+                    
+                    logger.info(f"📋 Данные записи #{booking_id}: status={status} (из БД), is_admin={is_admin_booking}, is_contractual={is_contractual}")
+                    
+                    # ===== ПРОВЕРКА НА ОТМЕНЕННЫЕ =====
+                    if status in ['cancelled_by_user', 'cancelled', 'rejected', 'отклонен', 'отменен']:
+                        logger.info(f"❌ Запись отменена/отклонена, пластинки не начисляются")
+                        return False, 0
+                    
+                    # ===== УСЛОВИЯ ДЛЯ НАЧИСЛЕНИЯ =====
+                    should_award = False
+                    award_reason = ""
+                    
+                    if is_admin_booking:
+                        should_award = True
+                        award_reason = "админская запись"
+                        logger.info(f"✅ Условие: админская запись")
+                    elif is_contractual and status in ['confirmed', 'подтвержден', 'completed', 'завершен']:
+                        should_award = True
+                        award_reason = "подтвержденная договорная запись"
+                        logger.info(f"✅ Условие: договорная подтвержденная запись")
+                    elif status in ['completed', 'завершен'] and date_str and 'Не указана' not in date_str:
+                        should_award = True
+                        award_reason = "завершенная запись"
+                        logger.info(f"✅ Условие: завершенная запись")
+                    
+                    if not should_award:
+                        logger.info(f"❌ Запись не подходит для начисления пластинок. status={status}")
+                        return False, 0
+                    
+                    # ===== НАЧИСЛЯЕМ ПЛАСТИНКИ =====
+                    cursor.execute('SELECT vinyls FROM users WHERE telegram_id = ?', (user_id,))
+                    result = cursor.fetchone()
+                    
+                    if not result:
+                        cursor.execute('''
+                            INSERT INTO users (telegram_id, vinyls) VALUES (?, ?)
+                        ''', (user_id, 25))
+                        new_vinyls = 25
+                        logger.info(f"✅ Создан новый пользователь с 25 пластинками")
+                    else:
+                        old_vinyls = result[0] or 0
+                        new_vinyls = old_vinyls + 25
+                        cursor.execute('UPDATE users SET vinyls = ? WHERE telegram_id = ?', (new_vinyls, user_id))
+                        logger.info(f"✅ Пользователю начислено +25 пластинок (было {old_vinyls}, стало {new_vinyls})")
+                    
+                    cursor.execute('UPDATE bookings SET vinyls_awarded = 1 WHERE id = ?', (booking_id,))
+                    conn.commit()
+                    
+                    await AchievementSystem.check_and_award_achievements(user_id, context, None)
+                    await AchievementSystem.update_user_level(user_id, context)
+                    
+                    if context:
+                        try:
+                            await context.bot.send_message(
+                                chat_id=int(user_id),
+                                text=(
+                                    f"*🎉 Добавлено 25 пластинок за запись!*\n\n"
+                                    f"*✨ Продолжайте записываться!*\n\n"
+                                    f"*💰 Пластинок после записи: {new_vinyls} 💿*"
+                                ),
+                                parse_mode="Markdown"
+                            )
+                            logger.info(f"✅ Уведомление о +25 пластинках отправлено пользователю {user_id}")
+                        except Exception as e:
+                            logger.error(f"❌ Ошибка отправки уведомления: {e}")
+                    
+                    logger.info(f"✅ УСПЕШНО начислено +25 пластинок для записи #{booking_id}")
+                    return True, new_vinyls
                 
-                cursor.execute('UPDATE bookings SET vinyls_awarded = 1 WHERE id = ?', (booking_id,))
-                conn.commit()
-                
-                await AchievementSystem.check_and_award_achievements(user_id, context, None)
-                await AchievementSystem.update_user_level(user_id, context)
-                
-                if context:
-                    try:
-                        await context.bot.send_message(
-                            chat_id=int(user_id),
-                            text=(
-                                f"*🎉 Добавлено 25 пластинок за запись!*\n\n"
-                                f"*✨ Продолжайте записываться!*\n\n"
-                                f"*💰 Пластинок после записи: {new_vinyls} 💿*"
-                            ),
-                            parse_mode="Markdown"
-                        )
-                        logger.info(f"✅ Уведомление о +25 пластинках отправлено пользователю {user_id}")
-                    except Exception as e:
-                        logger.error(f"❌ Ошибка отправки уведомления: {e}")
-                
-                logger.info(f"✅ УСПЕШНО начислено +25 пластинок для записи #{booking_id}")
-                return True, new_vinyls
-            
-        except Exception as e:
-            logger.error(f"❌ Ошибка начисления пластинок: {e}")
-            import traceback
-            traceback.print_exc()
-            return False, 0
+            except Exception as e:
+                logger.error(f"❌ Ошибка начисления пластинок: {e}")
+                import traceback
+                traceback.print_exc()
+                return False, 0
     
     @staticmethod
     async def update_user_level(user_id: str, context=None, send_notification: bool = True):
@@ -3517,21 +3522,14 @@ async def update_completed_bookings(context: ContextTypes.DEFAULT_TYPE):
                             start_hour_calc = int(start_str)
                             end_hour_calc = int(end_str)
                             
-                            # ===== ДЕТАЛЬНОЕ ЛОГИРОВАНИЕ =====
-                            logger.info(f"🔍 ОТЛАДКА: booking_id={booking_id}")
-                            logger.info(f"🔍 ОТЛАДКА: start_hour_calc={start_hour_calc}, end_hour_calc={end_hour_calc}")
-                            logger.info(f"🔍 ОТЛАДКА: year={year}, month={month}, day={day}")
-                            
                             # ===== НОРМАЛИЗУЕМ ЧАСЫ =====
                             start_hour_calc = start_hour_calc if start_hour_calc != 24 else 0
                             end_hour_calc = end_hour_calc if end_hour_calc != 24 else 0
                             
-                            logger.info(f"🔍 ОТЛАДКА: ПОСЛЕ НОРМАЛИЗАЦИИ: start={start_hour_calc}, end={end_hour_calc}")
-                            
                             # ===== ОПРЕДЕЛЯЕМ, ПЕРЕСЕКАЕТ ЛИ СЛОТ ПОЛНОЧЬ =====
                             is_crossing = end_hour_calc <= start_hour_calc
                             
-                            logger.info(f"🔍 Слот {start_hour_calc}-{end_hour_calc}, пересекает полночь: {is_crossing}")
+                            logger.debug(f"🔍 Слот {start_hour_calc}-{end_hour_calc}, пересекает полночь: {is_crossing}")
                         else:
                             continue
                         
@@ -3547,11 +3545,10 @@ async def update_completed_bookings(context: ContextTypes.DEFAULT_TYPE):
                         else:
                             if is_crossing:
                                 # Слот пересекает полночь - окончание на следующий день
-                                logger.info(f"🔍 ОТЛАДКА: создаём end_datetime с hour={end_hour_calc}, day={day}+1")
                                 end_datetime = datetime(year, month, day, end_hour_calc, 0, 0)
                                 end_datetime = Config.TIMEZONE.localize(end_datetime)
                                 end_datetime = end_datetime + timedelta(days=1)
-                                logger.info(f"🔍 Кросс-ночной слот: окончание {end_datetime}")
+                                logger.debug(f"🔍 Кросс-ночной слот: окончание {end_datetime}")
                             else:
                                 # Обычный дневной слот
                                 if end_hour_calc == 24 or end_hour_calc == 0:
@@ -3559,10 +3556,9 @@ async def update_completed_bookings(context: ContextTypes.DEFAULT_TYPE):
                                     end_datetime = Config.TIMEZONE.localize(end_datetime)
                                     end_datetime = end_datetime + timedelta(seconds=1)
                                 else:
-                                    logger.info(f"🔍 ОТЛАДКА: создаём end_datetime с hour={end_hour_calc}")
                                     end_datetime = datetime(year, month, day, end_hour_calc, 0, 0)
                                     end_datetime = Config.TIMEZONE.localize(end_datetime)
-                                logger.info(f"🔍 Обычный слот: окончание {end_datetime}")
+                                logger.debug(f"🔍 Обычный слот: окончание {end_datetime}")
                         
                         now_utc = now.astimezone(pytz.UTC)
                         end_utc = end_datetime.astimezone(pytz.UTC)
@@ -3587,10 +3583,18 @@ async def update_completed_bookings(context: ContextTypes.DEFAULT_TYPE):
                             logger.info(f"ℹ️ Пластинки уже начислены для записи #{booking_id}")
                             continue
                         
+                        # ===== ФИКС: СНАЧАЛА СТАВИМ СТАТУС COMPLETED =====
+                        # Разрывает замкнутый круг: add_vinyls_for_booking требует
+                        # status='completed' для обычных записей, а статус ставился
+                        # только ПОСЛЕ успешного начисления (которое не срабатывало).
+                        cursor.execute('UPDATE bookings SET status = "completed" WHERE id = ?', (booking_id,))
+                        conn.commit()
+                        logger.info(f"✅ Запись #{booking_id} переведена в статус completed")
+                        
                         booking_data = {
                             'id': booking_id,
                             'telegram_id': telegram_id,
-                            'status': 'confirmed',
+                            'status': 'completed',
                             'service': service,
                             'date_str': date_str,
                             'time_slot': time_slot,
@@ -3614,7 +3618,6 @@ async def update_completed_bookings(context: ContextTypes.DEFAULT_TYPE):
                             logger.info(f"✅ Пользователю {telegram_id} начислено +25 пластинок за запись #{booking_id}")
                             awarded_count += 1
                             
-                            cursor.execute('UPDATE bookings SET status = "completed" WHERE id = ?', (booking_id,))
                             cursor.execute('DELETE FROM notifications WHERE booking_id = ?', (booking_id,))
                             
                             if date_str:
