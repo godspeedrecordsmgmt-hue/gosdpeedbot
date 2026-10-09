@@ -3471,7 +3471,7 @@ async def update_completed_bookings(context: ContextTypes.DEFAULT_TYPE):
                        is_track_creation, track_type, with_engineer, is_contractual,
                        is_admin_booking, start_hour, end_hour
                 FROM bookings 
-                WHERE status IN ('confirmed', 'подтвержден')
+                WHERE status IN ('confirmed', 'подтвержден', 'completed', 'завершен')
                 AND vinyls_awarded = 0
                 ORDER BY id ASC
             ''')
