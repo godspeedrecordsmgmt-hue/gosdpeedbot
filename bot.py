@@ -6749,8 +6749,9 @@ async def get_booking_info(booking_id: int):
         with db.get_connection() as conn:
             cursor = conn.cursor()
             
+            # ДОБАВЛЕНО поле with_engineer
             cursor.execute('''
-                SELECT id, name, service, date_str, time_slot, status, telegram_id, price
+                SELECT id, name, service, date_str, time_slot, status, telegram_id, price, with_engineer
                 FROM bookings 
                 WHERE id = ?
             ''', (booking_id,))
@@ -6768,7 +6769,8 @@ async def get_booking_info(booking_id: int):
                 'time': row[4],
                 'status': row[5],
                 'user_id': row[6],
-                'price': row[7]
+                'price': row[7],
+                'with_engineer': row[8] == 1 if len(row) > 8 else False  # ДОБАВЛЕНО
             }
             
             return booking_info
@@ -6776,7 +6778,7 @@ async def get_booking_info(booking_id: int):
     except Exception as e:
         logger.error(f"Ошибка получения информации о бронировании: {e}")
         return None
-
+        
 async def send_notification_message(context, user_id: str, booking_info: dict, hours_before: int):
     """
     Отправляет уведомление о предстоящей записи в студию.
