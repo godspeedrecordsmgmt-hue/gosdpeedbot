@@ -6503,28 +6503,28 @@ class KeyboardManager:
             ["↩️ Главное меню"]
         ], resize_keyboard=True)
     
-        @staticmethod
-        def get_main_keyboard(user=None):
-            user_id = user.id if user else None
-            
-            keyboard = [
-                ["🎤 Записаться в студию", "📅 Мои записи"],
-                ["👤 Мой профиль", "🔔 Напоминания"],
-                ["🏆 Достижения", "🎁 Промокоды"],
-                ["👥 Рефералы", "📈 Уровень скидки"],
-                ["❓ Помощь", "❗️ Полезная информация"],
-                ["🏆 Топ пользователей"],
-            ]
-            
-            if user_id and user_id in Config.ADMIN_IDS:
-                keyboard.append(["👑 Создать запись", "👑 Отменить запись"])
-                keyboard.append(["👑 Заблокировать", "👑 Выдать достижение"])
-                keyboard.append(["👑 Удалить достижение", "👑 Пластинки"])
-                keyboard.append(["👑 Профиль", "👑 Выручка"])
-                keyboard.append(["👑 Расписание", "👑 Создать промокод"])
-                keyboard.append(["👑 Удалить промокод", "👑 Рассылка"])
-            
-            return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+    @staticmethod
+    def get_main_keyboard(user=None):
+        user_id = user.id if user else None
+        
+        keyboard = [
+            ["🎤 Записаться в студию", "📅 Мои записи"],
+            ["👤 Мой профиль", "🔔 Напоминания"],
+            ["🏆 Достижения", "🎁 Промокоды"],
+            ["👥 Рефералы", "📈 Уровень скидки"],
+            ["❓ Помощь", "❗️ Полезная информация"],
+            ["🏆 Топ пользователей"],
+        ]
+        
+        if user_id and user_id in Config.ADMIN_IDS:
+            keyboard.append(["👑 Создать запись", "👑 Отменить запись"])
+            keyboard.append(["👑 Заблокировать", "👑 Выдать достижение"])
+            keyboard.append(["👑 Удалить достижение", "👑 Пластинки"])
+            keyboard.append(["👑 Профиль", "👑 Выручка"])
+            keyboard.append(["👑 Расписание", "👑 Создать промокод"])
+            keyboard.append(["👑 Удалить промокод", "👑 Рассылка"])
+        
+        return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
     
     @staticmethod
     def get_admin_broadcast_confirm_keyboard():
@@ -23283,5 +23283,5 @@ def run_bot():
         run_bot()
 
 if __name__ == '__main__':
-    
+
     run_bot()
