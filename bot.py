@@ -22634,9 +22634,15 @@ async def show_week_schedule(message_or_query, week_offset: int = 0, is_edit: bo
                         if time_slot else "—"
                     )
                     clean_service = clean_service_text(service)
-                    admin_marker = "👑" if is_admin_booking else ""
+                    admin_marker = " 👑" if is_admin_booking else ""
 
-                    text += f"  {status_emoji} {display_time} — {clean_service} {admin_marker}\n"
+                    # ===== СТРОКА С УСЛУГОЙ =====
+                    text += f"  {status_emoji} {display_time} — {clean_service}{admin_marker}\n"
+
+                    # ===== НОВАЯ СТРОКА: ИМЯ КЛИЕНТА =====
+                    if name:
+                        safe_name = SecurityUtils.safe_markdown_text(str(name))
+                        text += f"     👤 {safe_name}\n"
 
                 text += "\n"
 
