@@ -6503,28 +6503,28 @@ class KeyboardManager:
             ["↩️ Главное меню"]
         ], resize_keyboard=True)
     
-    @staticmethod
-    def get_main_keyboard(user=None):
-        user_id = user.id if user else None
-        
-        keyboard = [
-            ["🎤 Записаться в студию", "📅 Мои записи"],
-            ["👤 Мой профиль", "🔔 Напоминания"],
-            ["🏆 Достижения", "🎁 Промокоды"],
-            ["👥 Рефералы", "📈 Уровень скидки"],
-            ["❓ Помощь", "❗️ Полезная информация"],
-            ["🏆 Топ пользователей"],
-        ]
-        
-        if user_id and user_id in Config.ADMIN_IDS:
-            keyboard.append(["👑 Создать запись", "👑 Отменить запись"])
-            keyboard.append(["👑 Заблокировать", "👑 Выдать достижение"])
-            keyboard.append(["👑 Удалить достижение", "👑 Пластинки"])
-            keyboard.append(["👑 Профиль", "👑 Выручка"])
-            keyboard.append(["👑 Создать промокод", "👑 Удалить промокод"])
-            keyboard.append(["👑 Рассылка"])
-        
-        return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+        @staticmethod
+        def get_main_keyboard(user=None):
+            user_id = user.id if user else None
+            
+            keyboard = [
+                ["🎤 Записаться в студию", "📅 Мои записи"],
+                ["👤 Мой профиль", "🔔 Напоминания"],
+                ["🏆 Достижения", "🎁 Промокоды"],
+                ["👥 Рефералы", "📈 Уровень скидки"],
+                ["❓ Помощь", "❗️ Полезная информация"],
+                ["🏆 Топ пользователей"],
+            ]
+            
+            if user_id and user_id in Config.ADMIN_IDS:
+                keyboard.append(["👑 Создать запись", "👑 Отменить запись"])
+                keyboard.append(["👑 Заблокировать", "👑 Выдать достижение"])
+                keyboard.append(["👑 Удалить достижение", "👑 Пластинки"])
+                keyboard.append(["👑 Профиль", "👑 Выручка"])
+                keyboard.append(["👑 Расписание", "👑 Создать промокод"])
+                keyboard.append(["👑 Удалить промокод", "👑 Рассылка"])
+            
+            return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
     
     @staticmethod
     def get_admin_broadcast_confirm_keyboard():
@@ -22439,6 +22439,70 @@ async def check_time(update: Update, context):
     
     await update.message.reply_text(message, parse_mode="Markdown")
 
+async def handle_global_buttons(update: Update, context):
+    text = update.message.text.strip()
+    
+    logger.info(f"🔍 ГЛОБАЛЬНЫЙ ОБРАБОТЧИК КНОПОК: '{text}'")
+    
+    # ===== КНОПКИ, КОТОРЫЕ ДОЛЖЕН ОБРАБАТЫВАТЬ CONVERSATIONHANDLER =====
+    if text in ["✅ Всё верно, отправить", "✏️ Исправить данные", "❌ Отменить", "↩️ Назад"]:
+        return None
+    
+    # ===== ОСНОВНЫЕ КНОПКИ ПОЛЬЗОВАТЕЛЯ =====
+    if text == "📅 Мои записи":
+        await show_my_bookings(update, context)
+        return ConversationHandler.END
+    
+    if text == "🔔 Напоминания":
+        await notifications_command(update, context)
+        return ConversationHandler.END
+    
+    if text == "👤 Мой профиль":
+        await profile_handler(update, context)
+        return ConversationHandler.END
+    
+    if text == "🏆 Достижения":
+        await achievements_handler(update, context)
+        return ConversationHandler.END
+    
+    if text == "🎁 Промокоды":
+        await promo_main_menu(update, context)
+        return ConversationHandler.END
+    
+    if text == "👥 Рефералы":
+        await referral_command(update, context)
+        return ConversationHandler.END
+    
+    if text == "📈 Уровень скидки":
+        await level_handler(update, context)
+        return ConversationHandler.END
+    
+    if text == "🏆 Топ пользователей":
+        await top_vinyls_handler(update, context)
+        return ConversationHandler.END
+    
+    # ===== КНОПКИ ПОМОЩИ =====
+    if text == "❓ Помощь":
+        await help_handler(update, context)
+        return ConversationHandler.END
+    
+    if text == "❗️ Полезная информация":
+        await useful_info_handler(update, context)
+        return ConversationHandler.END
+    
+    # ===== АДМИНСКИЕ КНОПКИ =====
+    if text == "👑 Выручка":
+        return await handle_revenue_menu(update, context)
+    
+    if text == "👑 Расписание":
+        await handle_admin_schedule_start(update, context)
+        return ConversationHandler.END
+    
+    if text == "👑 Удалить промокод":
+        return await admin_promo_delete_start(update, context)
+    
+    return None
+
 def setup_handlers(application):
     """Настройка всех обработчиков бота"""
     
@@ -22481,6 +22545,7 @@ def setup_handlers(application):
     application.add_handler(CallbackQueryHandler(admin_remove_achievement_callback, pattern="^admin_remove_achievement_\\d+$"))
     application.add_handler(CallbackQueryHandler(admin_remove_achievement_confirm, pattern="^admin_remove_achievement_confirm_"))
     application.add_handler(CallbackQueryHandler(admin_remove_achievement_cancel, pattern="^admin_remove_achievement_cancel$"))
+    application.add_handler(CallbackQueryHandler(handle_schedule_callback, pattern="^schedule_"))
     application.add_handler(CallbackQueryHandler(button_callback_handler))
     
     # ============================================================
@@ -22691,7 +22756,6 @@ def setup_handlers(application):
         ],
         states={
             ADMIN_BROADCAST_INPUT: [
-                # Принимаем и текст, и фото (с подписью или без)
                 MessageHandler(filters.TEXT & ~filters.COMMAND, handle_admin_broadcast_input),
                 MessageHandler(filters.PHOTO, handle_admin_broadcast_input),
             ],
