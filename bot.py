@@ -20276,11 +20276,11 @@ async def handle_admin_profile_user_id(update: Update, context):
             all_bookings = cursor.fetchall()
             
             # ===== СЧЁТЧИКИ =====
-            studio_count = 0          # Записи в студии (completed + админские confirmed)
-            contract_count = 0        # Договорные услуги (confirmed)
-            total_spent_calc = 0      # Общая стоимость
-            confirmed_count = 0       # Подтверждено (confirmed + completed)
-            cancelled_count = 0       # Отменено пользователем (cancelled_by_user)
+            studio_count = 0
+            contract_count = 0
+            total_spent_calc = 0
+            confirmed_count = 0
+            cancelled_count = 0
             
             for booking in all_bookings:
                 (is_contractual, service, date_str, price, status, is_12_hours, 
@@ -20295,7 +20295,6 @@ async def handle_admin_profile_user_id(update: Update, context):
                     'договорная' in str(date_str).lower()
                 )
                 
-                # ===== ПОДСЧЁТ СТАТИСТИКИ =====
                 if status_lower in ['confirmed', 'подтвержден']:
                     confirmed_count += 1
                 elif status_lower == 'completed':
@@ -20303,8 +20302,6 @@ async def handle_admin_profile_user_id(update: Update, context):
                 elif status_lower == 'cancelled_by_user':
                     cancelled_count += 1
                 
-                # ===== ИСТОРИЯ ЗАПИСЕЙ И СТОИМОСТЬ =====
-                # 1. Обычные записи: ТОЛЬКО completed
                 if status_lower == 'completed' and not is_admin:
                     studio_count += 1
                     if price and price not in ['0', 'Договорная'] and 'договорная' not in str(price).lower():
@@ -20314,13 +20311,11 @@ async def handle_admin_profile_user_id(update: Update, context):
                         except:
                             pass
                             
-                # 2. Админские записи: confirmed
                 elif is_admin and status_lower in ['confirmed', 'подтвержден']:
                     if is_contract:
                         contract_count += 1
                     else:
                         studio_count += 1
-                    
                     if price and price not in ['0', 'Договорная'] and 'договорная' not in str(price).lower():
                         try:
                             price_num = int(''.join(filter(str.isdigit, str(price))))
@@ -20328,7 +20323,6 @@ async def handle_admin_profile_user_id(update: Update, context):
                         except:
                             pass
                             
-                # 3. Договорные записи (не админские): confirmed
                 elif is_contract and status_lower in ['confirmed', 'подтвержден'] and not is_admin:
                     contract_count += 1
                     if price and price not in ['0', 'Договорная'] and 'договорная' not in str(price).lower():
@@ -20338,7 +20332,6 @@ async def handle_admin_profile_user_id(update: Update, context):
                         except:
                             pass
                             
-                # 4. Сведение/мастеринг: confirmed
                 elif is_mixing == 1 and status_lower in ['confirmed', 'подтвержден']:
                     contract_count += 1
                     if price and price not in ['0', 'Договорная'] and 'договорная' not in str(price).lower():
@@ -20348,7 +20341,6 @@ async def handle_admin_profile_user_id(update: Update, context):
                         except:
                             pass
                             
-                # 5. Создание альбома: confirmed
                 elif is_track_creation == 1 and track_type and 'Альбом' in track_type and status_lower in ['confirmed', 'подтвержден']:
                     contract_count += 1
                     if price and price not in ['0', 'Договорная'] and 'договорная' not in str(price).lower():
@@ -20358,7 +20350,6 @@ async def handle_admin_profile_user_id(update: Update, context):
                         except:
                             pass
             
-            # Обновляем total_spent если нужно
             if total_spent_calc != total_spent:
                 cursor.execute('UPDATE users SET total_spent = ? WHERE telegram_id = ?', 
                              (total_spent_calc, str(telegram_id)))
@@ -20366,7 +20357,6 @@ async def handle_admin_profile_user_id(update: Update, context):
                 total_spent = total_spent_calc
             
             # ===== ЛИМИТЫ =====
-            # Записей с датой: X/2
             cursor.execute('''
                 SELECT COUNT(*) 
                 FROM bookings 
@@ -20382,7 +20372,6 @@ async def handle_admin_profile_user_id(update: Update, context):
             ''', (str(telegram_id),))
             active_dated_count = cursor.fetchone()[0] or 0
             
-            # Договорных записей: X/3 (ТОЛЬКО PENDING!)
             cursor.execute('''
                 SELECT COUNT(*) 
                 FROM bookings 
@@ -20400,7 +20389,6 @@ async def handle_admin_profile_user_id(update: Update, context):
             ''', (str(telegram_id),))
             active_contract_count = cursor.fetchone()[0] or 0
             
-            # ===== ПРОЦЕНТЫ =====
             total_processed = confirmed_count + cancelled_count
             approved_percentage = 0
             cancelled_percentage = 0
@@ -20409,7 +20397,6 @@ async def handle_admin_profile_user_id(update: Update, context):
                 approved_percentage = int((confirmed_count / total_processed) * 100)
                 cancelled_percentage = 100 - approved_percentage
             
-            # Форматируем дату регистрации
             if registration_date:
                 try:
                     reg_date_obj = datetime.strptime(registration_date, '%d.%m.%Y')
@@ -20419,7 +20406,6 @@ async def handle_admin_profile_user_id(update: Update, context):
             else:
                 formatted_reg_date = "Не указана"
         
-        # ===== ФОРМИРУЕМ ТЕКСТ ПРОФИЛЯ ДЛЯ АДМИНА =====
         profile_text = (
             f"*👤 Профиль пользователя:*\n"
             f"• Username: @{username}\n"
@@ -20475,16 +20461,12 @@ async def handle_unknown(update: Update, context):
     """Обработчик для неизвестных команд/сообщений - ПРОСТО ИГНОРИРУЕТ"""
     text = update.message.text.strip()
     
-    # Проверяем, не является ли сообщение промокодом
     if text.lower().startswith('promo '):
         return await process_promo_code_message(update, context)
     
-    # Проверяем, не является ли сообщение реферальным кодом
     if len(text) >= 6 and text.isalnum() and not text.startswith(('🎤', '📅', '💰', '👥', '📍', '🔔', '❓', '🏆', '🎁', '👑', '↩️', '✅', '✏️', '❌', '👨‍🔧', '💪', '☀️', '🌙', '🎵', '💿', '🎚️', '⏰', '🎸', '➕', '➖', '📅')):
         return await process_referral_code_message(update, context)
     
-    # ===== УБРАНО СООБЩЕНИЕ О НЕИЗВЕСТНОЙ КОМАНДЕ =====
-    # Просто игнорируем любое другое сообщение
     return
 
 @handle_errors_with_rate_limit
@@ -20530,10 +20512,8 @@ async def button_callback_handler(update: Update, context):
         
         logger.info(f"🔍 button_callback_handler: data={data}, user_id={user_id}")
         
-        # ===== ВАЖНО: ОТВЕЧАЕМ НА ВСЕ CALLBACK СРАЗУ (УБИРАЕТ ПЕСОЧНЫЕ ЧАСЫ) =====
         await query.answer()
         
-        # Проверка блокировки для не-админов
         if user_id not in Config.ADMIN_IDS:
             with db.get_connection() as conn:
                 cursor = conn.cursor()
@@ -20563,7 +20543,6 @@ async def button_callback_handler(update: Update, context):
                             await query.edit_message_text(text=f"🔒 Вы заблокированы!\n\n⏳ Тип блокировки: Навсегда\n\n📞 По вопросам обращайтесь к администратору: @mothman32", parse_mode="Markdown")
                             return
         
-        # ========== РЕФЕРАЛЫ ==========
         if data == "enter_referral_code":
             await enter_referral_code_callback(update, context)
             return
@@ -20576,7 +20555,6 @@ async def button_callback_handler(update: Update, context):
             await back_to_referral_callback(update, context)
             return
         
-        # ========== ОТМЕНА ЗАПИСИ (ПОЛЬЗОВАТЕЛЬ) ==========
         if data == "keep_booking":
             await show_my_bookings_in_message(query.message, context, update.effective_user.id)
             return
@@ -20585,12 +20563,10 @@ async def button_callback_handler(update: Update, context):
             await show_my_bookings_in_message(query.message, context, update.effective_user.id)
             return
         
-        # ========== ВЫРУЧКА ==========
         if data.startswith('revenue_'):
             await handle_revenue_period_selection(update, context)
             return
         
-        # ========== ПРОМОКОДЫ ==========
         if data.startswith('promo_'):
             await promo_callback_handler(update, context)
             return
@@ -20603,7 +20579,6 @@ async def button_callback_handler(update: Update, context):
             await admin_promo_delete_confirm_handler(update, context)
             return
         
-        # ========== АДМИНСКАЯ ОТМЕНА ==========
         if data.startswith('admin_cancel_confirm_'):
             await admin_cancel_confirm_handler(update, context)
             return
@@ -20618,7 +20593,6 @@ async def button_callback_handler(update: Update, context):
             await admin_cancel_callback_handler(update, context)
             return
         
-        # ========== УДАЛЕНИЕ ДОСТИЖЕНИЙ ==========
         if data.startswith('admin_remove_achievement_'):
             if data.startswith('admin_remove_achievement_confirm_'):
                 await admin_remove_achievement_confirm(update, context)
@@ -20629,7 +20603,6 @@ async def button_callback_handler(update: Update, context):
             await admin_remove_achievement_callback(update, context)
             return
         
-        # ========== ПОДТВЕРЖДЕНИЕ ЗАПИСИ АДМИНОМ ==========
         if data.startswith('confirm_'):
             booking_id = int(data.split('_')[1])
             chat_id = query.message.chat_id
@@ -20649,7 +20622,6 @@ async def button_callback_handler(update: Update, context):
             ))
             return
         
-        # ========== ОТКЛОНЕНИЕ ЗАПИСИ ==========
         if data.startswith('reject_'):
             booking_id = int(data.split('_')[1])
             chat_id = query.message.chat_id
@@ -20669,7 +20641,6 @@ async def button_callback_handler(update: Update, context):
             ))
             return
         
-        # ========== ОТМЕНА ЗАПИСИ ПОЛЬЗОВАТЕЛЕМ (ЗАПРОС) ==========
         if data.startswith('cancel_'):
             try:
                 parts = data.split('_')
@@ -20681,7 +20652,6 @@ async def button_callback_handler(update: Update, context):
                     return
                 booking_id = int(parts[1])
                 
-                # ===== ПОЛУЧАЕМ ПОЛНЫЕ ДАННЫЕ ДЛЯ ПОДТВЕРЖДЕНИЯ =====
                 with db.get_connection() as conn:
                     cursor = conn.cursor()
                     cursor.execute('''
@@ -20743,7 +20713,6 @@ async def button_callback_handler(update: Update, context):
                     
                     hours_until = DateTimeUtils.get_hours_until_booking(date_str, time_slot)
                     
-                    # ===== ПРОВЕРКА НА 12 ЧАСОВ =====
                     if hours_until < 12 and hours_until != -1 and not is_12_hours and not is_track_creation:
                         error_text = (
                             f"*❌ Отмена записи недоступна!*\n\n"
@@ -20771,7 +20740,6 @@ async def button_callback_handler(update: Update, context):
                     safe_name = SecurityUtils.safe_markdown_text(name)
                     safe_contact = SecurityUtils.safe_markdown_text(contact)
                     
-                    # ===== ФОРМИРУЕМ ТЕКСТ СКИДКИ ПО УРОВНЮ =====
                     coupon_text = ""
                     if level_discount_percent and level_discount_percent > 0:
                         if level_coupon_id:
@@ -20787,7 +20755,6 @@ async def button_callback_handler(update: Update, context):
                         else:
                             coupon_text = f"• Скидка по уровню: {level_discount_percent}%"
                     
-                    # ===== ФОРМИРУЕМ ТЕКСТ ПРОМОКОДА =====
                     promo_text = ""
                     if promo_code_used:
                         cursor.execute('''
@@ -20814,7 +20781,6 @@ async def button_callback_handler(update: Update, context):
                                 service_names = {"вокал": "вокал", "инструмент": "инструмент", "аренда": "аренду", "сведение": "сведение", "трек": "трек"}
                                 promo_text = f"• Промокод: бесплатно: {service_names.get(target_service, target_service)} (код: {promo_code_used})"
                     
-                    # ===== ФОРМАТИРУЕМ ДАТУ И ВРЕМЯ =====
                     clean_date_display = date_str
                     if clean_date_display and '(' in clean_date_display:
                         clean_date_display = clean_date_display.split('(')[0].strip()
@@ -20825,7 +20791,6 @@ async def button_callback_handler(update: Update, context):
                     if time_display and '-' in time_display:
                         time_display = DateTimeUtils.format_time_for_display(time_display)
                     
-                    # ===== ФОРМИРУЕМ СТАТУС ДЛЯ ОТОБРАЖЕНИЯ =====
                     status_lower = current_status.lower() if current_status else ""
                     if 'pending' in status_lower or 'ожидает' in status_lower:
                         status_display = "Ожидает подтверждения"
@@ -20840,7 +20805,6 @@ async def button_callback_handler(update: Update, context):
                     else:
                         status_display = current_status or "Неизвестен"
                     
-                    # ===== ФОРМИРУЕМ ТЕКСТ ПОДТВЕРЖДЕНИЯ =====
                     confirm_text = f"*⚠️ Вы уверены, что хотите отменить запись?*\n\n"
                     confirm_text += f"*📋 Детали записи #{booking_id}:*\n"
                     confirm_text += f"• Имя: {safe_name}\n"
@@ -20887,7 +20851,6 @@ async def button_callback_handler(update: Update, context):
                         confirm_text += f"{promo_text}\n"
                     
                     confirm_text += f"• Статус: {status_display}\n"
-                    
                     confirm_text += f"\n*❌ Отменить запись?*"
                     
                     keyboard = InlineKeyboardMarkup([
@@ -20904,7 +20867,6 @@ async def button_callback_handler(update: Update, context):
                 )
             return
         
-        # ========== ВЫПОЛНЕНИЕ ОТМЕНЫ ПОЛЬЗОВАТЕЛЕМ ==========
         if data.startswith('do_cancel_'):
             try:
                 parts = data.split('_')
@@ -20916,7 +20878,6 @@ async def button_callback_handler(update: Update, context):
                     return
                 booking_id = int(parts[2])
                 
-                # ===== ПОКАЗЫВАЕМ ПРОЦЕСС ОТМЕНЫ =====
                 await query.edit_message_text(
                     text=f"⏳ Отмена записи #{booking_id}...",
                     parse_mode="Markdown"
@@ -20993,7 +20954,6 @@ async def button_callback_handler(update: Update, context):
                         )
                         return
                     
-                    # ===== ФОРМИРУЕМ ТЕКСТ КУПОНА =====
                     coupon_text = ""
                     if level_coupon_id:
                         cursor.execute('''
@@ -21006,7 +20966,6 @@ async def button_callback_handler(update: Update, context):
                         elif level_discount_percent and level_discount_percent > 0:
                             coupon_text = f"• Скидка по уровню: {level_discount_percent}%"
                     
-                    # ===== ФОРМИРУЕМ ТЕКСТ ПРОМОКОДА =====
                     promo_text = ""
                     if promo_code_used:
                         cursor.execute('''
@@ -21035,11 +20994,7 @@ async def button_callback_handler(update: Update, context):
                                 service_names = {"вокал": "вокал", "инструмент": "инструмент", "аренда": "аренду", "сведение": "сведение", "трек": "трек"}
                                 promo_text = f"• Промокод: бесплатно: {service_names.get(target_service, target_service)} (код: {promo_code_used})"
                     
-                    # ================================================================
-                    # ===== ЛОГИКА КУПОНА ПРИ ОТМЕНЕ (по проценту из записи) =====
-                    # ================================================================
                     if level_discount_percent and level_discount_percent > 0:
-                        # Определяем уровень купона по проценту
                         coupon_level = 1
                         for lvl in AchievementSystem.LEVELS:
                             if lvl['discount'] == level_discount_percent:
@@ -21047,7 +21002,6 @@ async def button_callback_handler(update: Update, context):
                                 break
                         
                         if hours_until >= 12 or hours_until == -1:
-                            # Возвращаем купон
                             cursor.execute('''
                                 SELECT id, remaining_uses FROM user_coupons 
                                 WHERE user_id = ? AND level = ? AND discount_percent = ? AND is_permanent = 0
@@ -21069,15 +21023,12 @@ async def button_callback_handler(update: Update, context):
                         else:
                             logger.info(f"🔥 Купон уровня {coupon_level} ({level_discount_percent}%) НЕ возвращён (отмена < 12ч) #{booking_id}")
                     
-                    # Обработка промокода
                     handle_promo_code_on_cancellation(booking_id, str(user_id), hours_until, context)
                     
-                    # Получаем текущие пластинки
                     cursor.execute('SELECT vinyls FROM users WHERE telegram_id = ?', (str(user_id),))
                     vinyl_row = cursor.fetchone()
                     old_vinyls = vinyl_row[0] if vinyl_row else 0
                     
-                    # Проверяем, были ли начислены пластинки
                     try:
                         cursor.execute('ALTER TABLE bookings ADD COLUMN vinyls_awarded INTEGER DEFAULT 0')
                         conn.commit()
@@ -21088,7 +21039,6 @@ async def button_callback_handler(update: Update, context):
                     award_row = cursor.fetchone()
                     was_awarded = award_row[0] == 1 if award_row else False
                     
-                    # Списываем пластинки если были начислены
                     if was_awarded and not is_mixing:
                         cursor.execute('UPDATE users SET vinyls = vinyls - 25 WHERE telegram_id = ? AND vinyls >= 25', (str(user_id),))
                         cursor.execute('UPDATE bookings SET vinyls_awarded = 0 WHERE id = ?', (booking_id,))
@@ -21099,13 +21049,9 @@ async def button_callback_handler(update: Update, context):
                         new_vinyls = new_vinyl_row[0] if new_vinyl_row else 0
                         await AchievementSystem.notify_level_change(str(user_id), old_vinyls, new_vinyls, context)
                     
-                    # Обновляем статус записи
                     cursor.execute('UPDATE bookings SET status = "cancelled_by_user" WHERE id = ?', (booking_id,))
                     cursor.execute('DELETE FROM notifications WHERE booking_id = ?', (booking_id,))
                     
-                    # ================================================================
-                    # ===== ОЧИСТКА КЭША =====
-                    # ================================================================
                     if date_str:
                         clean_date = date_str.split('(')[0].strip()
                         if clean_date and clean_date[0] in "🟢🟡🟠🔴⚪️":
@@ -21135,7 +21081,6 @@ async def button_callback_handler(update: Update, context):
                     await AchievementSystem.check_and_award_achievements(str(user_id), context, None)
                     await AchievementSystem.update_user_level(str(user_id), context)
                 
-                # ===== ФОРМАТИРУЕМ ДАННЫЕ ДЛЯ СООБЩЕНИЯ =====
                 safe_name = SecurityUtils.safe_markdown_text(name)
                 safe_contact = SecurityUtils.safe_markdown_text(contact)
                 
@@ -21149,7 +21094,6 @@ async def button_callback_handler(update: Update, context):
                 if time_display and '-' in time_display:
                     time_display = DateTimeUtils.format_time_for_display(time_display)
                 
-                # ===== ОТПРАВКА ОТДЕЛЬНОГО СООБЩЕНИЯ ПОЛЬЗОВАТЕЛЮ =====
                 try:
                     user_message = f"*✅ Запись #{booking_id} успешно отменена!*\n\n"
                     user_message += f"*✨ Благодарим вас, {safe_name}!*\n\n"
@@ -21205,7 +21149,6 @@ async def button_callback_handler(update: Update, context):
                 except Exception as e:
                     logger.error(f"❌ Ошибка отправки сообщения об отмене: {e}")
                 
-                # ===== ОТПРАВКА УВЕДОМЛЕНИЯ АДМИНАМ =====
                 clean_date_for_admin = date_str
                 if clean_date_for_admin and '(' in clean_date_for_admin:
                     clean_date_for_admin = clean_date_for_admin.split('(')[0].strip()
@@ -21255,13 +21198,11 @@ async def button_callback_handler(update: Update, context):
                     except Exception as e:
                         logger.error(f"❌ Ошибка отправки админу {admin_id}: {e}")
                 
-                # Показываем сообщение об успешной отмене и обновляем список записей
                 await query.edit_message_text(
                     text=f"*✅ Запись #{booking_id} успешно отменена!*",
                     parse_mode="Markdown"
                 )
                 
-                # Обновляем список записей
                 await show_my_bookings_in_message(query.message, context, update.effective_user.id)
                 
             except Exception as e:
@@ -21343,7 +21284,6 @@ async def debug_add_vinyls(update: Update, context):
             'track_type': data.get('track_type')
         }
         
-        # Отправляем сообщение БЕЗ маркдауна
         msg = f"📋 Данные для начисления:\n\n"
         msg += f"id: {booking_data['id']}\n"
         msg += f"telegram_id: {booking_data['telegram_id']}\n"
@@ -21360,7 +21300,6 @@ async def debug_add_vinyls(update: Update, context):
         
         await update.message.reply_text(msg)
         
-        # ПРЯМОЙ ВЫЗОВ
         result, new_vinyls = await AchievementSystem.add_vinyls_for_booking(
             str(booking_data['telegram_id']), 
             context, 
@@ -21434,18 +21373,13 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
             
             cursor.execute('UPDATE bookings SET status = "confirmed" WHERE id = ?', (booking_id,))
             
-            # ================================================================
-            # ===== ОЧИЩАЕМ КЭШ ДЛЯ ВСЕХ ЗАТРОНУТЫХ ДАТ =====
-            # ================================================================
             if date_str and 'Не указана' not in date_str:
                 clean_date = date_str.split('(')[0].strip()
                 if clean_date and clean_date[0] in "🟢🟡🟠🔴⚪️":
                     clean_date = clean_date[2:].strip()
                 
-                # Очищаем текущую дату
                 MemoryCache.invalidate_date(clean_date)
                 
-                # Если запись кросс-ночная - очищаем предыдущий и следующий день
                 if time_slot and '-' in time_slot:
                     try:
                         start_str, end_str = time_slot.split('-')
@@ -21456,24 +21390,20 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
                             day, month, year = map(int, clean_date.split('.'))
                             current_date = datetime(year, month, day)
                             
-                            # Следующий день
                             next_date = current_date + timedelta(days=1)
                             MemoryCache.invalidate_date(next_date.strftime("%d.%m.%Y"))
                             
-                            # Предыдущий день
                             prev_date = current_date - timedelta(days=1)
                             MemoryCache.invalidate_date(prev_date.strftime("%d.%m.%Y"))
                     except:
                         pass
             
-            # ===== СЖИГАЕМ КУПОН ДЛЯ СВЕДЕНИЯ (трек 2500₽) =====
             if is_mixing == 1 and not is_contractual and level_coupon_id:
                 cursor.execute('DELETE FROM user_coupons WHERE id = ?', (level_coupon_id,))
                 logger.info(f"🔥 Купон {level_coupon_id} сгорел при подтверждении сведения #{booking_id}")
             
             conn.commit()
             
-            # ===== НАЧИСЛЯЕМ ПЛАСТИНКИ ДЛЯ ДОГОВОРНЫХ ЗАПИСЕЙ И СВЕДЕНИЯ/МАСТЕРИНГА =====
             if is_contractual == 1 or is_mixing == 1 or is_admin_booking == 1:
                 booking_data_for_vinyls = {
                     'id': booking_id,
@@ -21493,7 +21423,6 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
                 if vinyls_added:
                     logger.info(f"✅ Пользователю {telegram_id} начислено +25 пластинок за {service} #{booking_id}")
             
-            # ===== ПРОВЕРЯЕМ РЕФЕРАЛЬНЫЙ БОНУС =====
             if not is_admin_booking:
                 try:
                     with db.get_connection() as conn_ref:
@@ -21561,11 +21490,8 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
                 except Exception as e:
                     logger.error(f"❌ Ошибка проверки реферального бонуса: {e}")
         
-        # ===== ОТПРАВКА СООБЩЕНИЯ ПОЛЬЗОВАТЕЛЮ =====
-        # ===== ОЧИЩАЕМ УСЛУГУ ОТ СМАЙЛИКОВ =====
         clean_service = clean_service_text(service)
         
-        # ===== ОЧИЩАЕМ ДАТУ ОТ СМАЙЛИКОВ =====
         clean_date = date_str
         if clean_date:
             for emoji in ['🟢', '🟡', '🟠', '🔴', '⚪️']:
@@ -21577,7 +21503,6 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
         if time_slot and '-' in time_slot:
             display_time = DateTimeUtils.format_time_for_display(time_slot)
         
-        # ===== ОЧИЩАЕМ ТИП ОТ СМАЙЛИКОВ =====
         clean_type = ""
         if is_12_hours and twelve_hours_type:
             clean_type = clean_service_text(twelve_hours_type)
@@ -21586,7 +21511,6 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
         elif is_track_creation and track_type:
             clean_type = clean_service_text(track_type)
         
-        # ===== ФОРМИРУЕМ ТЕКСТ СКИДОК =====
         discount_lines = []
         if level_discount_percent and level_discount_percent > 0:
             discount_lines.append(f"• Скидка по уровню: {level_discount_percent}%")
@@ -21601,7 +21525,6 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
         if discount_lines:
             discount_text = "\n" + "\n".join(discount_lines)
         
-        # ===== НОВЫЙ ФОРМАТ СООБЩЕНИЯ =====
         user_msg_lines = [
             f"*✅ Ваша заявка подтверждена!*",
             "",
@@ -21629,7 +21552,6 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
             else:
                 user_msg_lines.append(f"• Время: {display_time}")
         
-        # ===== ЦЕНА =====
         if is_12_hours == 1:
             rent_price = 6000 if twelve_hours_type and 'Ночь' in twelve_hours_type else 7000
             if price and price != '0' and price != str(rent_price):
@@ -21677,7 +21599,6 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
         )
         logger.info(f"✅ Сообщение пользователю {telegram_id} отправлено")
         
-        # ===== СОЗДАНИЕ УВЕДОМЛЕНИЙ =====
         if (clean_date and 'Не указана' not in clean_date and 
             display_time and display_time not in ['Не указано', 'Не указано (договорная)']):
             
@@ -21724,7 +21645,6 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
                     if success:
                         logger.info(f"✅ Создано уведомление за {hours_before} часов для записи #{booking_id}")
         
-        # ===== ОБНОВЛЯЕМ СООБЩЕНИЕ АДМИНА =====
         await context.bot.edit_message_text(
             chat_id=chat_id, message_id=message_id,
             text=f"*✅ Запись #{booking_id} подтверждена!*", parse_mode="Markdown"
@@ -21789,18 +21709,13 @@ async def process_booking_rejection(booking_id: int, admin_id: int, context: Con
                 )
                 return
             
-            # ================================================================
-            # ===== ОЧИЩАЕМ КЭШ ДЛЯ ВСЕХ ЗАТРОНУТЫХ ДАТ =====
-            # ================================================================
             if date_str and 'Не указана' not in date_str:
                 clean_date = date_str.split('(')[0].strip()
                 if clean_date and clean_date[0] in "🟢🟡🟠🔴⚪️":
                     clean_date = clean_date[2:].strip()
                 
-                # Очищаем текущую дату
                 MemoryCache.invalidate_date(clean_date)
                 
-                # Если запись кросс-ночная - очищаем предыдущий и следующий день
                 if time_slot and '-' in time_slot:
                     try:
                         start_str, end_str = time_slot.split('-')
@@ -21811,17 +21726,14 @@ async def process_booking_rejection(booking_id: int, admin_id: int, context: Con
                             day, month, year = map(int, clean_date.split('.'))
                             current_date = datetime(year, month, day)
                             
-                            # Следующий день
                             next_date = current_date + timedelta(days=1)
                             MemoryCache.invalidate_date(next_date.strftime("%d.%m.%Y"))
                             
-                            # Предыдущий день
                             prev_date = current_date - timedelta(days=1)
                             MemoryCache.invalidate_date(prev_date.strftime("%d.%m.%Y"))
                     except:
                         pass
             
-            # ===== ВОЗВРАЩАЕМ ПРОМОКОД (ЕСЛИ БЫЛ) =====
             if promo_code_used:
                 cursor.execute('''
                     UPDATE user_promo_usage 
@@ -21830,7 +21742,6 @@ async def process_booking_rejection(booking_id: int, admin_id: int, context: Con
                 ''', (promo_code_used, str(telegram_id)))
                 logger.info(f"🔄 Промокод {promo_code_used} ВОЗВРАЩЁН пользователю {telegram_id} при отклонении записи #{booking_id}")
             
-            # ===== ВОЗВРАЩАЕМ КУПОН (ЕСЛИ БЫЛ) =====
             if level_coupon_id:
                 cursor.execute('SELECT id FROM user_coupons WHERE id = ?', (level_coupon_id,))
                 exists = cursor.fetchone()
@@ -21852,11 +21763,8 @@ async def process_booking_rejection(booking_id: int, admin_id: int, context: Con
             cursor.execute('DELETE FROM notifications WHERE booking_id = ?', (booking_id,))
             conn.commit()
         
-        # ===== ОТПРАВЛЯЕМ СООБЩЕНИЕ ПОЛЬЗОВАТЕЛЮ =====
-        # ===== ОЧИЩАЕМ УСЛУГУ ОТ СМАЙЛИКОВ =====
         clean_service = clean_service_text(service)
         
-        # ===== ОЧИЩАЕМ ДАТУ ОТ СМАЙЛИКОВ =====
         clean_date = date_str
         if clean_date:
             for emoji in ['🟢', '🟡', '🟠', '🔴', '⚪️']:
@@ -21868,7 +21776,6 @@ async def process_booking_rejection(booking_id: int, admin_id: int, context: Con
         if time_slot and '-' in time_slot:
             display_time = DateTimeUtils.format_time_for_display(time_slot)
         
-        # ===== ОЧИЩАЕМ ТИП ОТ СМАЙЛИКОВ =====
         clean_type = ""
         if is_12_hours and twelve_hours_type:
             clean_type = clean_service_text(twelve_hours_type)
@@ -21877,7 +21784,6 @@ async def process_booking_rejection(booking_id: int, admin_id: int, context: Con
         elif is_track_creation and track_type:
             clean_type = clean_service_text(track_type)
         
-        # ===== ФОРМИРУЕМ ТЕКСТ СКИДОК =====
         discount_lines = []
         if level_discount_percent and level_discount_percent > 0:
             discount_lines.append(f"• Скидка по уровню: {level_discount_percent}%")
@@ -21892,7 +21798,6 @@ async def process_booking_rejection(booking_id: int, admin_id: int, context: Con
         if discount_lines:
             discount_text = "\n" + "\n".join(discount_lines)
         
-        # ===== НОВЫЙ ФОРМАТ СООБЩЕНИЯ =====
         user_msg_lines = [
             f"*❌ Ваша заявка отклонена*",
             "",
@@ -21920,7 +21825,6 @@ async def process_booking_rejection(booking_id: int, admin_id: int, context: Con
             else:
                 user_msg_lines.append(f"• Время: {display_time}")
         
-        # ===== ЦЕНА =====
         if is_12_hours == 1:
             rent_price = 6000 if twelve_hours_type and 'Ночь' in twelve_hours_type else 7000
             if price and price != '0' and price != str(rent_price):
@@ -21967,7 +21871,6 @@ async def process_booking_rejection(booking_id: int, admin_id: int, context: Con
         )
         logger.info(f"✅ Сообщение об отклонении отправлено пользователю {telegram_id}")
         
-        # ===== ОБНОВЛЯЕМ СООБЩЕНИЕ АДМИНА =====
         await context.bot.edit_message_text(
             chat_id=chat_id, message_id=message_id,
             text=f"*❌ Запись #{booking_id} отклонена!*", parse_mode="Markdown"
@@ -22019,7 +21922,6 @@ async def admin_cancel_confirm_handler(update: Update, context):
     mixing_type = booking_data.get('mixing_type', '')
     price = booking_data.get('price', '0')
     
-    # Формируем отображение цены
     if price and price != '0' and 'Договорная' not in str(price):
         try:
             price_int = int(float(price))
@@ -22067,18 +21969,13 @@ async def admin_cancel_confirm_handler(update: Update, context):
                 logger.info(f"💰 Списано 25 пластинок у пользователя {telegram_id} за отмену записи #{booking_id}")
                 cursor.execute('UPDATE bookings SET vinyls_awarded = 0 WHERE id = ?', (booking_id,))
             
-            # ================================================================
-            # ===== ЛОГИКА КУПОНА ПРИ ОТМЕНЕ АДМИНОМ =====
-            # ================================================================
             if level_discount_percent_db and level_discount_percent_db > 0:
-                # Определяем уровень купона по проценту
                 coupon_level = 1
                 for lvl in AchievementSystem.LEVELS:
                     if lvl['discount'] == level_discount_percent_db:
                         coupon_level = lvl['level']
                         break
                 
-                # ===== НОРМАЛИЗУЕМ СТАТУС =====
                 status_norm = str(current_status).strip().lower() if current_status else ""
                 
                 if status_norm in ['confirmed', 'подтвержден', 'подтверждена', 'подтверждено']:
@@ -22097,14 +21994,9 @@ async def admin_cancel_confirm_handler(update: Update, context):
                 logger.info(f"   hours_until = {hours_until}")
                 logger.info(f"   level_discount_percent_db = {level_discount_percent_db}")
                 
-                # ================================================================
-                # ===== ОПРЕДЕЛЯЕМ, СГОРАЕТ ИЛИ ВОЗВРАЩАЕТСЯ =====
-                # ================================================================
                 should_burn = False
                 
                 if is_mixing_db:
-                    # ===== ДЛЯ СВЕДЕНИЯ/МАСТЕРИНГА =====
-                    # pending → возвращается, confirmed → сгорает
                     if status_canonical == 'confirmed':
                         should_burn = True
                         logger.info(f"🔥 Купон СГОРАЕТ: сведение, статус=confirmed")
@@ -22113,14 +22005,11 @@ async def admin_cancel_confirm_handler(update: Update, context):
                         logger.info(f"🔄 Купон ВОЗВРАЩАЕТСЯ: сведение, статус={status_canonical}")
                 
                 else:
-                    # ===== ДЛЯ ЗАПИСЕЙ С ДАТОЙ =====
                     if status_canonical == 'completed':
-                        # Запись завершена (время прошло) → сгорает всегда
                         should_burn = True
                         logger.info(f"🔥 Купон СГОРАЕТ: запись с датой, статус=completed (время прошло)")
                     
                     elif status_canonical == 'confirmed':
-                        # confirmed: сгорает только если < 12ч до записи
                         if hours_until < 12 and hours_until != -1:
                             should_burn = True
                             logger.info(f"🔥 Купон СГОРАЕТ: запись с датой, confirmed, до начала {hours_until:.1f}ч < 12ч")
@@ -22129,15 +22018,12 @@ async def admin_cancel_confirm_handler(update: Update, context):
                             logger.info(f"🔄 Купон ВОЗВРАЩАЕТСЯ: запись с датой, confirmed, до начала {hours_until:.1f}ч >= 12ч")
                     
                     else:
-                        # pending → возвращается
                         should_burn = False
                         logger.info(f"🔄 Купон ВОЗВРАЩАЕТСЯ: запись с датой, статус={status_canonical}")
                 
-                # ===== ПРИМЕНЯЕМ РЕШЕНИЕ =====
                 if should_burn:
                     logger.info(f"🔥 Купон уровня {coupon_level} ({level_discount_percent_db}%) СГОРЕЛ при отмене админом #{booking_id}")
                 else:
-                    # Возвращаем купон
                     cursor.execute('''
                         SELECT id, remaining_uses FROM user_coupons 
                         WHERE user_id = ? AND level = ? AND discount_percent = ? AND is_permanent = 0
@@ -22170,7 +22056,6 @@ async def admin_cancel_confirm_handler(update: Update, context):
         
         conn.commit()
     
-    # ===== ОЧИЩАЕМ КЭШ ДАТЫ =====
     if date_str and 'Не указана' not in date_str:
         clean_date = date_str
         if '(' in clean_date:
@@ -22185,7 +22070,6 @@ async def admin_cancel_confirm_handler(update: Update, context):
         await AchievementSystem.check_and_award_achievements(str(telegram_id), context, None)
         await AchievementSystem.update_user_level(str(telegram_id), context)
     
-    # Отправляем уведомление пользователю
     if telegram_id:
         try:
             service_type_display = ""
@@ -22216,12 +22100,10 @@ async def admin_cancel_confirm_handler(update: Update, context):
         except Exception as e:
             logger.error(f"❌ Ошибка отправки уведомления пользователю: {e}")
     
-    # Отправляем сообщение админу об успешном удалении
     admin_message = f"*✅ Запись #{booking_id} удалена из базы*"
     await context.bot.send_message(chat_id=admin_id, text=admin_message, parse_mode="Markdown")
     logger.info(f"✅ Уведомление админу отправлено")
     
-    # ===== ОБНОВЛЯЕМ СПИСОК ЗАПИСЕЙ (АДМИНСКИЙ) =====
     if target_user_id:
         await asyncio.sleep(0.5)
         with db.get_connection() as conn:
@@ -22308,7 +22190,6 @@ async def reset_my_coupons(update: Update, context):
         cursor.execute('DELETE FROM user_coupons WHERE user_id = ?', (user_id,))
         conn.commit()
     
-    # Заново добавляем купон уровня 1
     CouponManager.add_level_coupons(user_id, 1)
     
     await update.message.reply_text("✅ Твои купоны сброшены! Теперь у тебя снова есть скидка 50% 1 раз.", parse_mode="Markdown")
@@ -22374,7 +22255,6 @@ async def check_time(update: Update, context):
         await update.message.reply_text("❌ Нет прав!")
         return
     
-    # Получаем аргументы
     args = context.args
     if not args:
         await update.message.reply_text("❌ /checktime 1")
@@ -22410,7 +22290,6 @@ async def check_time(update: Update, context):
     now = DateTimeUtils.now()
     now_utc = now.astimezone(pytz.UTC)
     
-    # Парсим дату и время
     clean_date = date_str.split('(')[0].strip()
     day, month, year = map(int, clean_date.split('.'))
     
@@ -22438,6 +22317,463 @@ async def check_time(update: Update, context):
     message += f"• Прошло? {now_utc >= end_utc}\n"
     
     await update.message.reply_text(message, parse_mode="Markdown")
+
+
+# ============================================================
+# РАСПИСАНИЕ СТУДИИ ДЛЯ АДМИНОВ  ← НОВЫЙ БЛОК
+# ============================================================
+
+@handle_errors_with_rate_limit
+async def handle_admin_schedule_start(update: Update, context):
+    """Точка входа: показ меню расписания"""
+    user_id = update.effective_user.id
+
+    if user_id not in Config.ADMIN_IDS:
+        await update.message.reply_text(
+            "❌ У вас нет прав для этого действия!",
+            reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
+            parse_mode="Markdown"
+        )
+        return
+
+    await show_schedule_menu(update.message, is_edit=False)
+
+
+async def show_schedule_menu(message_or_query, is_edit: bool = False):
+    """Показывает меню выбора периода/даты для расписания"""
+    today = DateTimeUtils.now()
+
+    keyboard = [
+        [
+            InlineKeyboardButton("📅 Сегодня", callback_data="schedule_period_today"),
+            InlineKeyboardButton("📅 Завтра", callback_data="schedule_period_tomorrow"),
+        ],
+        [
+            InlineKeyboardButton("📅 Эта неделя", callback_data="schedule_period_week"),
+            InlineKeyboardButton("📅 След. неделя", callback_data="schedule_period_next_week"),
+        ],
+        [
+            InlineKeyboardButton("📝 Договорные (без даты)", callback_data="schedule_contract"),
+        ],
+    ]
+
+    for i in range(0, 14, 2):
+        row = []
+        for j in range(2):
+            day_offset = i + j
+            if day_offset >= 14:
+                break
+            date = today + timedelta(days=day_offset)
+            date_str = date.strftime("%d.%m.%Y")
+            weekday = WEEKDAYS_RU[date.weekday()]
+            label = f"{date_str} {weekday}"
+            row.append(InlineKeyboardButton(
+                label, callback_data=f"schedule_date_{date_str}"
+            ))
+        if row:
+            keyboard.append(row)
+
+    text = (
+        "*👑 Расписание студии*\n\n"
+        "*Выберите период или конкретную дату:*"
+    )
+
+    try:
+        if is_edit and hasattr(message_or_query, "edit_message_text"):
+            await message_or_query.edit_message_text(
+                text=text,
+                parse_mode="Markdown",
+                reply_markup=InlineKeyboardMarkup(keyboard),
+            )
+        else:
+            await message_or_query.reply_text(
+                text=text,
+                parse_mode="Markdown",
+                reply_markup=InlineKeyboardMarkup(keyboard),
+            )
+    except Exception as e:
+        logger.error(f"Ошибка показа меню расписания: {e}")
+
+
+async def handle_schedule_callback(update: Update, context):
+    """Обработка всех inline-кнопок расписания"""
+    query = update.callback_query
+    await query.answer()
+
+    data = query.data
+    today = DateTimeUtils.now()
+
+    try:
+        if data == "noop":
+            return
+
+        if data == "schedule_back_to_menu":
+            await show_schedule_menu(query, is_edit=True)
+            return
+
+        if data == "schedule_contract":
+            await show_contract_schedule(query, is_edit=True)
+            return
+
+        if data == "schedule_period_today":
+            date_str = today.strftime("%d.%m.%Y")
+            await show_schedule_for_date(query, date_str, is_edit=True)
+            return
+
+        if data == "schedule_period_tomorrow":
+            date_str = (today + timedelta(days=1)).strftime("%d.%m.%Y")
+            await show_schedule_for_date(query, date_str, is_edit=True)
+            return
+
+        if data == "schedule_period_week":
+            await show_week_schedule(query, week_offset=0, is_edit=True)
+            return
+
+        if data == "schedule_period_next_week":
+            await show_week_schedule(query, week_offset=1, is_edit=True)
+            return
+
+        if data.startswith("schedule_date_"):
+            date_str = data.replace("schedule_date_", "", 1)
+            await show_schedule_for_date(query, date_str, is_edit=True)
+            return
+
+        if data.startswith("schedule_week_offset_"):
+            try:
+                offset = int(data.replace("schedule_week_offset_", ""))
+            except ValueError:
+                return
+            offset = max(-4, min(8, offset))
+            await show_week_schedule(query, week_offset=offset, is_edit=True)
+            return
+
+    except Exception as e:
+        logger.error(f"❌ Ошибка в handle_schedule_callback: {e}")
+        import traceback
+        traceback.print_exc()
+
+
+async def show_schedule_for_date(message_or_query, date_str: str, is_edit: bool = False):
+    """Показывает все записи на конкретную дату (только pending + confirmed)"""
+    try:
+        with db.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT id, name, contact, service, time_slot, date_str, status, price,
+                       is_mixing, is_track_creation, is_12_hours, twelve_hours_type,
+                       is_admin_booking, is_contractual, start_hour, duration,
+                       with_engineer, telegram_id
+                FROM bookings
+                WHERE (date_str LIKE ? OR date_str LIKE ?)
+                  AND status IN ('pending', 'confirmed', 'подтвержден')
+                ORDER BY start_hour ASC, id ASC
+                """,
+                (f"{date_str}%", f"%{date_str}%"),
+            )
+            bookings = cursor.fetchall()
+
+        try:
+            date_obj = datetime.strptime(date_str, "%d.%m.%Y")
+            weekday = WEEKDAYS_RU[date_obj.weekday()]
+        except ValueError:
+            weekday = ""
+
+        header = f"*📅 Расписание на {date_str}" + (f" ({weekday})" if weekday else "") + "*\n\n"
+
+        if not bookings:
+            text = header + "*📭 На эту дату нет записей*"
+        else:
+            text = header + f"*Всего записей: {len(bookings)}*\n\n"
+
+            for b in bookings:
+                (booking_id, name, contact, service, time_slot, date_str_db, status,
+                 price, is_mixing, is_track_creation, is_12_hours, twelve_hours_type,
+                 is_admin_booking, is_contractual, start_hour, duration,
+                 with_engineer, telegram_id) = b
+
+                status_lower = str(status).lower()
+                if "pending" in status_lower or "ожидает" in status_lower:
+                    status_emoji = "⏳"
+                elif "confirmed" in status_lower or "подтвержден" in status_lower:
+                    status_emoji = "✅"
+                else:
+                    status_emoji = "•"
+
+                display_time = (
+                    DateTimeUtils.format_time_for_display(time_slot)
+                    if time_slot else "—"
+                )
+                clean_service = clean_service_text(service)
+
+                admin_marker = " 👑" if is_admin_booking else ""
+                mix_marker = " 🎚️" if is_mixing else ""
+
+                text += f"{status_emoji} *{display_time}* — {clean_service}{admin_marker}{mix_marker}\n"
+                text += f"   👤 {name}\n"
+
+                if price and str(price) != "0" and "договорная" not in str(price).lower():
+                    try:
+                        price_int = int(float(price))
+                        text += f"   💰 {format_number(price_int)}₽\n"
+                    except Exception:
+                        pass
+                elif is_contractual:
+                    text += "   💰 Договорная\n"
+
+                text += "\n"
+
+        keyboard = [
+            [InlineKeyboardButton("🔄 Обновить", callback_data=f"schedule_date_{date_str}")],
+            [InlineKeyboardButton("↩️ К выбору даты", callback_data="schedule_back_to_menu")],
+        ]
+
+        if len(text) > 4000:
+            text = text[:3900] + "\n\n_(сообщение обрезано)_"
+
+        if is_edit and hasattr(message_or_query, "edit_message_text"):
+            await message_or_query.edit_message_text(
+                text=text, parse_mode="Markdown",
+                reply_markup=InlineKeyboardMarkup(keyboard),
+            )
+        else:
+            await message_or_query.reply_text(
+                text=text, parse_mode="Markdown",
+                reply_markup=InlineKeyboardMarkup(keyboard),
+            )
+
+    except Exception as e:
+        logger.error(f"❌ Ошибка показа расписания на {date_str}: {e}")
+        import traceback
+        traceback.print_exc()
+
+
+async def show_week_schedule(message_or_query, week_offset: int = 0, is_edit: bool = False):
+    """Показывает расписание на неделю (пн–вс)"""
+    try:
+        now = DateTimeUtils.now()
+        start_of_week = now - timedelta(days=now.weekday()) + timedelta(weeks=week_offset)
+        start_of_week = start_of_week.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_of_week = start_of_week + timedelta(days=6)
+
+        start_str = start_of_week.strftime("%d.%m.%Y")
+        end_str = end_of_week.strftime("%d.%m.%Y")
+
+        with db.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT id, name, service, time_slot, date_str, status,
+                       is_admin_booking, start_hour, is_contractual
+                FROM bookings
+                WHERE status IN ('pending', 'confirmed', 'подтвержден')
+                ORDER BY start_hour ASC, id ASC
+                """
+            )
+            all_bookings = cursor.fetchall()
+
+        from collections import defaultdict
+        by_date = defaultdict(list)
+
+        for b in all_bookings:
+            date_str_db = b[4]
+            if not date_str_db:
+                continue
+            clean_date = date_str_db.split("(")[0].strip()
+            if clean_date and clean_date[0] in "🟢🟡🟠🔴⚪️":
+                clean_date = clean_date[2:].strip()
+
+            try:
+                date_obj = datetime.strptime(clean_date, "%d.%m.%Y")
+                if start_of_week.date() <= date_obj.date() <= end_of_week.date():
+                    by_date[clean_date].append(b)
+            except ValueError:
+                continue
+
+        if week_offset == 0:
+            week_title = "Текущая неделя"
+        elif week_offset == 1:
+            week_title = "Следующая неделя"
+        elif week_offset < 0:
+            week_title = f"Неделя {week_offset:+d}"
+        else:
+            week_title = f"Неделя +{week_offset}"
+
+        text = f"*📅 {week_title}*\n"
+        text += f"*{start_str} — {end_str}*\n\n"
+
+        if not by_date:
+            text += "*📭 На эту неделю нет записей*"
+        else:
+            total = sum(len(v) for v in by_date.values())
+            text += f"*Всего записей: {total}*\n\n"
+
+            for date_str_sorted in sorted(
+                by_date.keys(), key=lambda d: datetime.strptime(d, "%d.%m.%Y")
+            ):
+                bookings = by_date[date_str_sorted]
+                date_obj = datetime.strptime(date_str_sorted, "%d.%m.%Y")
+                weekday = WEEKDAYS_RU[date_obj.weekday()]
+
+                text += f"*{date_str_sorted} ({weekday})* — {len(bookings)} записей\n"
+
+                for b in bookings:
+                    (booking_id, name, service, time_slot, _, status,
+                     is_admin_booking, _, is_contractual) = b
+
+                    status_lower = str(status).lower()
+                    if "pending" in status_lower or "ожидает" in status_lower:
+                        status_emoji = "⏳"
+                    elif "confirmed" in status_lower or "подтвержден" in status_lower:
+                        status_emoji = "✅"
+                    else:
+                        status_emoji = "•"
+
+                    display_time = (
+                        DateTimeUtils.format_time_for_display(time_slot)
+                        if time_slot else "—"
+                    )
+                    clean_service = clean_service_text(service)
+                    admin_marker = "👑" if is_admin_booking else ""
+
+                    text += f"  {status_emoji} {display_time} — {clean_service} {admin_marker}\n"
+
+                text += "\n"
+
+        keyboard = [
+            [
+                InlineKeyboardButton(
+                    "⬅️ Предыдущая",
+                    callback_data=f"schedule_week_offset_{week_offset - 1}",
+                ),
+                InlineKeyboardButton(
+                    "Следующая ➡️",
+                    callback_data=f"schedule_week_offset_{week_offset + 1}",
+                ),
+            ],
+            [InlineKeyboardButton("↩️ К выбору даты", callback_data="schedule_back_to_menu")],
+        ]
+
+        if len(text) > 4000:
+            text = text[:3900] + "\n\n_(сообщение обрезано)_"
+
+        if is_edit and hasattr(message_or_query, "edit_message_text"):
+            await message_or_query.edit_message_text(
+                text=text, parse_mode="Markdown",
+                reply_markup=InlineKeyboardMarkup(keyboard),
+            )
+        else:
+            await message_or_query.reply_text(
+                text=text, parse_mode="Markdown",
+                reply_markup=InlineKeyboardMarkup(keyboard),
+            )
+
+    except Exception as e:
+        logger.error(f"❌ Ошибка показа недельного расписания: {e}")
+        import traceback
+        traceback.print_exc()
+
+
+async def show_contract_schedule(message_or_query, is_edit: bool = False):
+    """Показывает все договорные записи без даты — только pending"""
+    try:
+        with db.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT id, name, contact, service, status, price,
+                       is_mixing, mixing_type, is_track_creation, track_type,
+                       is_12_hours, twelve_hours_type,
+                       is_admin_booking, is_contractual,
+                       timestamp, telegram_id
+                FROM bookings
+                WHERE status = 'pending'
+                  AND (
+                        is_contractual = 1
+                        OR is_admin_booking = 1
+                        OR is_mixing = 1
+                        OR is_track_creation = 1
+                        OR date_str LIKE '%Не указана%'
+                        OR date_str LIKE '%договорная%'
+                        OR date_str = 'Запись в студии'
+                        OR time_slot IN ('Не указано', 'Не указано (договорная)')
+                      )
+                ORDER BY id ASC
+            """)
+            rows = cursor.fetchall()
+
+        if not rows:
+            text = (
+                "*📝 Договорные записи (без даты)*\n\n"
+                "*📭 Нет активных договорных записей*"
+            )
+        else:
+            text = "*📝 Договорные записи (без даты)*\n\n"
+            text += f"*Всего ожидают: {len(rows)}*\n\n"
+
+            for r in rows:
+                (booking_id, name, contact, service, status, price,
+                 is_mixing, mixing_type, is_track_creation, track_type,
+                 is_12_hours, twelve_hours_type,
+                 is_admin_booking, is_contractual,
+                 timestamp, telegram_id) = r
+
+                clean_service = clean_service_text(service)
+
+                type_suffix = ""
+                if is_mixing and mixing_type:
+                    type_suffix = f" ({mixing_type})"
+                elif is_track_creation and track_type:
+                    type_suffix = f" ({track_type})"
+                elif is_12_hours and twelve_hours_type:
+                    type_suffix = f" ({twelve_hours_type})"
+
+                admin_marker = " 👑" if is_admin_booking else ""
+
+                text += f"⏳ *#{booking_id}* — {clean_service}{type_suffix}{admin_marker}\n"
+                text += f"   👤 {name}\n"
+                text += f"   📱 {contact}\n"
+
+                if price and str(price) != "0" and "договорная" not in str(price).lower():
+                    try:
+                        text += f"   💰 {format_number(int(float(price)))}₽\n"
+                    except Exception:
+                        text += f"   💰 {price}₽\n"
+                else:
+                    text += f"   💰 Договорная\n"
+
+                if timestamp:
+                    try:
+                        dt = datetime.strptime(str(timestamp), "%Y-%m-%d %H:%M:%S")
+                        text += f"   📅 Создана: {dt.strftime('%d.%m.%Y %H:%M')}\n"
+                    except Exception:
+                        pass
+
+                text += "\n"
+
+        keyboard = [
+            [InlineKeyboardButton("🔄 Обновить", callback_data="schedule_contract")],
+            [InlineKeyboardButton("↩️ К выбору даты", callback_data="schedule_back_to_menu")],
+        ]
+
+        if len(text) > 4000:
+            text = text[:3900] + "\n\n_(сообщение обрезано)_"
+
+        if is_edit and hasattr(message_or_query, "edit_message_text"):
+            await message_or_query.edit_message_text(
+                text=text, parse_mode="Markdown",
+                reply_markup=InlineKeyboardMarkup(keyboard),
+            )
+        else:
+            await message_or_query.reply_text(
+                text=text, parse_mode="Markdown",
+                reply_markup=InlineKeyboardMarkup(keyboard),
+            )
+
+    except Exception as e:
+        logger.error(f"❌ Ошибка показа договорных записей: {e}")
+        import traceback
+        traceback.print_exc()
+
 
 async def handle_global_buttons(update: Update, context):
     text = update.message.text.strip()
@@ -22526,7 +22862,6 @@ def setup_handlers(application):
     # ============================================================
     # 2. НОВЫЕ КНОПКИ (ВЫСОКИЙ ПРИОРИТЕТ)
     # ============================================================
-    # ❓ Помощь и ❗️ Полезная информация обрабатываются в handle_global_buttons
     
     # ============================================================
     # 3. CALLBACK QUERY HANDLERS
@@ -22825,7 +23160,6 @@ def run_bot():
     try:
         verify_data_directory()
         
-        # ===== ПРИНУДИТЕЛЬНОЕ ВКЛЮЧЕНИЕ WAL РЕЖИМА ДЛЯ ВСЕХ БД =====
         import sqlite3
         for db_path in [MAIN_DB_PATH, PERSISTENT_DB_PATH]:
             if os.path.exists(db_path):
@@ -22870,7 +23204,6 @@ def run_bot():
             logger.info(f"JobQueue доступен: {job_queue is not None}")
             
             if job_queue:
-                # Проверка уведомлений каждую минуту
                 job_queue.run_repeating(
                     callback=process_notifications,
                     interval=60.0,
@@ -22878,7 +23211,6 @@ def run_bot():
                     name="notifications_checker"
                 )
                 
-                # Мониторинг каждый час
                 job_queue.run_repeating(
                     callback=lambda context: Monitor.run_all_checks(),
                     interval=3600.0,
@@ -22886,7 +23218,6 @@ def run_bot():
                     name="monitoring_checker"
                 )
                 
-                # Очистка старых записей каждый день в 3:00
                 job_queue.run_daily(
                     callback=lambda context: cleanup_old_bookings(context),
                     time=dt.time(hour=3, minute=0),
@@ -22894,7 +23225,6 @@ def run_bot():
                     name="cleanup_old_bookings"
                 )
                 
-                # Проверка завершившихся записей каждую минуту (ВАЖНО!)
                 job_queue.run_repeating(
                     callback=update_completed_bookings,
                     interval=60.0,
@@ -22902,7 +23232,6 @@ def run_bot():
                     name="completed_bookings_checker"
                 )
                 
-                # Проверка истекших блокировок каждую минуту
                 job_queue.run_repeating(
                     callback=check_expired_blocks,
                     interval=60.0,
@@ -22910,7 +23239,6 @@ def run_bot():
                     name="expired_blocks_checker"
                 )
                 
-                # Очистка истекших промокодов каждый час
                 job_queue.run_repeating(
                     callback=cleanup_expired_promocodes,
                     interval=3600.0,
@@ -22928,7 +23256,6 @@ def run_bot():
         logger.info("🚀 Запуск бота...")
         logger.info("✅ Бот готов к работе!")
         
-        # Запуск с правильными параметрами
         application.run_polling(
             poll_interval=1.0,
             timeout=30,
@@ -22956,4 +23283,5 @@ def run_bot():
         run_bot()
 
 if __name__ == '__main__':
+    
     run_bot()
