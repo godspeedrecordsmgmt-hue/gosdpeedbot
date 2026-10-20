@@ -15117,7 +15117,6 @@ async def handle_admin_confirm(update: Update, context):
         
         logger.info(f"✅ Админская запись #{booking_id} сохранена в базу")
         
-        # ===== НАЧИСЛЕНИЕ ПЛАСТИНОК ДЛЯ АДМИНСКОЙ ЗАПИСИ =====
         if target_telegram_id:
             booking_data_for_vinyls = {
                 'id': booking_id,
@@ -15160,37 +15159,46 @@ async def handle_admin_confirm(update: Update, context):
             except Exception as e:
                 logger.error(f"❌ Ошибка обновления total_spent: {e}")
         
-        # Очищаем тип записи от смайликов
+        try:
+            price_int = int(price) if price else 0
+            if price_int == 0:
+                formatted_price = "0₽ (Договорная)"
+            else:
+                formatted_price = f"{price_int:,}₽".replace(',', ' ')
+        except Exception:
+            formatted_price = f"{price}₽"
+        
         clean_record_type = record_type.replace('📝', '').replace('🎤', '').strip()
         
-        # ===== НОВЫЙ ФОРМАТ ПОДТВЕРЖДЕНИЯ =====
-        confirmation_lines = [
-            f"*👑 Шаг 4/4: Подтверждение*",
-            "",
-            f"*✨ Проверьте правильность Ваших данных:*",
-            "",
-            f"• Уникальный ID: {unique_id}",
-            f"• Тип записи: {clean_record_type}",
-            f"• Стоимость: {formatted_price}",
-            "",
-            f"*📝 Дополнительная информация:*",
-            f"• Запись будет создана от имени администратора",
-            f"• Пользователь увидит запись в своем профиле",
-            "",
-            "*👇 Всё верно?*"
-        ]
-        
-        confirmation_text = "\n".join(confirmation_lines)
+        if target_telegram_id:
+            try:
+                await context.bot.send_message(
+                    chat_id=int(target_telegram_id),
+                    text=(
+                        f"*✅ Создана новая запись*\n\n"
+                        f"*📋 Детали:*\n"
+                        f"• Номер записи: #{booking_id}\n"
+                        f"• Тип: {clean_record_type}\n"
+                        f"• Стоимость: {formatted_price}\n\n"
+                        f"*👑 Создана администратором*"
+                    ),
+                    parse_mode="Markdown"
+                )
+            except Exception as e:
+                logger.error(f"Не удалось отправить уведомление пользователю: {e}")
         
         await update.message.reply_text(
-            confirmation_text,
+            f"*✅ Запись #{booking_id} успешно создана!*\n\n"
+            f"👤 Пользователь: @{target_username}\n"
+            f"📋 Уникальный ID: {unique_id}\n"
+            f"📝 Тип записи: {clean_record_type}\n"
+            f"💰 Стоимость: {formatted_price}",
             parse_mode="Markdown",
-            reply_markup=ReplyKeyboardMarkup([
-                ["✅ Да, создать запись", "✏️ Исправить данные"],
-                ["❌ Отменить"]
-            ], resize_keyboard=True, one_time_keyboard=True)
+            reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
         )
-        return ADMIN_CONFIRM
+        
+        context.user_data.clear()
+        return ConversationHandler.END
         
     except Exception as e:
         logger.error(f"❌ Критическая ошибка при создании админской записи: {e}")
