@@ -6971,16 +6971,16 @@ def handle_errors_with_rate_limit(func):
     async def wrapper(update: Update, context, *args, **kwargs):
         try:
             user_id = str(update.effective_user.id)
-            
+
             if update.effective_user.id in Config.ADMIN_IDS:
                 return await func(update, context, *args, **kwargs)
-            
+
             is_allowed, message, seconds_to_wait = RateLimiter.check_rate_limit(
-                user_id, 
-                limit=Config.RATE_LIMIT, 
+                user_id,
+                limit=Config.RATE_LIMIT,
                 period=60
             )
-            
+
             if not is_allowed:
                 if update.message:
                     if seconds_to_wait and seconds_to_wait > 60:
@@ -6990,18 +6990,24 @@ def handle_errors_with_rate_limit(func):
                             parse_mode="Markdown"
                         )
                 return
-            
+
             return await func(update, context, *args, **kwargs)
         except telegram.error.Forbidden:
             return ConversationHandler.END
         except telegram.error.TimedOut:
             if update and update.message:
-                await update.message.reply_text(
-                    "⏳ Превышено время ожидания. Попробуйте еще раз.",
-                    reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
-                )
+                try:
+                    await update.message.reply_text(
+                        "⏳ Превышено время ожидания. Попробуйте еще раз.",
+                        reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
+                    )
+                except Exception:
+                    pass
             return ConversationHandler.END
         except Exception as e:
+            logger.error(f"❌ Ошибка в {func.__name__}: {e}")
+            import traceback
+            traceback.print_exc()
             return ConversationHandler.END
     return wrapper
 
@@ -9564,73 +9570,6 @@ async def handle_main_menu(update: Update, context):
     # Если ничего не подошло - игнорируем
     return None
 
-async def handle_global_buttons(update: Update, context):
-    text = update.message.text.strip()
-
-    logger.info(f"🔍 ГЛОБАЛЬНЫЙ ОБРАБОТЧИК КНОПОК: '{text}'")
-
-    # ===== КНОПКИ, КОТОРЫЕ ДОЛЖЕН ОБРАБАТЫВАТЬ CONVERSATIONHANDLER =====
-    if text in ["✅ Всё верно, отправить", "✏️ Исправить данные", "❌ Отменить", "↩️ Назад"]:
-        return None
-
-    # ===== ОСНОВНЫЕ КНОПКИ ПОЛЬЗОВАТЕЛЯ =====
-    if text == "📅 Мои записи":
-        await show_my_bookings(update, context)
-        return ConversationHandler.END
-
-    if text == "🔔 Напоминания":
-        await notifications_command(update, context)
-        return ConversationHandler.END
-
-    if text == "👤 Мой профиль":
-        await profile_handler(update, context)
-        return ConversationHandler.END
-
-    if text == "🏆 Достижения":
-        await achievements_handler(update, context)
-        return ConversationHandler.END
-
-    if text == "🎁 Промокоды":
-        await promo_main_menu(update, context)
-        return ConversationHandler.END
-
-    if text == "👥 Рефералы":
-        await referral_command(update, context)
-        return ConversationHandler.END
-
-    if text == "📈 Уровень скидки":
-        await level_handler(update, context)
-        return ConversationHandler.END
-
-    if text == "🏆 Топ пользователей":
-        await top_vinyls_handler(update, context)
-        return ConversationHandler.END
-
-    if text == "🔵 Стримы":
-        await streams_handler(update, context)
-        return ConversationHandler.END
-
-    # ===== КНОПКИ ПОМОЩИ =====
-    if text == "❓ Помощь":
-        await help_handler(update, context)
-        return ConversationHandler.END
-
-    if text == "❗️ Полезная информация":
-        await useful_info_handler(update, context)
-        return ConversationHandler.END
-
-    # ===== АДМИНСКИЕ КНОПКИ =====
-    if text == "👑 Выручка":
-        return await handle_revenue_menu(update, context)
-
-    if text == "👑 Расписание":
-        await handle_admin_schedule_start(update, context)
-        return ConversationHandler.END
-
-    if text == "👑 Удалить промокод":
-        return await admin_promo_delete_start(update, context)
-
-    return None
 
 @handle_errors_with_rate_limit
 async def notifications_command(update: Update, context):
@@ -22832,66 +22771,70 @@ async def show_contract_schedule(message_or_query, is_edit: bool = False):
 
 async def handle_global_buttons(update: Update, context):
     text = update.message.text.strip()
-    
+
     logger.info(f"🔍 ГЛОБАЛЬНЫЙ ОБРАБОТЧИК КНОПОК: '{text}'")
-    
+
     # ===== КНОПКИ, КОТОРЫЕ ДОЛЖЕН ОБРАБАТЫВАТЬ CONVERSATIONHANDLER =====
     if text in ["✅ Всё верно, отправить", "✏️ Исправить данные", "❌ Отменить", "↩️ Назад"]:
         return None
-    
+
     # ===== ОСНОВНЫЕ КНОПКИ ПОЛЬЗОВАТЕЛЯ =====
     if text == "📅 Мои записи":
         await show_my_bookings(update, context)
         return ConversationHandler.END
-    
+
     if text == "🔔 Напоминания":
         await notifications_command(update, context)
         return ConversationHandler.END
-    
+
     if text == "👤 Мой профиль":
         await profile_handler(update, context)
         return ConversationHandler.END
-    
+
     if text == "🏆 Достижения":
         await achievements_handler(update, context)
         return ConversationHandler.END
-    
+
     if text == "🎁 Промокоды":
         await promo_main_menu(update, context)
         return ConversationHandler.END
-    
+
     if text == "👥 Рефералы":
         await referral_command(update, context)
         return ConversationHandler.END
-    
+
     if text == "📈 Уровень скидки":
         await level_handler(update, context)
         return ConversationHandler.END
-    
+
     if text == "🏆 Топ пользователей":
         await top_vinyls_handler(update, context)
         return ConversationHandler.END
-    
+
+    if text == "🔵 Стримы":
+        await streams_handler(update, context)
+        return ConversationHandler.END
+
     # ===== КНОПКИ ПОМОЩИ =====
     if text == "❓ Помощь":
         await help_handler(update, context)
         return ConversationHandler.END
-    
+
     if text == "❗️ Полезная информация":
         await useful_info_handler(update, context)
         return ConversationHandler.END
-    
+
     # ===== АДМИНСКИЕ КНОПКИ =====
     if text == "👑 Выручка":
         return await handle_revenue_menu(update, context)
-    
+
     if text == "👑 Расписание":
         await handle_admin_schedule_start(update, context)
         return ConversationHandler.END
-    
+
     if text == "👑 Удалить промокод":
         return await admin_promo_delete_start(update, context)
-    
+
     return None
 
 def setup_handlers(application):
