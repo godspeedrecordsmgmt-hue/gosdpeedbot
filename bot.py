@@ -6506,16 +6506,16 @@ class KeyboardManager:
     @staticmethod
     def get_main_keyboard(user=None):
         user_id = user.id if user else None
-        
+
         keyboard = [
             ["🎤 Записаться в студию", "📅 Мои записи"],
             ["👤 Мой профиль", "🔔 Напоминания"],
             ["🏆 Достижения", "🎁 Промокоды"],
             ["👥 Рефералы", "📈 Уровень скидки"],
+            ["🔵 Стримы", "🏆 Топ пользователей"],
             ["❓ Помощь", "❗️ Полезная информация"],
-            ["🏆 Топ пользователей"],
         ]
-        
+
         if user_id and user_id in Config.ADMIN_IDS:
             keyboard.append(["👑 Создать запись", "👑 Отменить запись"])
             keyboard.append(["👑 Заблокировать", "👑 Выдать достижение"])
@@ -6523,7 +6523,7 @@ class KeyboardManager:
             keyboard.append(["👑 Профиль", "👑 Выручка"])
             keyboard.append(["👑 Расписание", "👑 Создать промокод"])
             keyboard.append(["👑 Удалить промокод", "👑 Рассылка"])
-        
+
         return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
     
     @staticmethod
@@ -7004,6 +7004,35 @@ def handle_errors_with_rate_limit(func):
         except Exception as e:
             return ConversationHandler.END
     return wrapper
+
+@handle_errors_with_rate_limit
+async def streams_handler(update: Update, context):
+    """Кнопка «Стримы» — анонс стримов + inline-кнопки"""
+    if await check_user_blocked(update, context):
+        return ConversationHandler.END
+
+    streams_text = (
+        "*✨ Мы запускаем стримы на Twitch по расписанию: Пн–Ср–Пт в 20:00*\n\n"
+        "*На наших трансляциях мы:*\n"
+        "• Оцениваем ваши треки\n"
+        "• Показываем процесс записи на студии\n"
+        "• Приглашаем интересных гостей\n\n"
+        "*💳 Стоимость оценки трека 200 рублей. В комментариях к донату нужно отправить ссылку на последнее сообщение о стриме (https://t.me/godspeedrec/62?comment=68)*\n\n"
+        "*Ждём всех! ❤️*"
+    )
+
+    streams_keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🎥 Ссылка на Twitch", url="https://www.twitch.tv/godspeedrec")],
+        [InlineKeyboardButton("🎵 Заказать трек", url="https://www.donationalerts.com/r/godspeedrec")],
+    ])
+
+    await update.message.reply_text(
+        streams_text,
+        parse_mode="Markdown",
+        reply_markup=streams_keyboard,
+        disable_web_page_preview=True,
+    )
+    return ConversationHandler.END
 
 async def handle_main_menu_button(update: Update, context):
     if await check_user_blocked(update, context):
@@ -9406,21 +9435,21 @@ async def show_my_bookings(update: Update, context):
 async def handle_main_menu(update: Update, context):
     text = update.message.text.strip()
     user_id = update.effective_user.id
-    
+
     # ===== ОБРАБОТКА КНОПКИ "ГЛАВНОЕ МЕНЮ" =====
     if text == "↩️ Главное меню":
         return await handle_main_menu_button(update, context)
-    
+
     # ===== ОБРАБОТКА КНОПКИ "НАЗАД" =====
     if text == "↩️ Назад":
         current_state = context.user_data.get('_conversation_state')
-        
+
         if current_state == ADMIN_CANCEL_SHOW_BOOKINGS:
             return await handle_admin_cancel_back(update, context)
         elif current_state == ADMIN_REMOVE_ACHIEVEMENT_SHOW:
             return await handle_admin_remove_achievement_back(update, context)
-        elif current_state in [NAME, CONTACT, CONTACT_INPUT, SERVICE, ENGINEER_OPTION, 
-                               TWELVE_HOURS_OPTION, MIXING_TYPE, TRACK_CREATION_TYPE, 
+        elif current_state in [NAME, CONTACT, CONTACT_INPUT, SERVICE, ENGINEER_OPTION,
+                               TWELVE_HOURS_OPTION, MIXING_TYPE, TRACK_CREATION_TYPE,
                                DATE, SHOW_SLOTS, CONFIRM]:
             return await handle_back_button(update, context)
         else:
@@ -9432,163 +9461,175 @@ async def handle_main_menu(update: Update, context):
                 parse_mode="Markdown"
             )
             return ConversationHandler.END
-    
+
     # ===== КОМАНДЫ =====
     if text == '/start':
         return await start(update, context)
-    
+
     if text == '/pending' and user_id in Config.ADMIN_IDS:
         return await pending_command(update, context)
-    
+
     if await check_user_blocked(update, context):
         return ConversationHandler.END
-    
+
     if context.user_data.get('in_revenue_menu'):
         return await handle_revenue_period_selection(update, context)
-    
+
     if context.user_data.get('awaiting_custom_revenue_period'):
         return await handle_custom_revenue_period(update, context)
-    
+
     if context.user_data.get('_conversation_state') is not None:
         return
-    
+
     # ===== НОВЫЕ КНОПКИ =====
     if text == "❓ Помощь":
         return await help_handler(update, context)
-    
+
     if text == "❗️ Полезная информация":
         return await useful_info_handler(update, context)
-    
+
     # ===== ОСНОВНЫЕ КНОПКИ ПОЛЬЗОВАТЕЛЯ =====
     if text == "🎤 Записаться в студию":
         if await check_user_blocked(update, context):
             return ConversationHandler.END
         return await start_booking(update, context)
-    
+
     if text == "📅 Мои записи":
         await show_my_bookings(update, context)
         return ConversationHandler.END
-    
+
     if text == "🔔 Напоминания":
         await notifications_command(update, context)
         return ConversationHandler.END
-    
+
     if text == "👤 Мой профиль":
         await profile_handler(update, context)
         return ConversationHandler.END
-    
+
     if text == "🏆 Достижения":
         await achievements_handler(update, context)
         return ConversationHandler.END
-    
+
     if text == "🎁 Промокоды":
         await promo_main_menu(update, context)
         return ConversationHandler.END
-    
+
     if text == "👥 Рефералы":
         await referral_command(update, context)
         return ConversationHandler.END
-    
+
     if text == "📈 Уровень скидки":
         await level_handler(update, context)
         return ConversationHandler.END
-    
+
     if text == "🏆 Топ пользователей":
         await top_vinyls_handler(update, context)
         return ConversationHandler.END
-    
+
+    if text == "🔵 Стримы":
+        await streams_handler(update, context)
+        return ConversationHandler.END
+
     # ===== АДМИНСКИЕ КНОПКИ =====
     if text == "👑 Создать запись":
         return await handle_admin_create_booking(update, context)
-    
+
     if text == "👑 Отменить запись":
         return await handle_admin_cancel_start(update, context)
-    
+
     if text == "👑 Заблокировать":
         return await handle_admin_block_start(update, context)
-    
+
     if text == "👑 Выдать достижение":
         return await handle_admin_award_achievement_start(update, context)
-    
+
     if text == "👑 Удалить достижение":
         return await handle_admin_remove_achievement_start(update, context)
-    
+
     if text == "👑 Пластинки":
         return await handle_admin_vinyl_start(update, context)
-    
+
     if text == "👑 Профиль":
         return await handle_admin_profile_start(update, context)
-    
+
     if text == "👑 Выручка":
         return await handle_revenue_menu(update, context)
-    
+
     if text == "👑 Создать промокод":
         return await admin_promo_start(update, context)
-    
+
     if text == "👑 Удалить промокод":
         return await admin_promo_delete_start(update, context)
-    
+
     # Если ничего не подошло - игнорируем
     return None
 
 async def handle_global_buttons(update: Update, context):
     text = update.message.text.strip()
-    
+
     logger.info(f"🔍 ГЛОБАЛЬНЫЙ ОБРАБОТЧИК КНОПОК: '{text}'")
-    
+
     # ===== КНОПКИ, КОТОРЫЕ ДОЛЖЕН ОБРАБАТЫВАТЬ CONVERSATIONHANDLER =====
     if text in ["✅ Всё верно, отправить", "✏️ Исправить данные", "❌ Отменить", "↩️ Назад"]:
         return None
-    
+
     # ===== ОСНОВНЫЕ КНОПКИ ПОЛЬЗОВАТЕЛЯ =====
     if text == "📅 Мои записи":
         await show_my_bookings(update, context)
         return ConversationHandler.END
-    
+
     if text == "🔔 Напоминания":
         await notifications_command(update, context)
         return ConversationHandler.END
-    
+
     if text == "👤 Мой профиль":
         await profile_handler(update, context)
         return ConversationHandler.END
-    
+
     if text == "🏆 Достижения":
         await achievements_handler(update, context)
         return ConversationHandler.END
-    
+
     if text == "🎁 Промокоды":
         await promo_main_menu(update, context)
         return ConversationHandler.END
-    
+
     if text == "👥 Рефералы":
         await referral_command(update, context)
         return ConversationHandler.END
-    
+
     if text == "📈 Уровень скидки":
         await level_handler(update, context)
         return ConversationHandler.END
-    
+
     if text == "🏆 Топ пользователей":
         await top_vinyls_handler(update, context)
         return ConversationHandler.END
-    
+
+    if text == "🔵 Стримы":
+        await streams_handler(update, context)
+        return ConversationHandler.END
+
     # ===== КНОПКИ ПОМОЩИ =====
     if text == "❓ Помощь":
         await help_handler(update, context)
         return ConversationHandler.END
-    
+
     if text == "❗️ Полезная информация":
         await useful_info_handler(update, context)
         return ConversationHandler.END
-    
+
     # ===== АДМИНСКИЕ КНОПКИ =====
     if text == "👑 Выручка":
         return await handle_revenue_menu(update, context)
-    
+
+    if text == "👑 Расписание":
+        await handle_admin_schedule_start(update, context)
+        return ConversationHandler.END
+
     if text == "👑 Удалить промокод":
         return await admin_promo_delete_start(update, context)
-    
+
     return None
 
 @handle_errors_with_rate_limit
