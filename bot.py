@@ -23172,6 +23172,15 @@ def setup_handlers(application):
     
     logger.info("✅ Все обработчики успешно настроены")
 
+async def monitoring_job(context: ContextTypes.DEFAULT_TYPE):
+    """Async-обёртка для Monitor.run_all_checks (JobQueue требует awaitable)"""
+    try:
+        Monitor.run_all_checks()
+    except Exception as e:
+        logger.error(f"❌ Ошибка мониторинга: {e}")
+        import traceback
+        traceback.print_exc()
+
 def run_bot():
     try:
         verify_data_directory()
@@ -23228,7 +23237,7 @@ def run_bot():
                 )
                 
                 job_queue.run_repeating(
-                    callback=lambda context: Monitor.run_all_checks(),
+                    callback=monitoring_job,
                     interval=3600.0,
                     first=60.0,
                     name="monitoring_checker"
