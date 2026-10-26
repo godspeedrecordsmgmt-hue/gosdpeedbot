@@ -6970,6 +6970,10 @@ def handle_errors_with_rate_limit(func):
     @wraps(func)
     async def wrapper(update: Update, context, *args, **kwargs):
         try:
+            # Job/системный update может быть None — пропускаем проверку лимитов
+            if update is None or getattr(update, "effective_user", None) is None:
+                return await func(update, context, *args, **kwargs)
+
             user_id = str(update.effective_user.id)
 
             if update.effective_user.id in Config.ADMIN_IDS:
@@ -6995,7 +6999,7 @@ def handle_errors_with_rate_limit(func):
         except telegram.error.Forbidden:
             return ConversationHandler.END
         except telegram.error.TimedOut:
-            if update and update.message:
+            if update and getattr(update, "message", None):
                 try:
                     await update.message.reply_text(
                         "⏳ Превышено время ожидания. Попробуйте еще раз.",
@@ -7023,7 +7027,7 @@ async def streams_handler(update: Update, context):
         "• Оцениваем ваши треки\n"
         "• Показываем процесс записи на студии\n"
         "• Приглашаем интересных гостей\n\n"
-        "*💳 В комментариях к донату нужно отправить ссылку на последнее сообщение о стриме (https://t.me/godspeedrec/62?comment=68)*\n\n"
+        "*💳 Если отправляете трек на оценку, укажите к донату ссылку на ваш комментарий под последним постом о стриме в формате mp3 или укажите ссылку на SoundCloud или Яндекс Музыку*\n\n"
         "*Ждём всех! ❤️*"
     )
 
@@ -16016,18 +16020,32 @@ async def handle_admin_block_confirm(update: Update, context):
     context.user_data.clear()
     return ConversationHandler.END
 
-@handle_errors_with_rate_limit
-async def error_callback(update: Update, context):
-    if update and update.message:
-        try:
-            await update.message.reply_text(
-                "⚠️ Упс! Что-то пошло не так\n\n"
-                "✨ Пожалуйста, вернитесь в главное меню и попробуйте снова",
-                reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
-                parse_mode="Markdown"
-            )
-        except:
-            pass
+async def error_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Глобальный обработчик ошибок — не падает даже при update=None"""
+    try:
+        error = context.error if context else None
+
+        # ===== ЛОГИРУЕМ НАСТОЯЩУЮ ОШИБКУ =====
+        logger.error(f"❌ Глобальная ошибка: {error}", exc_info=error)
+
+        # ===== Пытаемся сообщить пользователю (только если есть куда отвечать) =====
+        if update and getattr(update, "effective_message", None):
+            try:
+                user = getattr(update, "effective_user", None)
+                keyboard = (
+                    KeyboardManager.get_main_keyboard(user)
+                    if user else None
+                )
+                await update.effective_message.reply_text(
+                    "⚠️ Упс! Что-то пошло не так\n\n"
+                    "✨ Пожалуйста, вернитесь в главное меню и попробуйте снова",
+                    reply_markup=keyboard,
+                    parse_mode="Markdown"
+                )
+            except Exception as reply_err:
+                logger.error(f"Не удалось отправить сообщение об ошибке: {reply_err}")
+    except Exception as e:
+        logger.error(f"Ошибка в error_callback: {e}")
 
 
 async def handle_back_to_previous_step(update: Update, context):
