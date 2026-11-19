@@ -1021,7 +1021,7 @@ class AchievementSystem:
                             f"*❌ Удалено {vinyls_to_remove} пластинок за достижение «{emoji} {achievement_name}»*\n\n"
                             f"*📉 Достижение отозвано администратором*\n"
                             f"*💰 Текущее количество пластинок: {new_vinyls} 💿*\n\n"
-                            f"*📞 Свяжитесь с администратором @mothman32 для уточнения*"
+                            f"*📞 Свяжитесь с администратором @bulochka812 для уточнения*"
                         )
                         
                         await context.bot.send_message(
@@ -3123,7 +3123,7 @@ class UserLimits:
                             f"*🎯 Максимально можно: {limit} записи в студию*\n\n"
                             f"*💡 Что можно сделать:*\n"
                             f"• Дождитесь обработки текущих заявок\n"
-                            f"• Или обратитесь к администратору @mothman32"
+                            f"• Или обратитесь к администратору @bulochka812"
                         )
                     else:
                         # ===== ЖИРНЫЙ ТОЛЬКО ЗАГОЛОВОК, СТАТИСТИКА И "ЧТО МОЖНО СДЕЛАТЬ" =====
@@ -3133,7 +3133,7 @@ class UserLimits:
                             f"*🎯 Максимально можно: {limit} договорные записи*\n\n"
                             f"*💡 Что можно сделать:*\n"
                             f"• Дождитесь обработки текущих заявок\n"
-                            f"• Или обратитесь к администратору @mothman32"
+                            f"• Или обратитесь к администратору @bulochka812"
                         )
                     return False, message, current_count
                 
@@ -3732,7 +3732,7 @@ async def update_completed_bookings(context: ContextTypes.DEFAULT_TYPE):
                                 f"🎧 Услуга: {service}\n"
                                 f"📅 Дата: {clean_date}\n"
                                 f"⏰ Время: {display_time}\n\n"
-                                f"*📞 Свяжитесь с администратором @mothman32*"
+                                f"*📞 Свяжитесь с администратором @bulochka812*"
                             )
                             
                             await context.bot.send_message(
@@ -6809,7 +6809,7 @@ async def send_notification_message(context, user_id: str, booking_info: dict, h
                 f"• До начала осталось: {hours_text}\n"
                 f"• ID записи: #{int(booking_id)}\n\n"
                 f"*📍 Адрес студии: Садовая ул., 91*\n"
-                f"*📱 Контакты: @mothman32*\n\n"
+                f"*📱 Контакты: @bulochka812*\n\n"
                 f"*✨ Если у вас изменились планы, пожалуйста, свяжитесь с администратором!*"
             )
         
@@ -6824,7 +6824,7 @@ async def send_notification_message(context, user_id: str, booking_info: dict, h
                 f"• До начала осталось: {hours_text}\n"
                 f"• ID записи: #{int(booking_id)}\n\n"
                 f"*📍 Адрес студии: Садовая ул., 91*\n"
-                f"*📱 Контакты: @mothman32*\n\n"
+                f"*📱 Контакты: @bulochka812*\n\n"
                 f"*✨ Если у вас изменились планы, пожалуйста, свяжитесь с администратором!*"
             )
         
@@ -6839,7 +6839,7 @@ async def send_notification_message(context, user_id: str, booking_info: dict, h
                 f"• До начала осталось: {hours_text}\n"
                 f"• ID записи: #{int(booking_id)}\n\n"
                 f"*📍 Адрес студии: Садовая ул., 91*\n"
-                f"*📱 Контакты: @mothman32*\n\n"
+                f"*📱 Контакты: @bulochka812*\n\n"
                 f"*✨ Если у вас изменились планы, пожалуйста, свяжитесь с администратором!*"
             )
         
@@ -6854,7 +6854,7 @@ async def send_notification_message(context, user_id: str, booking_info: dict, h
                 f"• До начала осталось: {hours_text}\n"
                 f"• ID записи: #{int(booking_id)}\n\n"
                 f"*📍 Адрес студии: Садовая ул., 91*\n"
-                f"*📱 Контакты: @mothman32*\n\n"
+                f"*📱 Контакты: @bulochka812*\n\n"
                 f"*✨ Если у вас изменились планы, пожалуйста, свяжитесь с администратором!*"
             )
         
@@ -6869,7 +6869,7 @@ async def send_notification_message(context, user_id: str, booking_info: dict, h
                 f"• До начала осталось: {hours_text}\n"
                 f"• ID записи: #{int(booking_id)}\n\n"
                 f"*📍 Адрес студии: Садовая ул., 91*\n"
-                f"*📱 Контакты: @mothman32*\n\n"
+                f"*📱 Контакты: @bulochka812*\n\n"
                 f"*✨ Если у вас изменились планы, пожалуйста, свяжитесь с администратором!*"
             )
         
@@ -6884,7 +6884,7 @@ async def send_notification_message(context, user_id: str, booking_info: dict, h
                 f"• До начала осталось: {hours_text}\n"
                 f"• ID записи: #{int(booking_id)}\n\n"
                 f"*📍 Адрес студии: Садовая ул., 91*\n"
-                f"*📱 Контакты: @mothman32*\n\n"
+                f"*📱 Контакты: @bulochka812*\n\n"
                 f"*✨ Если у вас изменились планы, пожалуйста, свяжитесь с администратором!*"
             )
         
@@ -7108,7 +7108,7 @@ async def check_user_blocked(update: Update, context) -> bool:
                             await update.message.reply_text(
                                 f"*🔒 Вы заблокированы!*\n\n"
                                 f"*⏳ До разблокировки осталось: {time_text}*\n\n"
-                                f"*📞 По вопросам обращайтесь к администратору: @mothman32*",
+                                f"*📞 По вопросам обращайтесь к администратору: @bulochka812*",
                                 parse_mode="Markdown"
                             )
                             return True
@@ -7127,7 +7127,7 @@ async def check_user_blocked(update: Update, context) -> bool:
                         await update.message.reply_text(
                             f"*🔒 Вы заблокированы!*\n\n"
                             f"*⏳ Тип блокировки: Навсегда*\n\n"
-                            f"*📞 По вопросам обращайтесь к администратору: @mothman32*",
+                            f"*📞 По вопросам обращайтесь к администратору: @bulochka812*",
                             parse_mode="Markdown"
                         )
                         return True
@@ -7135,7 +7135,7 @@ async def check_user_blocked(update: Update, context) -> bool:
                     await update.message.reply_text(
                         f"*🔒 Вы заблокированы!*\n\n"
                         f"*⏳ Тип блокировки: Навсегда*\n\n"
-                        f"*📞 По вопросам обращайтесь к администратору: @mothman32*",
+                        f"*📞 По вопросам обращайтесь к администратору: @bulochka812*",
                         parse_mode="Markdown"
                     )
                     return True
@@ -7168,8 +7168,8 @@ async def help_handler(update: Update, context):
         "• Возможны небольшие ошибки\n"
         "• Мы постоянно улучшаем сервис\n"
         "• Ваши отзывы помогают нам стать лучше\n\n"
-        "*По техническим вопросам:* @mothman32\n"
-        "*Администратор:* @mothman32\n\n"
+        "*По техническим вопросам:* @bulochka812\n"
+        "*Администратор:* @bulochka812\n\n"
     )
     
     await update.message.reply_text(
@@ -7286,7 +7286,8 @@ async def start(update: Update, context):
         "• Возможны небольшие ошибки\n"
         "• Мы постоянно улучшаем сервис\n"
         "• Ваши отзывы помогают нам стать лучше\n\n"
-        "*По техническим вопросам: @mothman32*\n\n"
+        "*📢 Наш канал:* [@godspeedrec](https://t.me/godspeedrec)\n\n"
+        "*По техническим вопросам: @bulochka812*\n\n"
         "*👇 Выберите подходящий вариант:*"
     )
     
@@ -7364,7 +7365,7 @@ async def fix_my_coupons(update: Update, context):
         logger.error(f"Ошибка добавления купонов: {e}")
         await update.message.reply_text(
             f"❌ Ошибка: {e}\n\n"
-            f"Обратитесь к администратору @mothman32",
+            f"Обратитесь к администратору @bulochka812",
             parse_mode="Markdown"
         )
 
@@ -10802,198 +10803,6 @@ async def handle_no_date_option(update: Update, context):
         )
         return CONFIRM
 
-@handle_errors_with_rate_limit
-async def pending_command(update: Update, context):
-    """Команда /pending - показать все ожидающие записи (только для админов)"""
-    user_id = update.effective_user.id
-    
-    if user_id not in Config.ADMIN_IDS:
-        await update.message.reply_text(
-            "❌ У вас нет прав для этой команды!",
-            reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
-            parse_mode="Markdown"
-        )
-        return
-    
-    await update.message.reply_text(
-        "*🔍 Ищу ожидающие подтверждения записи...*",
-        parse_mode="Markdown"
-    )
-    
-    try:
-        with db.get_connection() as conn:
-            cursor = conn.cursor()
-            
-            cursor.execute('''
-                SELECT id, timestamp, name, contact, service, date_str, time_slot, price,
-                       is_mixing, mixing_type, is_track_creation, track_type,
-                       is_12_hours, twelve_hours_type, with_engineer, duration,
-                       telegram_id, level_discount_percent, promo_discount_percent, promo_code_used
-                FROM bookings 
-                WHERE status = 'pending'
-                AND service NOT LIKE '%Админ%'
-                AND service NOT LIKE '%админ%'
-                ORDER BY timestamp ASC
-            ''')
-            
-            pending_bookings = cursor.fetchall()
-            
-            if not pending_bookings:
-                await update.message.reply_text(
-                    "*✅ Нет ожидающих подтверждения заявок*",
-                    parse_mode="Markdown",
-                    reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
-                )
-                return
-            
-            sent_count = 0
-            for booking in pending_bookings:
-                (booking_id, timestamp, name, contact, service, date_str, time_slot, price,
-                 is_mixing, mixing_type, is_track_creation, track_type,
-                 is_12_hours, twelve_hours_type, with_engineer, duration,
-                 telegram_id, level_discount_percent, promo_discount_percent, promo_code_used) = booking
-                
-                display_date = date_str
-                if date_str and '(' in date_str:
-                    display_date = date_str.split('(')[0].strip()
-                
-                # ===== ИСПРАВЛЕНО: format_time_for_display() нормализует 24→00 =====
-                display_time = time_slot
-                if time_slot and '-' in time_slot:
-                    display_time = DateTimeUtils.format_time_for_display(time_slot)
-                
-                # ===== ФОРМИРУЕМ ТЕКСТ СО СКИДКАМИ (БЕЗ ЛИШНИХ ПРОБЕЛОВ) =====
-                discount_lines = []
-                if level_discount_percent and level_discount_percent > 0:
-                    discount_lines.append(f"🎟 Скидка по уровню: {level_discount_percent}%")
-                if promo_discount_percent and promo_discount_percent > 0:
-                    discount_lines.append(f"🎟 Промокод: {promo_discount_percent}%")
-                if promo_code_used:
-                    discount_lines.append(f"🎟 Код промокода: {promo_code_used}")
-                
-                discount_text = ""
-                if discount_lines:
-                    discount_text = "\n" + "\n".join(discount_lines)
-                
-                # Формируем сообщение в зависимости от типа услуги
-                if is_12_hours:
-                    try:
-                        price_int = int(float(price)) if price else 0
-                        rent_price_display = f"{price_int}₽ + залог"
-                    except:
-                        rent_price_display = f"{price}₽ + залог" if price else "0₽ + залог"
-                    
-                    message_text = (
-                        f"🚨 Новая заявка! #{booking_id}\n\n"
-                        f"👤 Пользователь: {name}\n"
-                        f"📱 Контакт: {contact}\n"
-                        f"🎧 Услуга: {service}\n"
-                        f"⏰ Тип аренды: {twelve_hours_type}\n"
-                        f"📅 Дата: {display_date}\n"
-                        f"🕐 Время: {display_time} (12 часов)\n"
-                        f"💰 Стоимость аренды: {rent_price_display}{discount_text}\n\n"
-                        f"📅 Создана: {timestamp}\n\n"
-                        f"*👇 Подтвердить или отклонить?*"
-                    )
-                    
-                elif is_mixing:
-                    mix_type = mixing_type if mixing_type else "Не указан"
-                    try:
-                        price_int = int(float(price)) if price else 0
-                        price_text = "Договорная" if price_int == 0 else f"{price_int}₽"
-                    except:
-                        price_text = "Договорная" if "Договорная" in str(price) else f"{price}₽"
-                    
-                    message_text = (
-                        f"🚨 Новая заявка! #{booking_id}\n\n"
-                        f"👤 Пользователь: {name}\n"
-                        f"📱 Контакт: {contact}\n"
-                        f"🎧 Услуга: {service}\n"
-                        f"🎚️ Тип работы: {mix_type}\n"
-                        f"💰 Стоимость: {price_text}{discount_text}\n\n"
-                        f"📅 Создана: {timestamp}\n\n"
-                        f"*👇 Подтвердить или отклонить?*"
-                    )
-                    
-                elif is_track_creation:
-                    track_type_text = track_type if track_type else "Не указан"
-                    try:
-                        price_int = int(float(price)) if price else 0
-                        price_text = "Договорная" if price_int == 0 else f"{price_int}₽"
-                    except:
-                        price_text = "Договорная" if "Договорная" in str(price) else f"{price}₽"
-                    
-                    message_text = f"🚨 Новая заявка! #{booking_id}\n\n"
-                    message_text += f"👤 Пользователь: {name}\n"
-                    message_text += f"📱 Контакт: {contact}\n"
-                    message_text += f"🎧 Услуга: {service}\n"
-                    message_text += f"🎵 Тип: {track_type_text}\n"
-                    
-                    if date_str and 'Не указана' not in date_str:
-                        message_text += f"📅 Дата: {display_date}\n"
-                    if time_slot and time_slot not in ['Не указано', 'Не указано (договорная)']:
-                        message_text += f"⏰ Время: {display_time} (4 часа)\n"
-                    
-                    message_text += f"💰 Стоимость: {price_text}{discount_text}\n\n"
-                    message_text += f"📅 Создана: {timestamp}\n\n"
-                    message_text += f"*👇 Подтвердить или отклонить?*"
-                    
-                else:
-                    duration_text = ""
-                    if duration and duration > 0:
-                        duration_text = f" ({PriceCalculator.format_hours_ru(duration)})"
-                    
-                    try:
-                        price_int = int(float(price)) if price else 0
-                        price_text = f"{price_int}₽" if price_int > 0 else "0₽"
-                    except:
-                        price_text = f"{price}₽"
-                    
-                    message_text = f"🚨 Новая заявка! #{booking_id}\n\n"
-                    message_text += f"👤 Пользователь: {name}\n"
-                    message_text += f"📱 Контакт: {contact}\n"
-                    message_text += f"🎧 Услуга: {service}\n"
-                    
-                    if date_str and 'Не указана' not in date_str:
-                        message_text += f"📅 Дата: {display_date}\n"
-                    if time_slot and time_slot not in ['Не указано', 'Не указано (договорная)']:
-                        message_text += f"⏰ Время: {display_time}{duration_text}\n"
-                    if price and price != '0':
-                        message_text += f"💰 Стоимость: {price_text}{discount_text}\n"
-                    
-                    message_text += f"\n📅 Создана: {timestamp}\n\n"
-                    message_text += f"*👇 Подтвердить или отклонить?*"
-                
-                keyboard = InlineKeyboardMarkup([
-                    [
-                        InlineKeyboardButton("✅ Подтвердить", callback_data=f"confirm_{booking_id}"),
-                        InlineKeyboardButton("❌ Отклонить", callback_data=f"reject_{booking_id}")
-                    ]
-                ])
-                
-                await context.bot.send_message(
-                    chat_id=user_id,
-                    text=message_text,
-                    parse_mode="Markdown",
-                    reply_markup=keyboard
-                )
-                sent_count += 1
-            
-            await update.message.reply_text(
-                f"*✅ Найдено и отправлено {sent_count} ожидающих заявок*",
-                parse_mode="Markdown",
-                reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
-            )
-            
-    except Exception as e:
-        logger.error(f"❌ Ошибка в pending_command: {e}")
-        import traceback
-        traceback.print_exc()
-        await update.message.reply_text(
-            f"❌ Ошибка при получении заявок: {str(e)}",
-            parse_mode="Markdown",
-            reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
-        )
 
 @handle_errors_with_rate_limit
 async def get_date(update: Update, context):
@@ -12533,7 +12342,7 @@ async def handle_admin_cancel_start(update: Update, context):
         "*👑 Шаг 1/2: Ввод имени пользователя*\n\n"
         "*📋 Варианты ввода:*\n"
         "• Уникальный ID (MC...): `MC1772377294899374`\n"
-        "• Username (с @ или без): `@mothman32` или `mothman32`\n\n"
+        "• Username (с @ или без): `@bulochka812` или `bulochka812`\n\n"
         "*💡 Где найти Уникальный ID:*\n"
         "Попросите пользователя нажать 👤 \"Мой профиль\" и скопировать данные\n\n"
         "*✏️ Введите данные:*",
@@ -12947,7 +12756,7 @@ async def profile_handler(update: Update, context):
             f"*👤 Ваш профиль*\n\n"
             f"• Telegram ID: `{user_id}`\n"
             f"• Username: @{username}\n\n"
-            f"📞 По вопросам: @mothman32"
+            f"📞 По вопросам: @bulochka812"
         )
         
         await update.message.reply_text(
@@ -13720,7 +13529,7 @@ async def handle_admin_cancel_back(update: Update, context):
             "🔍 Введите данные пользователя, чью запись нужно отменить:\n\n"
             "📋 Варианты ввода:\n"
             "• Уникальный ID (MC...): `MC1772377294899374`\n"
-            "• Username (с @ или без): `@mothman32` или `mothman32`\n\n"
+            "• Username (с @ или без): `@bulochka812` или `bulochka812`\n\n"
             "💡 Где найти Уникальный ID:\n"
             "Попросите пользователя нажать 👤 \"Мой профиль\" и скопировать данные\n\n"
             "*✏️ Введите данные:*",
@@ -13760,7 +13569,7 @@ async def handle_admin_award_achievement_start(update: Update, context):
         "*👑 Шаг 1/3: Ввод имени пользователя*\n\n"
         "*📋 Варианты ввода:*\n"
         "• Уникальный ID (MC...): `MC1772377294899374`\n"
-        "• Username (с @ или без): `@mothman32` или `mothman32`\n\n"
+        "• Username (с @ или без): `@bulochka812` или `bulochka812`\n\n"
         "*💡 Где найти Уникальный ID:*\n"
         "Попросите пользователя нажать 👤 \"Мой профиль\" и скопировать данные\n\n"
         "*✏️ Введите данные:*",
@@ -13894,7 +13703,7 @@ async def handle_admin_achievement_name(update: Update, context):
             "*👑 Шаг 1/3: Ввод имени пользователя*\n\n"
             "*📋 Варианты ввода:*\n"
             "• Уникальный ID (MC...): `MC1772377294899374`\n"
-            "• Username (с @ или без): `@mothman32` или `mothman32`\n\n"
+            "• Username (с @ или без): `@bulochka812` или `bulochka812`\n\n"
             "*💡 Где найти Уникальный ID:*\n"
             "Попросите пользователя нажать 👤 \"Мой профиль\" и скопировать данные\n\n"
             "*✏️ Введите данные:*",
@@ -14131,7 +13940,7 @@ async def handle_admin_remove_achievement_start(update: Update, context):
         "*👑 Шаг 1/2: Ввод имени пользователя*\n\n"
         "*📋 Варианты ввода:*\n"
         "• Уникальный ID (MC...): `MC1772377294899374`\n"
-        "• Username (с @ или без): `@mothman32` или `mothman32`\n\n"
+        "• Username (с @ или без): `@bulochka812` или `bulochka812`\n\n"
         "*💡 Где найти Уникальный ID:*\n"
         "Попросите пользователя нажать 👤 \"Мой профиль\" и скопировать данные\n\n"
         "*✏️ Введите данные:*",
@@ -14515,7 +14324,7 @@ async def admin_remove_achievement_confirm(update: Update, context):
                 f"*Достижение «{achievement_name}» было удалено.*\n"
                 f"*📉 У вас отозвано {vinyls_to_remove} пластинок.*\n"
                 f"*💰 Текущее количество пластинок: {new_vinyls} 💿*\n\n"
-                f"*📞 Свяжитесь с администратором @mothman32 для уточнения*"
+                f"*📞 Свяжитесь с администратором @bulochka812 для уточнения*"
             )
             
             await context.bot.send_message(
@@ -14680,7 +14489,7 @@ async def handle_admin_remove_achievement_back(update: Update, context):
             "*👑 Шаг 1/2: Ввод имени пользователя*\n\n"
             "*📋 Варианты ввода:*\n"
             "• Уникальный ID (MC...): `MC1772377294899374`\n"
-            "• Username (с @ или без): `@mothman32` или `mothman32`\n\n"
+            "• Username (с @ или без): `@bulochka812` или `bulochka812`\n\n"
             "*💡 Где найти Уникальный ID:*\n"
             "Попросите пользователя нажать 👤 \"Мой профиль\" и скопировать данные\n\n"
             "*✏️ Введите данные:*",
@@ -14720,7 +14529,7 @@ async def handle_admin_create_booking(update: Update, context):
         "*👑 Шаг 1/4: Ввод имени пользователя*\n\n"
         "*📋 Варианты ввода:*\n"
         "• Уникальный ID (MC...): `MC1772377294899374`\n"
-        "• Username (с @ или без): `@mothman32` или `mothman32`\n\n"
+        "• Username (с @ или без): `@bulochka812` или `bulochka812`\n\n"
         "*💡 Где найти Уникальный ID:*\n"
         "Попросите пользователя нажать 👤 \"Мой профиль\" и скопировать данные\n\n"
         "*✏️ Введите данные:*",
@@ -14845,7 +14654,7 @@ async def handle_admin_record_type(update: Update, context):
             "*👑 Шаг 1/4: Ввод имени пользователя*\n\n"
             "*📋 Варианты ввода:*\n"
             "• Уникальный ID (MC...): `MC1772377294899374`\n"
-            "• Username (с @ или без): `@mothman32` или `mothman32`\n\n"
+            "• Username (с @ или без): `@bulochka812` или `bulochka812`\n\n"
             "*💡 Где найти Уникальный ID:*\n"
             "Попросите пользователя нажать 👤 \"Мой профиль\" и скопировать данные\n\n"
             "*✏️ Введите данные:*",
@@ -15202,24 +15011,24 @@ async def handle_admin_confirm(update: Update, context):
 async def pending_command(update: Update, context):
     """Команда /pending - показать все ожидающие записи (только для админов)"""
     user_id = update.effective_user.id
-    
+
     if user_id not in Config.ADMIN_IDS:
         await update.message.reply_text(
             "❌ У вас нет прав для этой команды!",
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user),
-            parse_mode="Markdown"
+            parse_mode="HTML"
         )
         return
-    
+
     await update.message.reply_text(
-        "*🔍 Ищу ожидающие подтверждения записи...*",
-        parse_mode="Markdown"
+        "<b>🔍 Ищу ожидающие подтверждения записи...</b>",
+        parse_mode="HTML"
     )
-    
+
     try:
         with db.get_connection() as conn:
             cursor = conn.cursor()
-            
+
             cursor.execute('''
                 SELECT id, timestamp, name, contact, service, date_str, time_slot, price,
                        is_mixing, mixing_type, is_track_creation, track_type,
@@ -15231,163 +15040,172 @@ async def pending_command(update: Update, context):
                 AND service NOT LIKE '%админ%'
                 ORDER BY timestamp ASC
             ''')
-            
+
             pending_bookings = cursor.fetchall()
-            
+
             if not pending_bookings:
                 await update.message.reply_text(
-                    "*✅ Нет ожидающих подтверждения заявок*",
-                    parse_mode="Markdown",
+                    "<b>✅ Нет ожидающих подтверждения заявок</b>",
+                    parse_mode="HTML",
                     reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
                 )
                 return
-            
+
             sent_count = 0
             for booking in pending_bookings:
                 (booking_id, timestamp, name, contact, service, date_str, time_slot, price,
                  is_mixing, mixing_type, is_track_creation, track_type,
                  is_12_hours, twelve_hours_type, with_engineer, duration,
                  telegram_id, level_discount_percent, promo_discount_percent, promo_code_used) = booking
-                
-                display_date = date_str
+
+                # ===== ЭКРАНИРУЕМ ВСЕ ПОЛЬЗОВАТЕЛЬСКИЕ ДАННЫЕ =====
+                safe_name      = html.escape(str(name or "—"))
+                safe_contact   = html.escape(str(contact or "—"))
+                safe_service   = html.escape(str(service or "—"))
+                safe_timestamp = html.escape(str(timestamp or "—"))
+                safe_tg_id     = html.escape(str(telegram_id or "—"))
+
+                display_date = date_str or "—"
                 if date_str and '(' in date_str:
                     display_date = date_str.split('(')[0].strip()
-                
-                # ===== ИСПРАВЛЕНО: format_time_for_display() уже нормализует 24→00 =====
-                display_time = time_slot
+                safe_date = html.escape(str(display_date))
+
+                display_time = time_slot or "—"
                 if time_slot and '-' in time_slot:
                     display_time = DateTimeUtils.format_time_for_display(time_slot)
-                
-                # ===== ФОРМИРУЕМ ТЕКСТ СО СКИДКАМИ (БЕЗ ЛИШНИХ ПРОБЕЛОВ) =====
+                safe_time = html.escape(str(display_time))
+
+                # ===== СКИДКИ =====
                 discount_lines = []
                 if level_discount_percent and level_discount_percent > 0:
                     discount_lines.append(f"🎟 Скидка по уровню: {level_discount_percent}%")
                 if promo_discount_percent and promo_discount_percent > 0:
                     discount_lines.append(f"🎟 Промокод: {promo_discount_percent}%")
                 if promo_code_used:
-                    discount_lines.append(f"🎟 Код промокода: {promo_code_used}")
-                
+                    discount_lines.append(f"🎟 Код промокода: {html.escape(str(promo_code_used))}")
+
                 discount_text = ""
                 if discount_lines:
                     discount_text = "\n" + "\n".join(discount_lines)
-                
-                # Формируем сообщение в зависимости от типа услуги
+
                 if is_12_hours:
                     try:
                         price_int = int(float(price)) if price else 0
                         rent_price_display = f"{price_int}₽ + залог"
-                    except:
-                        rent_price_display = f"{price}₽ + залог" if price else "0₽ + залог"
-                    
+                    except Exception:
+                        rent_price_display = f"{html.escape(str(price))}₽ + залог" if price else "0₽ + залог"
+
+                    safe_rent_type = html.escape(str(twelve_hours_type or "Не указан"))
+
                     message_text = (
                         f"🚨 Новая заявка! #{booking_id}\n\n"
-                        f"👤 Пользователь: {name}\n"
-                        f"📱 Контакт: {contact}\n"
-                        f"🎧 Услуга: {service}\n"
-                        f"⏰ Тип аренды: {twelve_hours_type}\n"
-                        f"📅 Дата: {display_date}\n"
-                        f"🕐 Время: {display_time} (12 часов)\n"
+                        f"👤 Пользователь: {safe_name}\n"
+                        f"📱 Контакт: {safe_contact}\n"
+                        f"🎧 Услуга: {safe_service}\n"
+                        f"⏰ Тип аренды: {safe_rent_type}\n"
+                        f"📅 Дата: {safe_date}\n"
+                        f"🕐 Время: {safe_time} (12 часов)\n"
                         f"💰 Стоимость аренды: {rent_price_display}{discount_text}\n\n"
-                        f"📅 Создана: {timestamp}\n\n"
-                        f"*👇 Подтвердить или отклонить?*"
+                        f"📅 Создана: {safe_timestamp}\n\n"
+                        f"<b>👇 Подтвердить или отклонить?</b>"
                     )
-                    
+
                 elif is_mixing:
-                    mix_type = mixing_type if mixing_type else "Не указан"
+                    safe_mix_type = html.escape(str(mixing_type if mixing_type else "Не указан"))
                     try:
                         price_int = int(float(price)) if price else 0
                         price_text = "Договорная" if price_int == 0 else f"{price_int}₽"
-                    except:
-                        price_text = "Договорная" if "Договорная" in str(price) else f"{price}₽"
-                    
+                    except Exception:
+                        price_text = "Договорная" if "Договорная" in str(price) else f"{html.escape(str(price))}₽"
+
                     message_text = (
                         f"🚨 Новая заявка! #{booking_id}\n\n"
-                        f"👤 Пользователь: {name}\n"
-                        f"📱 Контакт: {contact}\n"
-                        f"🎧 Услуга: {service}\n"
-                        f"🎚️ Тип работы: {mix_type}\n"
+                        f"👤 Пользователь: {safe_name}\n"
+                        f"📱 Контакт: {safe_contact}\n"
+                        f"🎧 Услуга: {safe_service}\n"
+                        f"🎚️ Тип работы: {safe_mix_type}\n"
                         f"💰 Стоимость: {price_text}{discount_text}\n\n"
-                        f"📅 Создана: {timestamp}\n\n"
-                        f"*👇 Подтвердить или отклонить?*"
+                        f"📅 Создана: {safe_timestamp}\n\n"
+                        f"<b>👇 Подтвердить или отклонить?</b>"
                     )
-                    
+
                 elif is_track_creation:
-                    track_type_text = track_type if track_type else "Не указан"
+                    safe_track_type = html.escape(str(track_type if track_type else "Не указан"))
                     try:
                         price_int = int(float(price)) if price else 0
                         price_text = "Договорная" if price_int == 0 else f"{price_int}₽"
-                    except:
-                        price_text = "Договорная" if "Договорная" in str(price) else f"{price}₽"
-                    
+                    except Exception:
+                        price_text = "Договорная" if "Договорная" in str(price) else f"{html.escape(str(price))}₽"
+
                     message_text = f"🚨 Новая заявка! #{booking_id}\n\n"
-                    message_text += f"👤 Пользователь: {name}\n"
-                    message_text += f"📱 Контакт: {contact}\n"
-                    message_text += f"🎧 Услуга: {service}\n"
-                    message_text += f"🎵 Тип: {track_type_text}\n"
-                    
+                    message_text += f"👤 Пользователь: {safe_name}\n"
+                    message_text += f"📱 Контакт: {safe_contact}\n"
+                    message_text += f"🎧 Услуга: {safe_service}\n"
+                    message_text += f"🎵 Тип: {safe_track_type}\n"
+
                     if date_str and 'Не указана' not in date_str:
-                        message_text += f"📅 Дата: {display_date}\n"
+                        message_text += f"📅 Дата: {safe_date}\n"
                     if time_slot and time_slot not in ['Не указано', 'Не указано (договорная)']:
-                        message_text += f"⏰ Время: {display_time} (4 часа)\n"
-                    
+                        message_text += f"⏰ Время: {safe_time} (4 часа)\n"
+
                     message_text += f"💰 Стоимость: {price_text}{discount_text}\n\n"
-                    message_text += f"📅 Создана: {timestamp}\n\n"
-                    message_text += f"*👇 Подтвердить или отклонить?*"
-                    
+                    message_text += f"📅 Создана: {safe_timestamp}\n\n"
+                    message_text += f"<b>👇 Подтвердить или отклонить?</b>"
+
                 else:
                     duration_text = ""
                     if duration and duration > 0:
                         duration_text = f" ({PriceCalculator.format_hours_ru(duration)})"
-                    
+
                     try:
                         price_int = int(float(price)) if price else 0
                         price_text = f"{price_int}₽" if price_int > 0 else "0₽"
-                    except:
-                        price_text = f"{price}₽"
-                    
+                    except Exception:
+                        price_text = f"{html.escape(str(price))}₽"
+
                     message_text = f"🚨 Новая заявка! #{booking_id}\n\n"
-                    message_text += f"👤 Пользователь: {name}\n"
-                    message_text += f"📱 Контакт: {contact}\n"
-                    message_text += f"🎧 Услуга: {service}\n"
-                    
+                    message_text += f"👤 Пользователь: {safe_name}\n"
+                    message_text += f"📱 Контакт: {safe_contact}\n"
+                    message_text += f"🎧 Услуга: {safe_service}\n"
+
                     if date_str and 'Не указана' not in date_str:
-                        message_text += f"📅 Дата: {display_date}\n"
+                        message_text += f"📅 Дата: {safe_date}\n"
                     if time_slot and time_slot not in ['Не указано', 'Не указано (договорная)']:
-                        message_text += f"⏰ Время: {display_time}{duration_text}\n"
+                        message_text += f"⏰ Время: {safe_time}{duration_text}\n"
                     if price and price != '0':
                         message_text += f"💰 Стоимость: {price_text}{discount_text}\n"
-                    
-                    message_text += f"\n📅 Создана: {timestamp}\n\n"
-                    message_text += f"*👇 Подтвердить или отклонить?*"
-                
+
+                    message_text += f"\n📅 Создана: {safe_timestamp}\n\n"
+                    message_text += f"<b>👇 Подтвердить или отклонить?</b>"
+
                 keyboard = InlineKeyboardMarkup([
                     [
                         InlineKeyboardButton("✅ Подтвердить", callback_data=f"confirm_{booking_id}"),
                         InlineKeyboardButton("❌ Отклонить", callback_data=f"reject_{booking_id}")
                     ]
                 ])
-                
+
                 await context.bot.send_message(
                     chat_id=user_id,
                     text=message_text,
-                    parse_mode="Markdown",
+                    parse_mode="HTML",
                     reply_markup=keyboard
                 )
                 sent_count += 1
-            
+
             await update.message.reply_text(
-                f"*✅ Найдено и отправлено {sent_count} ожидающих заявок*",
-                parse_mode="Markdown",
+                f"<b>✅ Найдено и отправлено {sent_count} ожидающих заявок</b>",
+                parse_mode="HTML",
                 reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
             )
-            
+
     except Exception as e:
         logger.error(f"❌ Ошибка в pending_command: {e}")
         import traceback
         traceback.print_exc()
         await update.message.reply_text(
             f"❌ Ошибка при получении заявок: {str(e)}",
-            parse_mode="Markdown",
+            parse_mode=None,
             reply_markup=KeyboardManager.get_main_keyboard(update.effective_user)
         )
 
@@ -15478,7 +15296,7 @@ async def handle_admin_block_start(update: Update, context):
         "*👑 Шаг 1/4: Ввод имени пользователя*\n\n"
         "*📋 Варианты ввода:*\n"
         "• Уникальный ID (MC...): `MC1772377294899374`\n"
-        "• Username (с @ или без): `@mothman32` или `mothman32`\n\n"
+        "• Username (с @ или без): `@bulochka812` или `bulochka812`\n\n"
         "*💡 Где найти Уникальный ID:*\n"
         "Попросите пользователя нажать 👤 \"Мой профиль\" и скопировать данные\n\n"
         "*✏️ Введите данные:*",
@@ -15663,7 +15481,7 @@ async def handle_admin_block_type(update: Update, context):
             "*👑 Шаг 1/4: Ввод имени пользователя*\n\n"
             "*📋 Варианты ввода:*\n"
             "• Уникальный ID (MC...): `MC1772377294899374`\n"
-            "• Username (с @ или без): `@mothman32` или `mothman32`\n\n"
+            "• Username (с @ или без): `@bulochka812` или `bulochka812`\n\n"
             "*💡 Где найти Уникальный ID:*\n"
             "Попросите пользователя нажать 👤 \"Мой профиль\" и скопировать данные\n\n"
             "*✏️ Введите данные:*",
@@ -15978,7 +15796,7 @@ async def handle_admin_block_confirm(update: Update, context):
                 f"{user_notification}\n\n"
                 f"*👤 Ваш профиль: @{username}*\n"
                 f"*📋 Уникальный ID: {unique_id}*\n\n"
-                f"*📞 По вопросам обращайтесь к администратору: @mothman32*"
+                f"*📞 По вопросам обращайтесь к администратору: @bulochka812*"
             )
             
             await context.bot.send_message(
@@ -17540,7 +17358,7 @@ async def admin_promo_select_type(update: Update, context):
             "*👑 Шаг 2/8: Ввод имени пользователя*\n\n"
             "*📋 Варианты ввода:*\n"
             "• Уникальный ID (MC...): `MC1772377294899374`\n"
-            "• Username (с @ или без): `@mothman32` или `mothman32`\n\n"
+            "• Username (с @ или без): `@bulochka812` или `bulochka812`\n\n"
             "*💡 Где найти Уникальный ID:*\n"
             "Попросите пользователя нажать 👤 \"Мой профиль\" и скопировать данные\n\n"
             "*✏️ Введите данные:*",
@@ -17740,7 +17558,7 @@ async def admin_promo_duration(update: Update, context):
                     "*👑 Шаг 2/8: Ввод имени пользователя*\n\n"
                     "*📋 Варианты ввода:*\n"
                     "• Уникальный ID (MC...): `MC1772377294899374`\n"
-                    "• Username (с @ или без): `@mothman32` или `mothman32`\n\n"
+                    "• Username (с @ или без): `@bulochka812` или `bulochka812`\n\n"
                     "*💡 Где найти Уникальный ID:*\n"
                     "Попросите пользователя нажать 👤 \"Мой профиль\" и скопировать данные\n\n"
                     "*✏️ Введите данные:*",
@@ -19379,7 +19197,7 @@ async def admin_promo_delete_confirm_handler(update: Update, context):
                         f"*❌ Промокод деактивирован администратором*\n\n"
                         f"*🎟️ Промокод:* `{promo_code}`\n"
                         f"*🎁 Бонус:* {bonus_text}\n\n"
-                        f"*📞 По вопросам обращайтесь к администратору @mothman32*"
+                        f"*📞 По вопросам обращайтесь к администратору @bulochka812*"
                     ),
                     parse_mode="Markdown"
                 )
@@ -19452,7 +19270,7 @@ async def handle_admin_vinyl_start(update: Update, context):
         "*👑 Шаг 1/4: Ввод имени пользователя*\n\n"
         "*📋 Варианты ввода:*\n"
         "• Уникальный ID (MC...): `MC1772377294899374`\n"
-        "• Username (с @ или без): `@mothman32` или `mothman32`\n\n"
+        "• Username (с @ или без): `@bulochka812` или `bulochka812`\n\n"
         "*💡 Где найти Уникальный ID:*\n"
         "Попросите пользователя нажать 👤 \"Мой профиль\" и скопировать данные\n\n"
         "*✏️ Введите данные:*",
@@ -19614,7 +19432,7 @@ async def handle_admin_vinyl_action(update: Update, context):
             "*👑 Шаг 1/4: Ввод имени пользователя*\n\n"
             "*📋 Варианты ввода:*\n"
             "• Уникальный ID (MC...): `MC1772377294899374`\n"
-            "• Username (с @ или без): `@mothman32` или `mothman32`\n\n"
+            "• Username (с @ или без): `@bulochka812` или `bulochka812`\n\n"
             "*💡 Где найти Уникальный ID:*\n"
             "Попросите пользователя нажать 👤 \"Мой профиль\" и скопировать данные\n\n"
             "*✏️ Введите данные:*",
@@ -19847,7 +19665,7 @@ async def handle_admin_vinyl_confirm(update: Update, context):
                     f"*📉 Количество: -{amount} 💿*\n"
                     f"*💰 Осталось пластинок: {new_total} 💿*\n\n"
                     f"*👑 Администратор: @{admin_username}*\n\n"
-                    f"*📞 По вопросам обращайтесь к @mothman32*"
+                    f"*📞 По вопросам обращайтесь к @bulochka812*"
                 )
             
             await context.bot.send_message(
@@ -20140,7 +19958,7 @@ async def handle_admin_profile_start(update: Update, context):
         "*👑 Шаг 1/2: Ввод имени пользователя*\n\n"
         "*📋 Варианты ввода:*\n"
         "• Уникальный ID (MC...): `MC1772377294899374`\n"
-        "• Username (с @ или без): `@mothman32` или `mothman32`\n\n"
+        "• Username (с @ или без): `@bulochka812` или `bulochka812`\n\n"
         "*💡 Где найти Уникальный ID:*\n"
         "Попросите пользователя нажать 👤 \"Мой профиль\" и скопировать данные\n\n"
         "*✏️ Введите данные:*",
@@ -20174,7 +19992,7 @@ async def handle_admin_profile_user_id(update: Update, context):
             "*❌ Введите данные для поиска!*\n\n"
             "*📋 Варианты ввода:*\n"
             "• Уникальный ID (MC...): `MC1772377294899374`\n"
-            "• Username (с @ или без): `@mothman32` или `mothman32`",
+            "• Username (с @ или без): `@bulochka812` или `bulochka812`",
             parse_mode="Markdown",
             reply_markup=ReplyKeyboardMarkup([
                 ["↩️ Главное меню"]
@@ -20537,16 +20355,16 @@ async def button_callback_handler(update: Update, context):
                                     hours = time_left.seconds // 3600
                                     minutes = (time_left.seconds % 3600) // 60
                                     time_text = f"{hours} ч. {minutes} мин." if hours > 0 and minutes > 0 else f"{hours} ч." if hours > 0 else f"{minutes} мин."
-                                    await query.edit_message_text(text=f"🔒 Вы заблокированы!\n\n⏳ До разблокировки осталось: {time_text}\n\n📞 По вопросам обращайтесь к администратору: @mothman32", parse_mode="Markdown")
+                                    await query.edit_message_text(text=f"🔒 Вы заблокированы!\n\n⏳ До разблокировки осталось: {time_text}\n\n📞 По вопросам обращайтесь к администратору: @bulochka812", parse_mode="Markdown")
                                     return
                                 else:
                                     cursor.execute('UPDATE users SET is_blocked = 0, blocked_until = NULL WHERE telegram_id = ?', (str(user_id),))
                                     conn.commit()
                             except:
-                                await query.edit_message_text(text=f"🔒 Вы заблокированы!\n\n⏳ Тип блокировки: Навсегда\n\n📞 По вопросам обращайтесь к администратору: @mothman32", parse_mode="Markdown")
+                                await query.edit_message_text(text=f"🔒 Вы заблокированы!\n\n⏳ Тип блокировки: Навсегда\n\n📞 По вопросам обращайтесь к администратору: @bulochka812", parse_mode="Markdown")
                                 return
                         else:
-                            await query.edit_message_text(text=f"🔒 Вы заблокированы!\n\n⏳ Тип блокировки: Навсегда\n\n📞 По вопросам обращайтесь к администратору: @mothman32", parse_mode="Markdown")
+                            await query.edit_message_text(text=f"🔒 Вы заблокированы!\n\n⏳ Тип блокировки: Навсегда\n\n📞 По вопросам обращайтесь к администратору: @bulochka812", parse_mode="Markdown")
                             return
         
         if data == "enter_referral_code":
@@ -20730,7 +20548,7 @@ async def button_callback_handler(update: Update, context):
                         )
                         if price != '0':
                             error_text += f"• Стоимость: {price}₽\n"
-                        error_text += f"\n*📞 Для отмены обратитесь к администратору @mothman32*"
+                        error_text += f"\n*📞 Для отмены обратитесь к администратору @bulochka812*"
                         
                         keyboard = InlineKeyboardMarkup([
                             [InlineKeyboardButton("↩️ Вернуться к списку", callback_data="back_to_bookings")]
@@ -20954,7 +20772,7 @@ async def button_callback_handler(update: Update, context):
                             text=(
                                 f"*❌ Отмена записи недоступна!*\n\n"
                                 f"*⏰ До начала менее 12 часов*\n\n"
-                                f"*📞 Для отмены обратитесь к администратору @mothman32*"
+                                f"*📞 Для отмены обратитесь к администратору @bulochka812*"
                             ),
                             parse_mode="Markdown"
                         )
@@ -21594,7 +21412,7 @@ async def process_booking_confirmation(booking_id: int, admin_id: int, context: 
         
         user_msg_lines.append("")
         user_msg_lines.append(f"*📍 Адрес: Садовая ул., 91*")
-        user_msg_lines.append(f"*📞 Контакты: @mothman32*")
+        user_msg_lines.append(f"*📞 Контакты: @bulochka812*")
         
         user_message = "\n".join(user_msg_lines)
         
@@ -21866,7 +21684,7 @@ async def process_booking_rejection(booking_id: int, admin_id: int, context: Con
             user_msg_lines.append(discount_text.lstrip('\n'))
         
         user_msg_lines.append("")
-        user_msg_lines.append(f"*📞 Свяжитесь с администратором @mothman32*")
+        user_msg_lines.append(f"*📞 Свяжитесь с администратором @bulochka812*")
         
         user_message = "\n".join(user_msg_lines)
         
@@ -22099,7 +21917,7 @@ async def admin_cancel_confirm_handler(update: Update, context):
 
             user_message += """
 
-*📞 По вопросам: @mothman32*"""
+*📞 По вопросам: @bulochka812*"""
             
             await context.bot.send_message(chat_id=int(telegram_id), text=user_message, parse_mode="Markdown")
             logger.info(f"✅ Уведомление об отмене отправлено пользователю {telegram_id}")
