@@ -7286,7 +7286,7 @@ async def start(update: Update, context):
         "• Возможны небольшие ошибки\n"
         "• Мы постоянно улучшаем сервис\n"
         "• Ваши отзывы помогают нам стать лучше\n\n"
-        "*📢 Наш канал:* [@godspeedrec](https://t.me/godspeedrec)\n\n"
+        "*Наш канал:* [@godspeedrec](https://t.me/godspeedrec)\n\n"
         "*По техническим вопросам: @bulochka812*\n\n"
         "*👇 Выберите подходящий вариант:*"
     )
